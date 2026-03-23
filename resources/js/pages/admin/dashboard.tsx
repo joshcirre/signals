@@ -1,25 +1,15 @@
 import { Head, Link, router } from '@inertiajs/react';
-import {
-    Activity,
-    ClipboardList,
-    MessageSquareWarning,
-    Search,
-    ShoppingBag,
-    type LucideIcon,
-} from 'lucide-react';
+import { Activity, ArrowRight } from 'lucide-react';
+import { FormEvent, useState } from 'react';
 import AppLayout from '@/layouts/app-layout';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { storeBrand } from '@/lib/brand';
 import { dashboard } from '@/routes';
 import admin from '@/routes/admin';
-import { FormEvent, useState } from 'react';
 import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'Admin Dashboard',
+        title: 'Dashboard',
         href: dashboard(),
     },
 ];
@@ -57,12 +47,6 @@ interface DashboardProps {
     }>;
 }
 
-interface StatCard {
-    label: string;
-    value: number;
-    icon: LucideIcon;
-}
-
 export default function AdminDashboard({
     onboarding,
     stats,
@@ -70,334 +54,281 @@ export default function AdminDashboard({
     latestAppliedChange,
     recentActions,
 }: DashboardProps) {
-    const [searchTerm, setSearchTerm] = useState('hoodie reviews about sizing');
-    const cards: StatCard[] = [
-        { label: 'Products', value: stats.products, icon: ShoppingBag },
-        { label: 'Awaiting analysis', value: stats.new_reviews, icon: Search },
-        {
-            label: 'Low-rating reviews',
-            value: stats.negative_reviews,
-            icon: MessageSquareWarning,
-        },
-        {
-            label: 'Pending proposals',
-            value: stats.pending_proposals,
-            icon: ClipboardList,
-        },
-    ];
+    const [searchTerm, setSearchTerm] = useState(
+        'hoodie reviews about sizing',
+    );
 
     const submitSearch = (event: FormEvent) => {
         event.preventDefault();
-
         router.get(admin.signals().url, { q: searchTerm });
     };
 
+    const statItems = [
+        { label: 'Products', value: stats.products },
+        { label: 'Awaiting analysis', value: stats.new_reviews },
+        { label: 'Low-rating reviews', value: stats.negative_reviews },
+        { label: 'Pending proposals', value: stats.pending_proposals },
+    ];
+
+    // Border classes for the 4-up stat grid at 1/2/4 columns
+    const statBorderClasses = [
+        '',
+        'border-t border-slate-950/5 sm:border-t-0 sm:border-l',
+        'border-t border-slate-950/5 sm:border-l-0 xl:border-t-0 xl:border-l',
+        'border-t border-slate-950/5 sm:border-l xl:border-t-0',
+    ];
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Admin Dashboard" />
-            <div className="space-y-8 p-4 md:p-6">
+            <Head title="Dashboard" />
+
+            <div className="space-y-6 p-4 md:p-6">
+                {/* Onboarding banner */}
                 {onboarding.needs_helper_setup ? (
-                    <section className="rounded-[1.9rem] border border-sky-200 bg-sky-50/90 p-6 text-slate-950 shadow-sm">
-                        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-                            <div className="max-w-3xl">
-                                <Badge className="rounded-full border-sky-300 bg-white/80 px-3 py-1 text-[0.68rem] tracking-[0.24em] text-sky-900 uppercase hover:bg-white/80">
-                                    New demo account
-                                </Badge>
-                                <h2 className="mt-4 text-2xl font-semibold tracking-tight">
-                                    Start the local helper before you run the
-                                    first Signals analysis.
+                    <section className="rounded-xl border border-sky-200 bg-sky-50 p-5">
+                        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                            <div className="max-w-2xl">
+                                <p className="text-xs font-medium text-sky-600">
+                                    Setup required
+                                </p>
+                                <h2 className="mt-1 text-base font-semibold text-slate-900">
+                                    Start the local Signals helper before running
+                                    your first analysis.
                                 </h2>
-                                <p className="mt-3 text-sm leading-7 text-slate-700">
-                                    The hosted app is ready. Your next step is
-                                    to open Signals, issue a helper token, run
-                                    the Node bridge on your laptop, and then
-                                    click Analyze New Reviews.
+                                <p className="mt-1 max-w-[48ch] text-sm text-pretty text-slate-600">
+                                    Issue a helper token in Signals, run the Node
+                                    bridge on your laptop, then click Analyze New
+                                    Reviews.
                                 </p>
                             </div>
-                            <div className="flex flex-wrap gap-3">
-                                <Button
-                                    asChild
-                                    className="rounded-full bg-slate-950 hover:bg-slate-800"
-                                >
-                                    <Link href={admin.signals().url}>
-                                        Open Signals setup
-                                    </Link>
-                                </Button>
-                                <Button
-                                    asChild
-                                    variant="outline"
-                                    className="rounded-full border-sky-300 bg-white/80"
-                                >
-                                    <Link href="/">
-                                        Preview the storefront
-                                    </Link>
-                                </Button>
-                            </div>
+                            <Link
+                                href={admin.signals().url}
+                                className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-slate-950/10 py-2 pl-3 pr-3 text-sm font-medium text-slate-700 hover:bg-white"
+                            >
+                                Open Signals setup
+                                <ArrowRight className="size-4" />
+                            </Link>
                         </div>
                     </section>
                 ) : null}
 
-                <section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-                    <div className="rounded-[2.2rem] bg-[linear-gradient(135deg,_#112031_0%,_#1b3f74_48%,_#38bdf8_100%)] p-8 text-white shadow-[0_28px_85px_rgba(17,32,49,0.28)]">
-                        <Badge className="rounded-full border-white/12 bg-white/12 px-3 py-1 text-[0.68rem] tracking-[0.24em] text-white uppercase hover:bg-white/12">
-                            {storeBrand.adminName}
-                        </Badge>
-                        <h1 className="mt-5 max-w-3xl text-4xl font-semibold tracking-tight">
-                            Customer language becomes shopper guidance after one
-                            visible approval step.
-                        </h1>
-                        <p className="mt-4 max-w-2xl text-base leading-7 text-white/78">
-                            Northstar uses a local Codex helper, Laravel MCP
-                            tools, and a lightweight approval layer to turn
-                            recurring review friction into safer storefront copy
-                            changes.
-                        </p>
-                        <div className="mt-7 flex flex-wrap gap-3">
-                            <Button
-                                asChild
-                                size="lg"
-                                className="rounded-full bg-white px-6 text-slate-950 hover:bg-slate-100"
-                            >
-                                <Link href={admin.signals().url}>
-                                    Open Signals
-                                </Link>
-                            </Button>
-                            <Button
-                                asChild
-                                size="lg"
-                                variant="outline"
-                                className="rounded-full border-white/22 bg-white/8 px-6 text-white hover:bg-white/12 hover:text-white"
-                            >
-                                <Link href={admin.proposals.index().url}>
-                                    Open Proposal Queue
-                                </Link>
-                            </Button>
-                            <Button
-                                asChild
-                                size="lg"
-                                variant="outline"
-                                className="rounded-full border-white/22 bg-white/8 px-6 text-white hover:bg-white/12 hover:text-white"
-                            >
-                                <Link href="/">View Storefront</Link>
-                            </Button>
+                {/* Demo flow — 3 steps */}
+                <section className="grid gap-4 lg:grid-cols-3">
+                    <Link
+                        href={admin.signals().url}
+                        className="group flex flex-col gap-4 rounded-xl border border-slate-950/10 bg-white p-6 hover:border-slate-400"
+                    >
+                        <div className="flex items-start justify-between">
+                            <span className="flex size-8 items-center justify-center rounded-lg bg-slate-950 text-sm font-bold text-white">
+                                1
+                            </span>
                         </div>
-                    </div>
-
-                    <Card className="rounded-[2rem] border-white/80 bg-white/82 py-0 shadow-[0_20px_60px_rgba(15,23,42,0.1)] backdrop-blur">
-                        <CardContent className="space-y-5 px-6 py-6">
-                            <div className="flex items-center justify-between gap-3">
-                                <div>
-                                    <p className="text-sm font-medium tracking-[0.24em] text-slate-500 uppercase">
-                                        Demo focus
-                                    </p>
-                                    <h2 className="mt-2 text-2xl font-semibold text-slate-950">
-                                        Signals control room
-                                    </h2>
-                                </div>
-                                <Badge
-                                    variant="outline"
-                                    className="rounded-full border-emerald-200 bg-emerald-50 text-emerald-800"
-                                >
-                                    Hosted + local
-                                </Badge>
-                            </div>
-                            <div className="grid gap-3 text-sm text-slate-700">
-                                <div className="rounded-[1.4rem] bg-slate-50 px-4 py-4">
-                                    1. Search reviews using natural merchant
-                                    language.
-                                </div>
-                                <div className="rounded-[1.4rem] bg-slate-50 px-4 py-4">
-                                    2. Watch Codex stream MCP tool usage back
-                                    into the admin UI.
-                                </div>
-                                <div className="rounded-[1.4rem] bg-amber-50 px-4 py-4 text-amber-950">
-                                    3. Approve one fit-note proposal and refresh
-                                    the public storefront.
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </section>
-
-                <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                    {cards.map(({ label, value, icon: Icon }) => (
-                        <Card
-                            key={label}
-                            className="rounded-[1.75rem] border-white/80 bg-white/82 py-0 shadow-sm backdrop-blur"
-                        >
-                            <CardContent className="px-5 py-5">
-                                <div className="flex items-center justify-between">
-                                    <p className="text-sm text-slate-500">
-                                        {label}
-                                    </p>
-                                    <div className="rounded-2xl bg-slate-100 p-2 text-slate-600">
-                                        <Icon className="size-4" />
-                                    </div>
-                                </div>
-                                <p className="mt-5 text-4xl font-semibold tracking-tight text-slate-950">
-                                    {value}
-                                </p>
-                            </CardContent>
-                        </Card>
-                    ))}
-                </section>
-
-                <section className="grid gap-6 lg:grid-cols-[1fr_0.9fr]">
-                    <div className="rounded-[2rem] border border-white/40 bg-[linear-gradient(135deg,_rgba(255,255,255,0.55)_0%,_rgba(255,255,255,0.84)_100%)] p-7 text-slate-950 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur">
-                        <div className="flex items-center gap-2 text-sm tracking-[0.25em] text-slate-500 uppercase">
-                            <Activity className="size-4" />
-                            Signals
-                        </div>
-                        <h2 className="mt-4 text-3xl font-semibold tracking-tight">
-                            Stream live Codex analysis, inspect proposals, and
-                            push storefront updates with approval.
-                        </h2>
-                        <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600">
-                            The primary demo loop lives in Signals. Search
-                            reviews semantically, watch the local helper claim a
-                            run, and approve the best proposal for immediate
-                            storefront impact.
-                        </p>
-                        <div className="mt-8 flex flex-wrap gap-3">
-                            <Button
-                                asChild
-                                className="rounded-full bg-slate-950 hover:bg-slate-800"
-                            >
-                                <Link href={admin.signals().url}>
-                                    Open Signals
-                                </Link>
-                            </Button>
-                            <Button
-                                asChild
-                                variant="outline"
-                                className="rounded-full"
-                            >
-                                <Link href={admin.auditLog().url}>
-                                    Open Audit Log
-                                </Link>
-                            </Button>
-                            <Button
-                                asChild
-                                variant="outline"
-                                className="rounded-full"
-                            >
-                                <Link href={admin.proposals.index().url}>
-                                    Open Proposal Queue
-                                </Link>
-                            </Button>
-                        </div>
-                    </div>
-
-                    <Card className="rounded-[2rem] border-white/80 bg-white/82 py-0 shadow-sm backdrop-blur">
-                        <CardContent className="px-6 py-6">
-                            <p className="text-sm font-medium tracking-[0.25em] text-slate-500 uppercase">
-                                Latest Run
+                        <div>
+                            <h3 className="font-semibold text-slate-950">
+                                Search reviews
+                            </h3>
+                            <p className="mt-1 max-w-[48ch] text-sm text-pretty text-slate-500">
+                                Ask in natural language — "hoodie reviews about
+                                sizing" — and watch the local Codex helper stream
+                                MCP tool usage back live.
                             </p>
-                            {latestRun ? (
-                                <div className="mt-5 space-y-4">
-                                    <div className="inline-flex rounded-full bg-emerald-50 px-3 py-1 text-sm font-medium text-emerald-700">
-                                        {latestRun.status}
-                                    </div>
-                                    <p className="text-lg font-semibold text-slate-900">
-                                        {latestRun.summary}
-                                    </p>
-                                    <p className="text-sm text-slate-500">
-                                        {latestRun.requested_at}
-                                    </p>
-                                </div>
-                            ) : (
-                                <p className="mt-5 text-sm text-slate-500">
-                                    No review analysis runs have been queued
-                                    yet.
-                                </p>
-                            )}
-                        </CardContent>
-                    </Card>
+                        </div>
+                        <span className="mt-auto inline-flex items-center gap-1 text-sm font-medium text-slate-950">
+                            Open Signals
+                            <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+                        </span>
+                    </Link>
+
+                    <Link
+                        href={admin.proposals.index().url}
+                        className="group flex flex-col gap-4 rounded-xl border border-slate-950/10 bg-white p-6 hover:border-slate-400"
+                    >
+                        <div className="flex items-start justify-between">
+                            <span className="flex size-8 items-center justify-center rounded-lg bg-slate-950 text-sm font-bold text-white">
+                                2
+                            </span>
+                        </div>
+                        <div>
+                            <h3 className="font-semibold text-slate-950">
+                                Review proposals
+                            </h3>
+                            <p className="mt-1 max-w-[48ch] text-sm text-pretty text-slate-500">
+                                Codex surfaces fit-note and FAQ changes ranked by
+                                confidence. You decide which ones make it to the
+                                storefront.
+                            </p>
+                        </div>
+                        <span className="mt-auto inline-flex items-center gap-1 text-sm font-medium text-slate-950">
+                            Open proposals
+                            <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+                        </span>
+                    </Link>
+
+                    <Link
+                        href="/"
+                        className="group flex flex-col gap-4 rounded-xl border border-slate-950/10 bg-white p-6 hover:border-slate-400"
+                    >
+                        <div className="flex items-start justify-between">
+                            <span className="flex size-8 items-center justify-center rounded-lg bg-slate-950 text-sm font-bold text-white">
+                                3
+                            </span>
+                        </div>
+                        <div>
+                            <h3 className="font-semibold text-slate-950">
+                                See it on the storefront
+                            </h3>
+                            <p className="mt-1 max-w-[48ch] text-sm text-pretty text-slate-500">
+                                Approved changes publish immediately. Refresh the
+                                product page and the updated fit note or FAQ
+                                appears for shoppers.
+                            </p>
+                        </div>
+                        <span className="mt-auto inline-flex items-center gap-1 text-sm font-medium text-slate-950">
+                            View storefront
+                            <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+                        </span>
+                    </Link>
                 </section>
 
-                <Card className="rounded-[2rem] border-white/80 bg-white/82 py-0 shadow-sm backdrop-blur">
-                    <CardContent className="px-6 py-6">
-                        <div className="flex items-center justify-between gap-4">
-                            <div>
-                                <p className="text-sm tracking-[0.25em] text-slate-500 uppercase">
-                                    Quick search
-                                </p>
-                                <h2 className="mt-3 text-2xl font-semibold text-slate-900">
-                                    Jump straight into the trust-building
-                                    retrieval demo.
-                                </h2>
-                            </div>
-                            <Search className="size-5 text-slate-400" />
-                        </div>
-                        <form
-                            onSubmit={submitSearch}
-                            className="mt-5 flex flex-col gap-3 md:flex-row"
+                {/* Quick search — primary action */}
+                <section className="rounded-xl border border-slate-950/10 bg-white p-6">
+                    <div>
+                        <p className="text-xs font-medium text-slate-500">
+                            Quick start
+                        </p>
+                        <h2 className="mt-1 text-base font-semibold text-slate-950">
+                            Jump straight into the demo
+                        </h2>
+                    </div>
+                    <form
+                        onSubmit={submitSearch}
+                        className="mt-4 flex flex-col gap-2 sm:flex-row"
+                    >
+                        <input
+                            name="q"
+                            aria-label="Search reviews"
+                            value={searchTerm}
+                            onChange={(event) =>
+                                setSearchTerm(event.target.value)
+                            }
+                            className="w-full rounded-lg px-4 py-2.5 text-sm ring-1 ring-slate-950/10 outline-none focus:ring-2 focus:ring-slate-950/20"
+                        />
+                        <button
+                            type="submit"
+                            className="shrink-0 rounded-lg bg-slate-950 py-2.5 pl-4 pr-4 text-sm font-medium text-white hover:bg-slate-800"
                         >
-                            <input
-                                value={searchTerm}
-                                onChange={(event) =>
-                                    setSearchTerm(event.target.value)
-                                }
-                                className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm transition outline-none focus:border-slate-900"
-                            />
-                            <button
-                                type="submit"
-                                className="rounded-full bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-700"
-                            >
-                                Open in Signals
-                            </button>
-                        </form>
-                    </CardContent>
-                </Card>
+                            Search in Signals
+                        </button>
+                    </form>
+                </section>
 
-                <Card className="rounded-[2rem] border-white/80 bg-white/82 py-0 shadow-sm backdrop-blur">
-                    <CardContent className="px-6 py-6">
-                        {latestAppliedChange ? (
-                            <div className="mb-6 rounded-[1.5rem] bg-slate-50 p-5">
-                                <p className="text-sm font-medium tracking-[0.25em] text-slate-500 uppercase">
-                                    Latest Approved Change
+                {/* Stats — divider-separated, no icons */}
+                <section className="overflow-hidden rounded-xl border border-slate-950/10 bg-white">
+                    <dl className="grid sm:grid-cols-2 xl:grid-cols-4">
+                        {statItems.map(({ label, value }, i) => (
+                            <div
+                                key={label}
+                                className={`px-6 py-5 ${statBorderClasses[i]}`}
+                            >
+                                <dt className="truncate text-sm text-slate-500">
+                                    {label}
+                                </dt>
+                                <dd className="mt-3 text-3xl font-semibold tracking-tight text-slate-950">
+                                    {value}
+                                </dd>
+                            </div>
+                        ))}
+                    </dl>
+                </section>
+
+                {/* Latest run + applied change */}
+                <section className="grid gap-4 lg:grid-cols-2">
+                    <div className="rounded-xl border border-slate-950/10 bg-white p-6">
+                        <p className="text-xs font-medium text-slate-500">
+                            Latest analysis run
+                        </p>
+                        {latestRun ? (
+                            <div className="mt-4 space-y-3">
+                                <span className="inline-flex rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
+                                    {latestRun.status}
+                                </span>
+                                <p className="text-base font-medium text-slate-900">
+                                    {latestRun.summary}
                                 </p>
-                                <p className="mt-3 text-lg font-semibold text-slate-900">
+                                <p className="text-sm text-slate-400">
+                                    {latestRun.requested_at}
+                                </p>
+                            </div>
+                        ) : (
+                            <p className="mt-4 text-sm text-slate-400">
+                                No analysis runs queued yet. Use Signals to
+                                start one.
+                            </p>
+                        )}
+                    </div>
+
+                    <div className="rounded-xl border border-slate-950/10 bg-white p-6">
+                        <p className="text-xs font-medium text-slate-500">
+                            Latest approved change
+                        </p>
+                        {latestAppliedChange ? (
+                            <div className="mt-4 space-y-2">
+                                <p className="font-medium capitalize text-slate-900">
                                     {latestAppliedChange.type.replaceAll(
                                         '_',
                                         ' ',
                                     )}
                                 </p>
-                                <p className="mt-2 text-sm leading-6 text-slate-600">
+                                <p className="text-sm text-pretty text-slate-500">
                                     {latestAppliedChange.rationale}
                                 </p>
-                                <p className="mt-3 text-sm text-slate-500">
+                                <p className="text-sm text-slate-400">
                                     {latestAppliedChange.applied_at ??
                                         'Awaiting publication timestamp'}
                                 </p>
                             </div>
-                        ) : null}
-                        <h2 className="text-xl font-semibold text-slate-900">
-                            Recent actions
-                        </h2>
-                        <div className="mt-5 space-y-4">
+                        ) : (
+                            <p className="mt-4 text-sm text-slate-400">
+                                No proposals approved yet.
+                            </p>
+                        )}
+                    </div>
+                </section>
+
+                {/* Recent activity */}
+                {recentActions.length > 0 ? (
+                    <section className="rounded-xl border border-slate-950/10 bg-white p-6">
+                        <div className="flex items-center gap-2">
+                            <Activity className="size-4 text-slate-400" />
+                            <p className="text-xs font-medium text-slate-500">
+                                Recent activity
+                            </p>
+                        </div>
+                        <div className="mt-4 divide-y divide-slate-950/5">
                             {recentActions.map((action) => (
                                 <div
                                     key={action.id}
-                                    className="flex flex-col gap-2 rounded-2xl bg-slate-50 p-4 md:flex-row md:items-center md:justify-between"
+                                    className="flex items-center justify-between gap-4 py-3"
                                 >
                                     <div>
-                                        <p className="font-medium text-slate-900">
+                                        <p className="text-sm font-medium text-slate-900">
                                             {action.action}
                                         </p>
-                                        <p className="text-sm text-slate-500">
-                                            {action.message}
-                                        </p>
+                                        {action.message ? (
+                                            <p className="text-xs text-slate-400">
+                                                {action.message}
+                                            </p>
+                                        ) : null}
                                     </div>
-                                    <div className="text-sm text-slate-500">
-                                        {action.actor_type} ·{' '}
-                                        {action.created_at}
+                                    <div className="shrink-0 text-right text-xs text-slate-400">
+                                        <p>{action.actor_type}</p>
+                                        <p>{action.created_at}</p>
                                     </div>
                                 </div>
                             ))}
                         </div>
-                    </CardContent>
-                </Card>
+                    </section>
+                ) : null}
             </div>
         </AppLayout>
     );
