@@ -1,8 +1,8 @@
 import { Head } from '@inertiajs/react';
 import { Bot, ShieldCheck, TerminalSquare } from 'lucide-react';
-import AppLayout from '@/layouts/app-layout';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
+import AppLayout from '@/layouts/app-layout';
 import { storeBrand } from '@/lib/brand';
 import { dashboard } from '@/routes';
 import admin from '@/routes/admin';

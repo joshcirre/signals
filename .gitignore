@@ -23,7 +23,14 @@ yarn-error.log
 /auth.json
 /.fleet
 /.agents/skills
-/.codex/config.toml
+/.amp/
+/.claude/
+/.codex/
+/.cursor/
+/.gemini/
+/.mcp.json
+/.opencode/
+/opencode.json
 /.idea
 /.nova
 /.vscode

@@ -30,7 +30,7 @@ export default function StorefrontIndex({
                 <p className="text-xs font-medium text-slate-500">
                     {storeBrand.collection}
                 </p>
-                <h1 className="mt-4 max-w-[30ch] text-5xl tracking-tight text-balance text-slate-950 font-['Fraunces',serif] sm:max-w-[24ch] sm:text-6xl lg:max-w-[20ch] lg:text-7xl">
+                <h1 className="mt-4 max-w-[30ch] font-['Fraunces',serif] text-5xl tracking-tight text-balance text-slate-950 sm:max-w-[24ch] sm:text-6xl lg:max-w-[20ch] lg:text-7xl">
                     Performance gear built for the mountain.
                 </h1>
                 <p className="mt-6 max-w-[48ch] text-lg text-pretty text-slate-500">
@@ -54,7 +54,7 @@ export default function StorefrontIndex({
             {/* Featured product */}
             {featuredProduct ? (
                 <section className="grid border-b border-slate-950/10 lg:grid-cols-2">
-                    <div className="overflow-hidden border-b border-slate-950/10 bg-gray-50 lg:border-b-0 lg:border-r">
+                    <div className="overflow-hidden border-b border-slate-950/10 bg-gray-50 lg:border-r lg:border-b-0">
                         <img
                             src={featuredProduct.hero_image_url}
                             alt={featuredProduct.name}
@@ -65,7 +65,7 @@ export default function StorefrontIndex({
                         <p className="text-xs font-medium text-slate-500">
                             Featured &middot; {featuredProduct.category}
                         </p>
-                        <h2 className="mt-4 max-w-[35ch] text-4xl tracking-tight text-balance text-slate-950 font-['Fraunces',serif]">
+                        <h2 className="mt-4 max-w-[35ch] font-['Fraunces',serif] text-4xl tracking-tight text-balance text-slate-950">
                             {featuredProduct.name}
                         </h2>
                         <p className="mt-4 max-w-[48ch] text-base text-pretty text-slate-500">
@@ -84,7 +84,9 @@ export default function StorefrontIndex({
                         </div>
                         {featuredProduct.fit_note ? (
                             <div className="mt-5 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-pretty text-amber-900">
-                                <span className="font-medium">Sizing note: </span>
+                                <span className="font-medium">
+                                    Sizing note:{' '}
+                                </span>
                                 {featuredProduct.fit_note}
                             </div>
                         ) : null}
@@ -102,7 +104,7 @@ export default function StorefrontIndex({
             {/* Product grid */}
             <section className="py-16">
                 <div className="border-b border-slate-950/10 pb-6">
-                    <h2 className="max-w-[35ch] text-2xl font-semibold tracking-tight text-balance text-slate-950 font-['Fraunces',serif]">
+                    <h2 className="max-w-[35ch] font-['Fraunces',serif] text-2xl font-semibold tracking-tight text-balance text-slate-950">
                         The full collection
                     </h2>
                 </div>
@@ -137,7 +139,7 @@ export default function StorefrontIndex({
                                         <p className="text-xs font-medium text-slate-400">
                                             {product.category}
                                         </p>
-                                        <h3 className="mt-2 max-w-[35ch] text-2xl tracking-tight text-balance text-slate-950 font-['Fraunces',serif]">
+                                        <h3 className="mt-2 max-w-[35ch] font-['Fraunces',serif] text-2xl tracking-tight text-balance text-slate-950">
                                             {product.name}
                                         </h3>
                                         <p className="mt-3 max-w-[48ch] text-sm text-pretty text-slate-500">

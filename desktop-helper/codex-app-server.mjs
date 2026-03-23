@@ -1,6 +1,6 @@
+import { spawn, spawnSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { EventEmitter } from 'node:events';
-import { spawn, spawnSync } from 'node:child_process';
 import { createInterface } from 'node:readline';
 
 function parseJsonLine(line) {
@@ -110,6 +110,7 @@ export class CodexAppServerClient {
 
             if (isJsonRpcResponse(parsed)) {
                 this.handleResponse(parsed);
+
                 return;
             }
 
@@ -165,6 +166,7 @@ export class CodexAppServerClient {
                     `${pending.method} failed: ${response.error.message ?? 'Unknown error'}`,
                 ),
             );
+
             return;
         }
 

@@ -1,5 +1,5 @@
 import { Head, Link, usePage } from '@inertiajs/react';
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { BrandMark } from '@/components/brand-mark';
 import { storeBrand } from '@/lib/brand';
 import { dashboard, login } from '@/routes';
@@ -34,7 +34,11 @@ export function StorefrontShell({ title, children }: StorefrontShellProps) {
             <div className="isolate min-h-dvh bg-white font-['Manrope',sans-serif] text-slate-950 antialiased">
                 <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-10">
                     <header className="flex items-center justify-between gap-4 border-b border-slate-950/10 py-5">
-                        <a href="/" aria-label="Homepage" className="inline-flex items-center gap-3">
+                        <a
+                            href="/"
+                            aria-label="Homepage"
+                            className="inline-flex items-center gap-3"
+                        >
                             <BrandMark />
                             <span className="text-base font-semibold tracking-tight text-slate-950">
                                 {storeBrand.name}
@@ -64,8 +68,8 @@ export function StorefrontShell({ title, children }: StorefrontShellProps) {
                     <footer className="mt-16 border-t border-slate-950/10 py-8">
                         <div className="flex flex-col gap-2 text-sm text-slate-400 md:flex-row md:items-center md:justify-between">
                             <p>
-                                © {new Date().getFullYear()} {storeBrand.name} &middot;{' '}
-                                {storeBrand.collection}
+                                © {new Date().getFullYear()} {storeBrand.name}{' '}
+                                &middot; {storeBrand.collection}
                             </p>
                             {!auth.user ? (
                                 <Link

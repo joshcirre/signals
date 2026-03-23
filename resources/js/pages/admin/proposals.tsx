@@ -7,11 +7,11 @@ import {
     ShieldCheck,
     ShieldX,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import AppLayout from '@/layouts/app-layout';
+import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import AppLayout from '@/layouts/app-layout';
 import { storeBrand } from '@/lib/brand';
 import { dashboard } from '@/routes';
 import admin from '@/routes/admin';
@@ -55,7 +55,7 @@ export default function ProposalQueue({
     filters,
     proposals,
 }: ProposalQueueProps) {
-    const [statusFilter, setStatusFilter] = useState(filters.status);
+    const statusFilter = filters.status;
     const [editingProposalId, setEditingProposalId] = useState<number | null>(
         null,
     );
@@ -64,10 +64,6 @@ export default function ProposalQueue({
         rationale: '',
         confidence: 0.9,
     });
-
-    useEffect(() => {
-        setStatusFilter(filters.status);
-    }, [filters.status]);
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>

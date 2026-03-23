@@ -118,6 +118,14 @@ export default [
             'resources/js/wayfinder/**',
         ],
     },
+    {
+        files: ['desktop-helper/**/*.mjs'],
+        languageOptions: {
+            globals: {
+                ...globals.node,
+            },
+        },
+    },
     prettier, // Turn off all rules that might conflict with Prettier
     {
         plugins: {

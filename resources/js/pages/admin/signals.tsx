@@ -12,12 +12,13 @@ import {
     Terminal,
     Waypoints,
 } from 'lucide-react';
-import { FormEvent, useEffect, useState } from 'react';
-import AppLayout from '@/layouts/app-layout';
+import type { FormEvent } from 'react';
+import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useClipboard } from '@/hooks/use-clipboard';
+import AppLayout from '@/layouts/app-layout';
 import { storeBrand } from '@/lib/brand';
 import { dashboard } from '@/routes';
 import admin from '@/routes/admin';
@@ -148,6 +149,8 @@ interface RunEventPayload {
     created_at: string;
 }
 
+type SignalsPageProps = Omit<SignalsProps, 'products'>;
+
 export default function Signals({
     filters,
     helper,
@@ -156,12 +159,37 @@ export default function Signals({
     reviews,
     clusters,
     recentAuditLog,
-}: SignalsProps) {
+}: SignalsPageProps) {
+    return (
+        <SignalsPage
+            key={latestRun?.id ?? 'no-run'}
+            filters={filters}
+            helper={helper}
+            latestRun={latestRun}
+            pendingProposals={pendingProposals}
+            reviews={reviews}
+            clusters={clusters}
+            recentAuditLog={recentAuditLog}
+        />
+    );
+}
+
+function SignalsPage({
+    filters,
+    helper,
+    latestRun,
+    pendingProposals,
+    reviews,
+    clusters,
+    recentAuditLog,
+}: SignalsPageProps) {
     const { appUrl, auth, flash, repositoryUrl } = usePage<PageProps>().props;
     const [searchTerm, setSearchTerm] = useState(filters.q);
     const [helperName, setHelperName] = useState(helper.default_name);
-    const [runState, setRunState] = useState(latestRun);
-    const [events, setEvents] = useState(latestRun?.events ?? []);
+    const [runOverride, setRunOverride] = useState<RunUpdatedEvent | null>(
+        null,
+    );
+    const [liveEvents, setLiveEvents] = useState<RunEventPayload[]>([]);
     const [copiedText, copy] = useClipboard();
     const helperServerUrl = appUrl;
     const helperCloneCommand = `git clone ${repositoryUrl}`;
@@ -180,25 +208,25 @@ export default function Signals({
           ].join(' && \\\n')
         : 'Generate a launch command to create a one-line helper bootstrap.';
     const needsHelperSetup = helper.latest_device_seen_at === null;
-
-    useEffect(() => {
-        setRunState(latestRun);
-        setEvents(latestRun?.events ?? []);
-    }, [latestRun]);
+    const runState =
+        latestRun !== null && runOverride?.id === latestRun.id
+            ? {
+                  ...latestRun,
+                  status: runOverride.status,
+                  summary: runOverride.summary,
+              }
+            : latestRun;
+    const events = [...(latestRun?.events ?? []), ...liveEvents].filter(
+        (event, index, allEvents) =>
+            allEvents.findIndex((candidate) => candidate.id === event.id) ===
+            index,
+    );
 
     useEcho<RunUpdatedEvent>(
         `signals.user.${auth.user.id}`,
         'review-analysis-run.updated',
         (payload) => {
-            setRunState((current) =>
-                current && current.id === payload.id
-                    ? {
-                          ...current,
-                          status: payload.status,
-                          summary: payload.summary,
-                      }
-                    : current,
-            );
+            setRunOverride(payload);
         },
         [auth.user.id],
     );
@@ -207,10 +235,10 @@ export default function Signals({
         `signals.user.${auth.user.id}`,
         'review-analysis-event.created',
         (payload) => {
-            setEvents((current) => {
+            setLiveEvents((current) => {
                 if (
-                    runState === null ||
-                    payload.review_analysis_run_id !== runState.id
+                    latestRun === null ||
+                    payload.review_analysis_run_id !== latestRun.id
                 ) {
                     return current;
                 }
@@ -219,6 +247,7 @@ export default function Signals({
                     ...current,
                     {
                         id: payload.id,
+                        review_analysis_run_id: payload.review_analysis_run_id,
                         action: payload.action,
                         actor_type: payload.actor_type,
                         metadata: payload.metadata,
@@ -227,7 +256,7 @@ export default function Signals({
                 ];
             });
         },
-        [auth.user.id, runState?.id],
+        [auth.user.id, latestRun?.id],
     );
 
     const submitSearch = (event: FormEvent) => {
@@ -295,9 +324,7 @@ export default function Signals({
                                     variant="outline"
                                     className="rounded-full border-amber-300 bg-white/80"
                                 >
-                                    <Link href="/">
-                                        Preview storefront
-                                    </Link>
+                                    <Link href="/">Preview storefront</Link>
                                 </Button>
                             </div>
                         </div>
@@ -428,7 +455,8 @@ export default function Signals({
                                                 void copy(helperCloneCommand)
                                             }
                                         >
-                                            {copiedText === helperCloneCommand ? (
+                                            {copiedText ===
+                                            helperCloneCommand ? (
                                                 <Check className="size-4" />
                                             ) : (
                                                 <Copy className="size-4" />
@@ -454,7 +482,8 @@ export default function Signals({
                                                 void copy(helperInstallCommand)
                                             }
                                         >
-                                            {copiedText === helperInstallCommand ? (
+                                            {copiedText ===
+                                            helperInstallCommand ? (
                                                 <Check className="size-4" />
                                             ) : (
                                                 <Copy className="size-4" />
@@ -486,10 +515,13 @@ export default function Signals({
                                             size="sm"
                                             className="rounded-full bg-slate-950 text-white hover:bg-slate-800"
                                             onClick={() =>
-                                                void copy(helperBootstrapCommand)
+                                                void copy(
+                                                    helperBootstrapCommand,
+                                                )
                                             }
                                         >
-                                            {copiedText === helperBootstrapCommand ? (
+                                            {copiedText ===
+                                            helperBootstrapCommand ? (
                                                 <Check className="size-4" />
                                             ) : (
                                                 <Copy className="size-4" />
@@ -514,7 +546,8 @@ export default function Signals({
                                                     void copy(helperRunCommand)
                                                 }
                                             >
-                                                {copiedText === helperRunCommand ? (
+                                                {copiedText ===
+                                                helperRunCommand ? (
                                                     <Check className="size-4" />
                                                 ) : (
                                                     <Copy className="size-4" />

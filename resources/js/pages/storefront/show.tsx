@@ -63,7 +63,7 @@ export default function StorefrontShow({
                         <p className="text-xs font-medium text-slate-500">
                             {product.category}
                         </p>
-                        <h1 className="mt-3 max-w-[30ch] text-5xl tracking-tight text-balance text-slate-950 font-['Fraunces',serif] lg:max-w-[24ch] lg:text-6xl">
+                        <h1 className="mt-3 max-w-[30ch] font-['Fraunces',serif] text-5xl tracking-tight text-balance text-slate-950 lg:max-w-[24ch] lg:text-6xl">
                             {product.name}
                         </h1>
                         <p className="mt-4 max-w-[48ch] text-base text-pretty text-slate-500">
@@ -92,13 +92,13 @@ export default function StorefrontShow({
                         <div className="mt-6 flex flex-wrap gap-3">
                             <button
                                 type="button"
-                                className="rounded-lg bg-slate-950 py-2.5 pl-4 pr-4 text-sm font-medium text-white hover:bg-slate-800"
+                                className="rounded-lg bg-slate-950 py-2.5 pr-4 pl-4 text-sm font-medium text-white hover:bg-slate-800"
                             >
                                 Add to cart
                             </button>
                             <button
                                 type="button"
-                                className="rounded-lg border border-slate-950/10 py-2.5 pl-4 pr-4 text-sm font-medium text-slate-700 hover:bg-gray-50"
+                                className="rounded-lg border border-slate-950/10 py-2.5 pr-4 pl-4 text-sm font-medium text-slate-700 hover:bg-gray-50"
                             >
                                 Save for later
                             </button>
@@ -144,7 +144,7 @@ export default function StorefrontShow({
             {/* Reviews */}
             {reviews.length > 0 ? (
                 <section className="border-t border-slate-950/10 py-16">
-                    <h2 className="max-w-[35ch] text-2xl font-semibold tracking-tight text-balance text-slate-950 font-['Fraunces',serif]">
+                    <h2 className="max-w-[35ch] font-['Fraunces',serif] text-2xl font-semibold tracking-tight text-balance text-slate-950">
                         Customer reviews
                     </h2>
                     <div className="mt-6 grid gap-4 md:grid-cols-2 lg:grid-cols-3">

@@ -1,8 +1,8 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { Activity, ArrowRight } from 'lucide-react';
-import { FormEvent, useState } from 'react';
+import type { FormEvent } from 'react';
+import { useState } from 'react';
 import AppLayout from '@/layouts/app-layout';
-import { storeBrand } from '@/lib/brand';
 import { dashboard } from '@/routes';
 import admin from '@/routes/admin';
 import type { BreadcrumbItem } from '@/types';
@@ -54,9 +54,7 @@ export default function AdminDashboard({
     latestAppliedChange,
     recentActions,
 }: DashboardProps) {
-    const [searchTerm, setSearchTerm] = useState(
-        'hoodie reviews about sizing',
-    );
+    const [searchTerm, setSearchTerm] = useState('hoodie reviews about sizing');
 
     const submitSearch = (event: FormEvent) => {
         event.preventDefault();
@@ -92,18 +90,18 @@ export default function AdminDashboard({
                                     Setup required
                                 </p>
                                 <h2 className="mt-1 text-base font-semibold text-slate-900">
-                                    Start the local Signals helper before running
-                                    your first analysis.
+                                    Start the local Signals helper before
+                                    running your first analysis.
                                 </h2>
                                 <p className="mt-1 max-w-[48ch] text-sm text-pretty text-slate-600">
-                                    Issue a helper token in Signals, run the Node
-                                    bridge on your laptop, then click Analyze New
-                                    Reviews.
+                                    Issue a helper token in Signals, run the
+                                    Node bridge on your laptop, then click
+                                    Analyze New Reviews.
                                 </p>
                             </div>
                             <Link
                                 href={admin.signals().url}
-                                className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-slate-950/10 py-2 pl-3 pr-3 text-sm font-medium text-slate-700 hover:bg-white"
+                                className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-slate-950/10 py-2 pr-3 pl-3 text-sm font-medium text-slate-700 hover:bg-white"
                             >
                                 Open Signals setup
                                 <ArrowRight className="size-4" />
@@ -129,8 +127,8 @@ export default function AdminDashboard({
                             </h3>
                             <p className="mt-1 max-w-[48ch] text-sm text-pretty text-slate-500">
                                 Ask in natural language — "hoodie reviews about
-                                sizing" — and watch the local Codex helper stream
-                                MCP tool usage back live.
+                                sizing" — and watch the local Codex helper
+                                stream MCP tool usage back live.
                             </p>
                         </div>
                         <span className="mt-auto inline-flex items-center gap-1 text-sm font-medium text-slate-950">
@@ -153,9 +151,9 @@ export default function AdminDashboard({
                                 Review proposals
                             </h3>
                             <p className="mt-1 max-w-[48ch] text-sm text-pretty text-slate-500">
-                                Codex surfaces fit-note and FAQ changes ranked by
-                                confidence. You decide which ones make it to the
-                                storefront.
+                                Codex surfaces fit-note and FAQ changes ranked
+                                by confidence. You decide which ones make it to
+                                the storefront.
                             </p>
                         </div>
                         <span className="mt-auto inline-flex items-center gap-1 text-sm font-medium text-slate-950">
@@ -178,8 +176,8 @@ export default function AdminDashboard({
                                 See it on the storefront
                             </h3>
                             <p className="mt-1 max-w-[48ch] text-sm text-pretty text-slate-500">
-                                Approved changes publish immediately. Refresh the
-                                product page and the updated fit note or FAQ
+                                Approved changes publish immediately. Refresh
+                                the product page and the updated fit note or FAQ
                                 appears for shoppers.
                             </p>
                         </div>
@@ -215,7 +213,7 @@ export default function AdminDashboard({
                         />
                         <button
                             type="submit"
-                            className="shrink-0 rounded-lg bg-slate-950 py-2.5 pl-4 pr-4 text-sm font-medium text-white hover:bg-slate-800"
+                            className="shrink-0 rounded-lg bg-slate-950 py-2.5 pr-4 pl-4 text-sm font-medium text-white hover:bg-slate-800"
                         >
                             Search in Signals
                         </button>
@@ -273,7 +271,7 @@ export default function AdminDashboard({
                         </p>
                         {latestAppliedChange ? (
                             <div className="mt-4 space-y-2">
-                                <p className="font-medium capitalize text-slate-900">
+                                <p className="font-medium text-slate-900 capitalize">
                                     {latestAppliedChange.type.replaceAll(
                                         '_',
                                         ' ',

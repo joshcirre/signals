@@ -417,6 +417,7 @@ async function executeCustomCommand(run) {
                             'Custom Signals run command completed successfully.',
                     });
                     resolve();
+
                     return;
                 }
 
@@ -562,6 +563,7 @@ async function executeRun(run) {
 
     if (runCommand) {
         await executeCustomCommand(run);
+
         return;
     }
 

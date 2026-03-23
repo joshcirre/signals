@@ -22,7 +22,6 @@ import {
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
 import type { NavItem } from '@/types';
-import { storeBrand } from '@/lib/brand';
 
 const mainNavItems: NavItem[] = [
     {
