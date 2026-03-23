@@ -8,21 +8,45 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('reviews', function (Blueprint $table): void {
-            $table->text('response_draft')->nullable()->after('processed_at');
-            $table->string('response_draft_status')->nullable()->after('response_draft');
-            $table->timestamp('response_draft_approved_at')->nullable()->after('response_draft_status');
-        });
+        if (! Schema::hasColumn('reviews', 'processed_at')) {
+            Schema::table('reviews', function (Blueprint $table): void {
+                $table->timestamp('processed_at')->nullable();
+            });
+        }
+
+        if (! Schema::hasColumn('reviews', 'response_draft')) {
+            Schema::table('reviews', function (Blueprint $table): void {
+                $table->text('response_draft')->nullable();
+            });
+        }
+
+        if (! Schema::hasColumn('reviews', 'response_draft_status')) {
+            Schema::table('reviews', function (Blueprint $table): void {
+                $table->string('response_draft_status')->nullable();
+            });
+        }
+
+        if (! Schema::hasColumn('reviews', 'response_draft_approved_at')) {
+            Schema::table('reviews', function (Blueprint $table): void {
+                $table->timestamp('response_draft_approved_at')->nullable();
+            });
+        }
     }
 
     public function down(): void
     {
-        Schema::table('reviews', function (Blueprint $table): void {
-            $table->dropColumn([
-                'response_draft',
-                'response_draft_status',
-                'response_draft_approved_at',
-            ]);
-        });
+        $columns = collect([
+            'response_draft',
+            'response_draft_status',
+            'response_draft_approved_at',
+        ])->filter(fn (string $column): bool => Schema::hasColumn('reviews', $column))
+            ->values()
+            ->all();
+
+        if ($columns !== []) {
+            Schema::table('reviews', function (Blueprint $table) use ($columns): void {
+                $table->dropColumn($columns);
+            });
+        }
     }
 };
