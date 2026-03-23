@@ -9,8 +9,8 @@ import {
 } from '@/components/admin-page';
 import { BrandMark } from '@/components/brand-mark';
 import { storeBrand } from '@/lib/brand';
-import { home } from '@/routes';
 import type { AuthLayoutProps } from '@/types';
+import { home } from '@/routes';
 
 const workflow = [
     {

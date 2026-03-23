@@ -24,9 +24,9 @@ import {
 import { useClipboard } from '@/hooks/use-clipboard';
 import AppLayout from '@/layouts/app-layout';
 import { cn } from '@/lib/utils';
+import type { BreadcrumbItem } from '@/types';
 import { dashboard } from '@/routes';
 import admin from '@/routes/admin';
-import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
