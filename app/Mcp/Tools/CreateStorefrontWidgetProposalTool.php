@@ -102,12 +102,10 @@ class CreateStorefrontWidgetProposalTool extends Tool
                 ->enum(['hero', 'below_products', 'product_card'])
                 ->required(),
             'title' => $schema->string()->required(),
-            'arrow_source' => $schema->object()
-                ->properties([
-                    'main.ts' => $schema->string()->required(),
-                    'main.css' => $schema->string(),
-                ])
-                ->required(),
+            'arrow_source' => $schema->object([
+                'main.ts' => $schema->string()->required(),
+                'main.css' => $schema->string(),
+            ])->required(),
             'rationale' => $schema->string()->required(),
             'confidence' => $schema->number(),
         ];
