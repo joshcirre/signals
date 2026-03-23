@@ -2,7 +2,9 @@ import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useEcho } from '@laravel/echo-react';
 import {
     Bot,
+    Check,
     CirclePlay,
+    Copy,
     Search,
     ShieldCheck,
     ShieldX,
@@ -15,6 +17,7 @@ import AppLayout from '@/layouts/app-layout';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { useClipboard } from '@/hooks/use-clipboard';
 import { storeBrand } from '@/lib/brand';
 import { dashboard } from '@/routes';
 import admin from '@/routes/admin';
@@ -159,12 +162,23 @@ export default function Signals({
     const [helperName, setHelperName] = useState(helper.default_name);
     const [runState, setRunState] = useState(latestRun);
     const [events, setEvents] = useState(latestRun?.events ?? []);
+    const [copiedText, copy] = useClipboard();
     const helperServerUrl = appUrl;
     const helperCloneCommand = `git clone ${repositoryUrl}`;
     const helperInstallCommand = `cd signals\nnpm install --prefix desktop-helper`;
     const helperRunCommand = flash.helper_token
         ? `SIGNALS_SERVER_URL=${helperServerUrl} \\\nSIGNALS_DEVICE_TOKEN=${flash.helper_token} \\\nnode desktop-helper/index.mjs`
         : 'Issue a helper token to generate the exact launch command.';
+    const helperBootstrapCommand = flash.helper_token
+        ? [
+              'tmp_dir="${TMPDIR:-/tmp}/signals-helper"',
+              'rm -rf "$tmp_dir"',
+              `git clone ${repositoryUrl} "$tmp_dir"`,
+              'cd "$tmp_dir"',
+              'npm install --prefix desktop-helper',
+              `SIGNALS_SERVER_URL=${helperServerUrl} SIGNALS_DEVICE_TOKEN=${flash.helper_token} node desktop-helper/index.mjs`,
+          ].join(' && \\\n')
+        : 'Generate a launch command to create a one-line helper bootstrap.';
     const needsHelperSetup = helper.latest_device_seen_at === null;
 
     useEffect(() => {
@@ -249,16 +263,16 @@ export default function Signals({
                                 </p>
                                 <div className="mt-4 grid gap-3 text-sm text-slate-700 md:grid-cols-3">
                                     <div className="rounded-[1.4rem] bg-white/80 px-4 py-4">
-                                        1. Clone the repo and install
-                                        `desktop-helper`.
+                                        1. Generate a launch command from this
+                                        page.
                                     </div>
                                     <div className="rounded-[1.4rem] bg-white/80 px-4 py-4">
-                                        2. Issue a helper token for this
-                                        account.
+                                        2. Copy and paste it into a terminal on
+                                        your laptop.
                                     </div>
                                     <div className="rounded-[1.4rem] bg-white/80 px-4 py-4">
-                                        3. Run the helper locally and come back
-                                        here to start analysis.
+                                        3. Wait for the heartbeat, then click
+                                        Analyze New Reviews.
                                     </div>
                                 </div>
                                 {flash.helper_token ? (
@@ -379,7 +393,7 @@ export default function Signals({
                                     type="submit"
                                     className="rounded-full bg-slate-900 hover:bg-slate-700"
                                 >
-                                    Issue helper token
+                                    Generate launch command
                                 </Button>
                             </form>
                             <div className="mt-5 rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">
@@ -396,39 +410,130 @@ export default function Signals({
                                     Fresh machine setup
                                 </p>
                                 <p className="mt-2">
-                                    Clone the repo once, install the helper
-                                    dependencies, then run the helper with the
-                                    token from this page.
+                                    If someone wants the long-form setup, these
+                                    commands still work. For the fastest demo
+                                    path, use the one-line quick start below.
                                 </p>
-                                <code className="mt-3 block overflow-x-auto rounded-xl bg-white px-3 py-3 text-xs text-slate-900">
-                                    {helperCloneCommand}
-                                </code>
-                                <code className="mt-3 block overflow-x-auto rounded-xl bg-white px-3 py-3 text-xs text-slate-900">
-                                    {helperInstallCommand}
-                                </code>
+                                <div className="mt-3 overflow-hidden rounded-xl border border-slate-200 bg-white">
+                                    <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-3 py-2">
+                                        <p className="text-xs font-semibold tracking-[0.22em] text-slate-500 uppercase">
+                                            Clone repo
+                                        </p>
+                                        <Button
+                                            type="button"
+                                            size="sm"
+                                            variant="ghost"
+                                            className="rounded-full"
+                                            onClick={() =>
+                                                void copy(helperCloneCommand)
+                                            }
+                                        >
+                                            {copiedText === helperCloneCommand ? (
+                                                <Check className="size-4" />
+                                            ) : (
+                                                <Copy className="size-4" />
+                                            )}
+                                            Copy
+                                        </Button>
+                                    </div>
+                                    <code className="block overflow-x-auto px-3 py-3 text-xs text-slate-900">
+                                        {helperCloneCommand}
+                                    </code>
+                                </div>
+                                <div className="mt-3 overflow-hidden rounded-xl border border-slate-200 bg-white">
+                                    <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-3 py-2">
+                                        <p className="text-xs font-semibold tracking-[0.22em] text-slate-500 uppercase">
+                                            Install helper
+                                        </p>
+                                        <Button
+                                            type="button"
+                                            size="sm"
+                                            variant="ghost"
+                                            className="rounded-full"
+                                            onClick={() =>
+                                                void copy(helperInstallCommand)
+                                            }
+                                        >
+                                            {copiedText === helperInstallCommand ? (
+                                                <Check className="size-4" />
+                                            ) : (
+                                                <Copy className="size-4" />
+                                            )}
+                                            Copy
+                                        </Button>
+                                    </div>
+                                    <code className="block overflow-x-auto px-3 py-3 text-xs text-slate-900">
+                                        {helperInstallCommand}
+                                    </code>
+                                </div>
                             </div>
                             {flash.helper_token ? (
                                 <div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-950">
-                                    <p className="font-semibold">
-                                        Helper token for {flash.helper_name}
-                                    </p>
-                                    <code className="mt-2 block overflow-x-auto rounded-xl bg-white px-3 py-3 text-xs text-slate-900">
-                                        {flash.helper_token}
+                                    <div className="flex items-center justify-between gap-3">
+                                        <div>
+                                            <p className="font-semibold text-slate-900">
+                                                One-line quick start for{' '}
+                                                {flash.helper_name}
+                                            </p>
+                                            <p className="mt-1 text-emerald-900/80">
+                                                Copy this once and paste it into
+                                                a terminal on the operator
+                                                machine.
+                                            </p>
+                                        </div>
+                                        <Button
+                                            type="button"
+                                            size="sm"
+                                            className="rounded-full bg-slate-950 text-white hover:bg-slate-800"
+                                            onClick={() =>
+                                                void copy(helperBootstrapCommand)
+                                            }
+                                        >
+                                            {copiedText === helperBootstrapCommand ? (
+                                                <Check className="size-4" />
+                                            ) : (
+                                                <Copy className="size-4" />
+                                            )}
+                                            Copy quick start
+                                        </Button>
+                                    </div>
+                                    <code className="mt-3 block overflow-x-auto rounded-xl bg-slate-950 px-3 py-3 text-xs text-emerald-200">
+                                        {helperBootstrapCommand}
                                     </code>
-                                    <p className="mt-4 font-semibold text-slate-900">
-                                        Start the local helper
-                                    </p>
-                                    <code className="mt-2 block overflow-x-auto rounded-xl bg-slate-950 px-3 py-3 text-xs text-emerald-200">
-                                        {helperRunCommand}
-                                    </code>
+                                    <div className="mt-4 overflow-hidden rounded-xl border border-emerald-200 bg-white">
+                                        <div className="flex items-center justify-between gap-3 border-b border-emerald-200 px-3 py-2">
+                                            <p className="text-xs font-semibold tracking-[0.22em] text-slate-500 uppercase">
+                                                Rerun-only command
+                                            </p>
+                                            <Button
+                                                type="button"
+                                                size="sm"
+                                                variant="ghost"
+                                                className="rounded-full"
+                                                onClick={() =>
+                                                    void copy(helperRunCommand)
+                                                }
+                                            >
+                                                {copiedText === helperRunCommand ? (
+                                                    <Check className="size-4" />
+                                                ) : (
+                                                    <Copy className="size-4" />
+                                                )}
+                                                Copy rerun
+                                            </Button>
+                                        </div>
+                                        <code className="block overflow-x-auto px-3 py-3 text-xs text-slate-900">
+                                            {helperRunCommand}
+                                        </code>
+                                    </div>
                                 </div>
                             ) : (
                                 <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
                                     <p className="font-semibold text-slate-900">
-                                        Run command
+                                        Quick start command
                                     </p>
                                     <code className="mt-2 block overflow-x-auto rounded-xl bg-slate-950 px-3 py-3 text-xs text-slate-200">
-                                        {helperRunCommand}
+                                        {helperBootstrapCommand}
                                     </code>
                                 </div>
                             )}

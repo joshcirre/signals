@@ -115,9 +115,9 @@ Then:
 
 1. Create an account or sign in.
 2. Open `/admin/signals`.
-3. Issue a helper token.
-4. Copy the run command shown in the UI.
-5. Start the helper locally.
+3. Click `Generate launch command`.
+4. Copy the one-line quick start command shown in the UI and paste it into a terminal.
+5. Wait for the helper heartbeat to appear.
 6. Click `Analyze New Reviews`.
 7. Approve a proposal.
 8. Open the public product page to show the storefront update.
@@ -126,7 +126,18 @@ Then:
 
 The helper lives in `desktop-helper/` and is intentionally simple.
 
-Run it with the token from `/admin/signals`:
+Fastest hosted demo path:
+
+```bash
+tmp_dir="${TMPDIR:-/tmp}/signals-helper" && \
+rm -rf "$tmp_dir" && \
+git clone https://github.com/joshcirre/signals.git "$tmp_dir" && \
+cd "$tmp_dir" && \
+npm install --prefix desktop-helper && \
+SIGNALS_SERVER_URL=https://signals.joshcirre.com SIGNALS_DEVICE_TOKEN=your-issued-token node desktop-helper/index.mjs
+```
+
+If the repo is already cloned locally, run the helper directly with the command from `/admin/signals`:
 
 ```bash
 SIGNALS_SERVER_URL=https://signals.joshcirre.com \
@@ -148,7 +159,7 @@ Recommended 5-minute flow:
 1. Show the public storefront and the Premium Hoodie before the fit note exists.
 2. Sign in and open `/admin/signals`.
 3. Search for hoodie sizing feedback.
-4. Show the helper install/run commands.
+4. Click `Generate launch command` and copy the one-line bootstrap command.
 5. Start the local helper.
 6. Trigger `Analyze New Reviews`.
 7. Narrate the live MCP-backed stream as Codex inspects tools and resources.
