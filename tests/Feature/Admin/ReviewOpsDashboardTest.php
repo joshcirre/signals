@@ -60,6 +60,16 @@ test('new admin sees helper onboarding until a device checks in', function (): v
             ->where('helper.latest_device_seen_at', fn (?string $value): bool => $value !== null));
 });
 
+test('signals page auto-provisions a helper token for the demo flow', function (): void {
+    $admin = User::factory()->create();
+
+    $this->actingAs($admin)
+        ->get('/admin/signals')
+        ->assertSuccessful()
+        ->assertSessionHas('helper_token')
+        ->assertSessionHas('helper_name', 'Signals Helper');
+});
+
 test('dashboard highlights local helper setup for a new admin', function (): void {
     $admin = User::factory()->create();
 

@@ -1,5 +1,14 @@
 import { Head } from '@inertiajs/react';
 import { Bot, ShieldCheck, TerminalSquare } from 'lucide-react';
+import {
+    AdminHeader,
+    AdminMetric,
+    AdminPage,
+    AdminPill,
+    AdminSurface,
+    AdminSurfaceBody,
+    AdminSurfaceHeader,
+} from '@/components/admin-page';
 import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
 import admin from '@/routes/admin';
@@ -35,97 +44,149 @@ const actorIcons = {
 } as const;
 
 export default function AuditLog({ entries }: AuditLogPageProps) {
+    const agentCount = entries.filter(
+        (entry) => entry.actor_type === 'agent',
+    ).length;
+    const humanCount = entries.filter(
+        (entry) => entry.actor_type === 'human',
+    ).length;
+    const systemCount = entries.filter(
+        (entry) => entry.actor_type === 'system',
+    ).length;
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Audit Log" />
-            <div className="space-y-4 p-4 md:p-5">
-                {/* Page header */}
-                <div className="flex flex-wrap items-center justify-between gap-4">
-                    <div>
-                        <h1 className="text-sm font-semibold text-slate-950">
-                            Audit log
-                        </h1>
-                        <p className="mt-0.5 text-sm text-slate-500">
-                            Every Codex and human action, recorded.
-                        </p>
-                    </div>
-                    <span className="rounded-md bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-600">
-                        {entries.length} events
-                    </span>
+
+            <AdminPage>
+                <AdminHeader
+                    eyebrow="System history"
+                    title="Audit log"
+                    description="A denser event feed for every Codex, human, and system action. Important metadata stays available, but the page reads like a clean operational timeline instead of a wall of cards."
+                    meta={
+                        <AdminPill>
+                            <span className="size-1.5 rounded-full bg-slate-300" />
+                            {entries.length} total events
+                        </AdminPill>
+                    }
+                />
+
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                    <AdminMetric
+                        label="Total"
+                        value={entries.length}
+                        detail="Events in this feed."
+                    />
+                    <AdminMetric
+                        label="Agent"
+                        value={agentCount}
+                        detail="Automated decisions and tool activity."
+                    />
+                    <AdminMetric
+                        label="Human"
+                        value={humanCount}
+                        detail="Operator review and approval actions."
+                    />
+                    <AdminMetric
+                        label="System"
+                        value={systemCount}
+                        detail="Platform or runtime messages."
+                    />
                 </div>
 
-                {/* Entries */}
-                <section className="space-y-2">
-                    {entries.map((entry) => {
-                        const Icon =
-                            actorIcons[
-                                entry.actor_type as keyof typeof actorIcons
-                            ] ?? TerminalSquare;
+                <AdminSurface>
+                    <AdminSurfaceHeader
+                        title="Event timeline"
+                        description="Newest events first, with structured metadata available on demand."
+                    />
+                    <AdminSurfaceBody className="space-y-0 p-0">
+                        {entries.length > 0 ? (
+                            entries.map((entry, index) => {
+                                const Icon =
+                                    actorIcons[
+                                        entry.actor_type as keyof typeof actorIcons
+                                    ] ?? TerminalSquare;
+                                const metadata = Object.fromEntries(
+                                    Object.entries(entry.metadata).filter(
+                                        ([key]) => key !== 'message',
+                                    ),
+                                );
+                                const hasMetadata =
+                                    Object.keys(metadata).length > 0;
 
-                        return (
-                            <article
-                                key={entry.id}
-                                className="rounded-lg border border-slate-950/10 bg-white p-4"
-                            >
-                                <div className="flex flex-wrap items-start justify-between gap-4">
-                                    <div className="flex items-start gap-3">
-                                        <Icon className="mt-0.5 size-4 shrink-0 text-slate-400" />
-                                        <div>
-                                            <p className="text-xs text-slate-400">
-                                                {entry.actor_type}
-                                            </p>
-                                            <h2 className="mt-0.5 text-sm font-medium text-slate-950">
-                                                {entry.action}
-                                            </h2>
-                                            <p className="mt-1 max-w-3xl text-sm text-pretty text-slate-500">
-                                                {String(
-                                                    entry.metadata.message ??
-                                                        'No message recorded.',
-                                                )}
-                                            </p>
+                                return (
+                                    <article
+                                        key={entry.id}
+                                        className={`px-4 py-4 ${
+                                            index === 0
+                                                ? ''
+                                                : 'border-t border-slate-950/6'
+                                        }`}
+                                    >
+                                        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                                            <div className="flex min-w-0 gap-3">
+                                                <div className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-slate-950/8 bg-slate-50 text-slate-500">
+                                                    <Icon className="size-4" />
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <div className="flex flex-wrap items-center gap-2">
+                                                        <p className="text-sm font-medium text-slate-950">
+                                                            {entry.action}
+                                                        </p>
+                                                        <span className="rounded-full bg-slate-100 px-2 py-1 text-[11px] font-medium tracking-[0.16em] text-slate-500 uppercase">
+                                                            {entry.actor_type}
+                                                        </span>
+                                                    </div>
+                                                    <p className="mt-1 text-sm leading-6 text-slate-500">
+                                                        {String(
+                                                            entry.metadata
+                                                                .message ??
+                                                                'No message recorded.',
+                                                        )}
+                                                    </p>
+                                                    {entry.target_type &&
+                                                    entry.target_id ? (
+                                                        <p className="mt-2 text-[11px] font-medium tracking-[0.18em] text-slate-400 uppercase">
+                                                            {entry.target_type}{' '}
+                                                            #{entry.target_id}
+                                                        </p>
+                                                    ) : null}
+                                                </div>
+                                            </div>
+
+                                            <div className="shrink-0 text-xs text-slate-400">
+                                                {new Date(
+                                                    entry.created_at,
+                                                ).toLocaleString()}
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div className="text-right text-xs text-slate-400">
-                                        <p>
-                                            {new Date(
-                                                entry.created_at,
-                                            ).toLocaleString()}
-                                        </p>
-                                        {entry.target_type &&
-                                        entry.target_id ? (
-                                            <p className="mt-1">
-                                                {entry.target_type} #
-                                                {entry.target_id}
-                                            </p>
-                                        ) : null}
-                                    </div>
-                                </div>
 
-                                {Object.entries(entry.metadata).filter(
-                                    ([key]) => key !== 'message',
-                                ).length > 0 ? (
-                                    <div className="mt-3 rounded bg-slate-50 p-3 text-xs text-slate-600">
-                                        <pre className="overflow-x-auto break-words whitespace-pre-wrap">
-                                            {JSON.stringify(
-                                                Object.fromEntries(
-                                                    Object.entries(
-                                                        entry.metadata,
-                                                    ).filter(
-                                                        ([key]) =>
-                                                            key !== 'message',
-                                                    ),
-                                                ),
-                                                null,
-                                                2,
-                                            )}
-                                        </pre>
-                                    </div>
-                                ) : null}
-                            </article>
-                        );
-                    })}
-                </section>
-            </div>
+                                        {hasMetadata ? (
+                                            <details className="mt-3 rounded-lg border border-slate-950/8 bg-slate-50/80 px-3 py-3 text-sm text-slate-600">
+                                                <summary className="cursor-pointer list-none text-xs font-medium tracking-[0.18em] text-slate-400 uppercase">
+                                                    Structured metadata
+                                                </summary>
+                                                <pre className="mt-3 overflow-x-auto text-xs leading-5 break-words whitespace-pre-wrap text-slate-600">
+                                                    {JSON.stringify(
+                                                        metadata,
+                                                        null,
+                                                        2,
+                                                    )}
+                                                </pre>
+                                            </details>
+                                        ) : null}
+                                    </article>
+                                );
+                            })
+                        ) : (
+                            <div className="px-4 py-8 text-sm leading-6 text-slate-500">
+                                Audit events will appear here once the next
+                                action is recorded.
+                            </div>
+                        )}
+                    </AdminSurfaceBody>
+                </AdminSurface>
+            </AdminPage>
         </AppLayout>
     );
 }

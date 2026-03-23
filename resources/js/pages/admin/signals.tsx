@@ -1,20 +1,30 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useEcho } from '@laravel/echo-react';
 import {
-    ArrowRight,
     Bot,
     Check,
     CirclePlay,
     Copy,
     Loader2,
+    Radar,
     Search,
     ShieldX,
     Terminal,
 } from 'lucide-react';
 import type { FormEvent } from 'react';
 import { useState } from 'react';
+import {
+    AdminHeader,
+    AdminMetric,
+    AdminPage,
+    AdminPill,
+    AdminSurface,
+    AdminSurfaceBody,
+    AdminSurfaceHeader,
+} from '@/components/admin-page';
 import { useClipboard } from '@/hooks/use-clipboard';
 import AppLayout from '@/layouts/app-layout';
+import { cn } from '@/lib/utils';
 import { dashboard } from '@/routes';
 import admin from '@/routes/admin';
 import productRoutes from '@/routes/products';
@@ -157,7 +167,85 @@ interface RunEventPayload {
     created_at: string;
 }
 
+interface HelperHeartbeatUpdatedEvent {
+    id: number;
+    name: string;
+    last_seen_at: string | null;
+    is_active: boolean;
+}
+
 type SignalsPageProps = Omit<SignalsProps, 'products'>;
+
+function eventKindLabel(event: RunEventPayload): string {
+    if (event.kind === 'assistant_text') {
+        return 'Assistant';
+    }
+
+    if (event.kind === 'tool_call') {
+        return 'Tool call';
+    }
+
+    if (event.kind === 'tool_result') {
+        return 'Tool result';
+    }
+
+    return 'Status';
+}
+
+function eventBody(event: RunEventPayload): string {
+    return (
+        event.content ??
+        (typeof event.metadata.message === 'string'
+            ? event.metadata.message
+            : 'No message provided.')
+    );
+}
+
+function runStatusClassName(status: string | null | undefined): string {
+    if (status === 'running') {
+        return 'border-sky-200 bg-sky-50 text-sky-700';
+    }
+
+    if (status === 'completed') {
+        return 'border-emerald-200 bg-emerald-50 text-emerald-700';
+    }
+
+    if (status === 'failed') {
+        return 'border-red-200 bg-red-50 text-red-700';
+    }
+
+    return 'border-slate-200 bg-slate-50 text-slate-500';
+}
+
+function StreamEventIcon({
+    event,
+    isLive,
+}: {
+    event: RunEventPayload;
+    isLive: boolean;
+}) {
+    if (isLive) {
+        return <Loader2 className="size-4 animate-spin text-sky-500" />;
+    }
+
+    if (event.is_error) {
+        return <ShieldX className="size-4 text-red-500" />;
+    }
+
+    if (event.kind === 'assistant_text') {
+        return <Bot className="size-4 text-sky-500" />;
+    }
+
+    if (event.kind === 'tool_call') {
+        return <Terminal className="size-4 text-amber-500" />;
+    }
+
+    if (event.kind === 'tool_result') {
+        return <Check className="size-4 text-emerald-500" />;
+    }
+
+    return <Radar className="size-4 text-slate-400" />;
+}
 
 export default function Signals({
     filters,
@@ -191,11 +279,14 @@ function SignalsPage({
     clusters,
     recentAuditLog,
 }: SignalsPageProps) {
+    const helperHeartbeatEventName = '.signals-helper.heartbeat.updated';
     const runUpdatedEventName = '.review-analysis-run.updated';
     const runEventCreatedEventName = '.review-analysis-event.created';
     const { appUrl, auth, flash, repositoryUrl } = usePage<PageProps>().props;
     const [searchTerm, setSearchTerm] = useState(filters.q);
-    const [helperName, setHelperName] = useState(helper.default_name);
+    const [helperLastSeenAt, setHelperLastSeenAt] = useState(
+        helper.latest_device_seen_at,
+    );
     const [runOverride, setRunOverride] = useState<RunUpdatedEvent | null>(
         null,
     );
@@ -204,7 +295,7 @@ function SignalsPage({
     const helperServerUrl = appUrl;
     const helperRunCommand = flash.helper_token
         ? `SIGNALS_SERVER_URL=${helperServerUrl} \\\nSIGNALS_DEVICE_TOKEN=${flash.helper_token} \\\nnode desktop-helper/index.mjs`
-        : 'Issue a helper token to generate the exact launch command.';
+        : 'Helper token unavailable.';
     const helperBootstrapCommand = flash.helper_token
         ? [
               'tmp_dir="${TMPDIR:-/tmp}/signals-helper"',
@@ -214,8 +305,8 @@ function SignalsPage({
               'npm install --prefix desktop-helper',
               `SIGNALS_SERVER_URL=${helperServerUrl} SIGNALS_DEVICE_TOKEN=${flash.helper_token} node desktop-helper/index.mjs`,
           ].join(' && \\\n')
-        : 'Generate a launch command to create a one-line helper bootstrap.';
-    const needsHelperSetup = helper.latest_device_seen_at === null;
+        : 'Helper token unavailable.';
+    const needsHelperSetup = helperLastSeenAt === null;
     const runState =
         latestRun !== null && runOverride?.id === latestRun.id
             ? {
@@ -259,7 +350,7 @@ function SignalsPage({
         const existingEvent = current[existingIndex];
         const mergedContent =
             event.kind === 'assistant_text'
-                ? event.content ?? existingEvent.content
+                ? (event.content ?? existingEvent.content)
                 : `${existingEvent.content ?? ''}${event.content ?? ''}`;
 
         current[existingIndex] = {
@@ -278,6 +369,15 @@ function SignalsPage({
         runUpdatedEventName,
         (payload) => {
             setRunOverride(payload);
+        },
+        [auth.user.id],
+    );
+
+    useEcho<HelperHeartbeatUpdatedEvent>(
+        `signals.user.${auth.user.id}`,
+        helperHeartbeatEventName,
+        (payload) => {
+            setHelperLastSeenAt(payload.last_seen_at);
         },
         [auth.user.id],
     );
@@ -326,463 +426,393 @@ function SignalsPage({
         );
     };
 
-    const eventKindLabel = (event: RunEventPayload): string => {
-        if (event.kind === 'assistant_text') {
-            return 'Assistant';
-        }
-
-        if (event.kind === 'tool_call') {
-            return 'Tool call';
-        }
-
-        if (event.kind === 'tool_result') {
-            return 'Tool result';
-        }
-
-        return 'Status';
-    };
-
-    const eventBody = (event: RunEventPayload): string =>
-        event.content ??
-        (typeof event.metadata.message === 'string'
-            ? event.metadata.message
-            : 'No message provided.');
-
-    const EventIcon = ({ event }: { event: RunEventPayload }) => {
-        if (event.is_error) {
-            return (
-                <ShieldX className="mt-0.5 size-4 shrink-0 text-red-500" />
-            );
-        }
-
-        if (event.kind === 'assistant_text') {
-            return <Bot className="mt-0.5 size-4 shrink-0 text-sky-500" />;
-        }
-
-        if (event.kind === 'tool_call') {
-            return (
-                <Terminal className="mt-0.5 size-4 shrink-0 text-amber-500" />
-            );
-        }
-
-        if (event.kind === 'tool_result') {
-            return (
-                <Check className="mt-0.5 size-4 shrink-0 text-emerald-500" />
-            );
-        }
-
-        return <Bot className="mt-0.5 size-4 shrink-0 text-slate-400" />;
-    };
-
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Signals" />
-            <div className="space-y-6 p-4 md:p-6">
-                {/* Onboarding banner */}
-                {needsHelperSetup ? (
-                    <section className="rounded-lg border border-amber-200 bg-amber-50 p-5">
-                        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                            <div className="max-w-2xl">
-                                <p className="text-xs font-medium text-amber-700">
-                                    Setup required
+
+            <AdminPage>
+                <AdminHeader
+                    eyebrow="Review intelligence"
+                    title="Signals"
+                    description="The admin demo should read in one direction: search the review signal, run the analysis, then approve the resulting proposal. This layout keeps those stages visible without the oversized card stack."
+                    meta={
+                        <>
+                            <AdminPill
+                                className={runStatusClassName(runState?.status)}
+                            >
+                                {runState?.status ?? 'idle'}
+                            </AdminPill>
+                            <AdminPill>
+                                <span className="size-1.5 rounded-full bg-slate-300" />
+                                {needsHelperSetup
+                                    ? 'Helper offline'
+                                    : 'Helper connected'}
+                            </AdminPill>
+                        </>
+                    }
+                    actions={
+                        <>
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    router.post(admin.reviewRuns.store().url)
+                                }
+                                className="inline-flex items-center gap-2 rounded-lg bg-slate-950 px-3 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
+                            >
+                                <CirclePlay className="size-4" />
+                                Analyze new reviews
+                            </button>
+                            {latestRun ? (
+                                <Link
+                                    href={
+                                        admin.reviewRuns.show(latestRun.id).url
+                                    }
+                                    className="rounded-lg border border-slate-950/10 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-950/20 hover:bg-slate-50"
+                                >
+                                    Open latest run
+                                </Link>
+                            ) : null}
+                            <Link
+                                href={admin.proposals.index().url}
+                                className="rounded-lg border border-slate-950/10 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-950/20 hover:bg-slate-50"
+                            >
+                                Proposals
+                            </Link>
+                        </>
+                    }
+                />
+
+                <div className="grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_360px]">
+                    <AdminSurface>
+                        <AdminSurfaceBody className="space-y-4 p-5">
+                            <div className="space-y-2">
+                                <p className="text-[11px] font-medium tracking-[0.22em] text-slate-400 uppercase">
+                                    Start here
                                 </p>
-                                <h2 className="mt-1 text-base font-semibold text-slate-900">
-                                    Connect the local helper before running your
-                                    first analysis.
+                                <h2 className="text-xl font-semibold tracking-tight text-slate-950">
+                                    Search the review signal you want to demo.
                                 </h2>
-                                <p className="mt-1 max-w-[48ch] text-sm text-pretty text-slate-600">
-                                    Generate a launch command below, run it in a
-                                    terminal on your machine, then click Analyze
-                                    New Reviews.
+                                <p className="max-w-3xl text-sm leading-6 text-slate-600">
+                                    Use a natural-language query to pull in the
+                                    reviews and complaint clusters that matter,
+                                    then queue a run when the helper is online.
                                 </p>
                             </div>
-                            <a
-                                href="#helper-setup"
-                                className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-slate-950/10 py-2 pl-3 pr-2 text-sm font-medium text-slate-700 hover:bg-white"
-                            >
-                                Helper setup
-                                <ArrowRight className="size-4 shrink-0" />
-                            </a>
-                        </div>
-                    </section>
-                ) : null}
 
-                {/* Page header */}
-                <div className="flex flex-wrap items-center justify-between gap-4">
-                    <div>
-                        <p className="text-xs font-medium text-slate-500">
-                            Review Intelligence
-                        </p>
-                        <h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-950">
-                            Signals
-                        </h1>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-3">
-                        <button
-                            type="button"
-                            onClick={() =>
-                                router.post(admin.reviewRuns.store().url)
-                            }
-                            className="inline-flex items-center gap-2 rounded-lg bg-slate-950 py-2 pl-2 pr-3 text-sm font-medium text-white hover:bg-slate-800"
-                        >
-                            <CirclePlay className="size-4 shrink-0" />
-                            Analyze new reviews
-                        </button>
-                        {latestRun ? (
-                            <Link
-                                href={admin.reviewRuns.show(latestRun.id).url}
-                                className="rounded-lg border border-slate-950/10 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                            <form
+                                onSubmit={submitSearch}
+                                className="rounded-lg border border-slate-950/8 bg-slate-50/80 p-3"
                             >
-                                Open latest run
-                            </Link>
-                        ) : null}
-                        <Link
-                            href={admin.proposals.index().url}
-                            className="rounded-lg border border-slate-950/10 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-                        >
-                            Proposals
-                        </Link>
-                        <Link
-                            href="/"
-                            className="rounded-lg border border-slate-950/10 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-                        >
-                            Storefront
-                        </Link>
-                    </div>
+                                <div className="flex flex-col gap-3 lg:flex-row">
+                                    <div className="min-w-0 flex-1">
+                                        <label
+                                            htmlFor="signals-search"
+                                            className="text-[11px] font-medium tracking-[0.18em] text-slate-400 uppercase"
+                                        >
+                                            Query
+                                        </label>
+                                        <input
+                                            id="signals-search"
+                                            value={searchTerm}
+                                            onChange={(event) =>
+                                                setSearchTerm(
+                                                    event.target.value,
+                                                )
+                                            }
+                                            placeholder="hoodie sizing, shipping delay, comfort..."
+                                            className="mt-2 w-full rounded-lg border border-slate-950/10 bg-white px-3 py-2.5 text-sm text-slate-900 transition outline-none focus:border-slate-950/20 focus:ring-2 focus:ring-slate-950/5"
+                                        />
+                                    </div>
+                                    <button
+                                        type="submit"
+                                        className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-white px-3 py-2.5 text-sm font-medium text-slate-900 ring-1 ring-slate-950/10 transition hover:bg-slate-100"
+                                    >
+                                        <Search className="size-4" />
+                                        Search reviews
+                                    </button>
+                                </div>
+                            </form>
+
+                            <div className="grid gap-3 md:grid-cols-3">
+                                <AdminMetric
+                                    label="Matched reviews"
+                                    value={reviews.length}
+                                    detail="Results for the active query."
+                                />
+                                <AdminMetric
+                                    label="Complaint clusters"
+                                    value={clusters.length}
+                                    detail="Grouped pain points worth checking."
+                                />
+                                <AdminMetric
+                                    label="Pending proposals"
+                                    value={pendingProposals.length}
+                                    detail="Ready for operator review."
+                                />
+                            </div>
+                        </AdminSurfaceBody>
+                    </AdminSurface>
+
+                    <AdminSurface>
+                        <AdminSurfaceHeader
+                            title="Next action"
+                            description={
+                                needsHelperSetup
+                                    ? 'Start the helper with the command below. The page will switch to ready as soon as it checks in over Echo.'
+                                    : pendingProposals.length > 0
+                                      ? 'Review the proposals created from the last run.'
+                                      : 'Queue a new run once your query looks right.'
+                            }
+                        />
+                        <AdminSurfaceBody className="space-y-3">
+                            {needsHelperSetup ? (
+                                <>
+                                    <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900">
+                                        Run the helper bootstrap command. As
+                                        soon as the helper starts polling, this
+                                        panel will update to connected
+                                        automatically.
+                                    </div>
+                                    <div className="rounded-lg border border-slate-950/8 bg-slate-950 p-4">
+                                        <div className="flex items-center justify-between gap-3">
+                                            <div>
+                                                <p className="text-[11px] font-medium tracking-[0.18em] text-slate-400 uppercase">
+                                                    Bootstrap command
+                                                </p>
+                                                <p className="mt-1 text-sm text-slate-200">
+                                                    Starts the helper with the
+                                                    current Signals token.
+                                                </p>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    void copy(
+                                                        helperBootstrapCommand,
+                                                    )
+                                                }
+                                                className="inline-flex items-center gap-2 rounded-md border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-xs font-medium text-slate-100 transition hover:bg-slate-800"
+                                            >
+                                                {copiedText ===
+                                                helperBootstrapCommand ? (
+                                                    <Check className="size-3.5" />
+                                                ) : (
+                                                    <Copy className="size-3.5" />
+                                                )}
+                                                Copy
+                                            </button>
+                                        </div>
+                                        <code className="mt-3 block overflow-x-auto text-xs leading-5 break-all whitespace-pre-wrap text-emerald-200">
+                                            {helperBootstrapCommand}
+                                        </code>
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm leading-6 text-emerald-800">
+                                    The helper last checked in at{' '}
+                                    {helperLastSeenAt}.
+                                </div>
+                            )}
+
+                            {runState ? (
+                                <div className="rounded-lg border border-slate-950/8 bg-slate-50/80 px-4 py-3">
+                                    <p className="text-[11px] font-medium tracking-[0.18em] text-slate-400 uppercase">
+                                        Latest run
+                                    </p>
+                                    <p className="mt-2 text-sm font-medium text-slate-950">
+                                        {runState.summary ??
+                                            'Run ready to inspect.'}
+                                    </p>
+                                    <p className="mt-1 text-xs text-slate-400">
+                                        Requested {runState.requested_at}
+                                    </p>
+                                </div>
+                            ) : null}
+
+                            <div className="flex flex-wrap gap-2">
+                                <Link
+                                    href={admin.proposals.index().url}
+                                    className="inline-flex items-center gap-2 rounded-lg border border-slate-950/10 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-950/20 hover:bg-slate-50"
+                                >
+                                    Open proposal queue
+                                </Link>
+                                <Link
+                                    href="/"
+                                    className="inline-flex items-center gap-2 rounded-lg border border-slate-950/10 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-950/20 hover:bg-slate-50"
+                                >
+                                    View storefront
+                                </Link>
+                            </div>
+                        </AdminSurfaceBody>
+                    </AdminSurface>
                 </div>
 
-                {/* Main 3-col grid */}
-                <section className="grid gap-6 xl:grid-cols-[0.9fr_1fr_0.95fr]">
-                    {/* Col 1: Search + reviews */}
-                    <div className="rounded-lg border border-slate-950/10 bg-white p-6">
-                        <div className="flex items-center justify-between">
-                            <h2 className="text-sm font-semibold text-slate-950">
-                                Search reviews
-                            </h2>
-                            <Search className="size-4 shrink-0 text-slate-400" />
-                        </div>
-                        <form
-                            onSubmit={submitSearch}
-                            className="mt-4 space-y-3"
-                        >
-                            <input
-                                value={searchTerm}
-                                onChange={(event) =>
-                                    setSearchTerm(event.target.value)
-                                }
-                                placeholder="hoodie sizing, shipping delay, comfort..."
-                                className="w-full rounded-lg border border-slate-950/10 px-3 py-2.5 text-sm outline-none focus:ring-1 focus:ring-slate-950/20"
-                            />
-                            <button
-                                type="submit"
-                                className="rounded-lg bg-slate-100 px-3 py-2 text-sm font-medium text-slate-900 hover:bg-slate-200"
-                            >
-                                Search
-                            </button>
-                        </form>
-                        <div className="mt-4 space-y-3">
-                            {reviews.map((review) => (
-                                <article
-                                    key={review.id}
-                                    className="rounded-md bg-slate-50 p-4"
-                                >
-                                    <div className="flex items-center justify-between gap-4 text-xs text-slate-500">
-                                        <span>{review.product}</span>
-                                        <span>
-                                            {review.rating}/5 &middot;{' '}
-                                            {review.match_score}
-                                        </span>
-                                    </div>
-                                    {review.title ? (
-                                        <h3 className="mt-2 text-sm font-semibold text-slate-900">
-                                            {review.title}
-                                        </h3>
-                                    ) : null}
-                                    <p className="mt-2 text-sm text-pretty text-slate-600">
-                                        {review.body}
-                                    </p>
-                                    <div className="mt-3 flex flex-wrap gap-1.5">
-                                        <span className="rounded-md bg-sky-500/10 px-2 py-0.5 text-xs text-sky-700">
-                                            {review.sentiment}
-                                        </span>
-                                        <span className="rounded-md bg-amber-500/10 px-2 py-0.5 text-xs text-amber-700">
-                                            severity {review.severity}
-                                        </span>
-                                        {review.response_draft_status ? (
-                                            <span className="rounded-md bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-700">
-                                                response{' '}
-                                                {review.response_draft_status}
-                                            </span>
-                                        ) : null}
-                                    </div>
-                                    {review.tags.length > 0 ? (
-                                        <div className="mt-2 flex flex-wrap gap-1.5">
-                                            {review.tags.map((tag) => (
-                                                <span
-                                                    key={`${review.id}-${tag.name}`}
-                                                    className="rounded-md bg-slate-200 px-2 py-0.5 text-xs text-slate-600"
-                                                >
-                                                    {tag.name}
-                                                </span>
-                                            ))}
-                                        </div>
-                                    ) : null}
-                                    {review.response_draft ? (
-                                        <div className="mt-3 rounded bg-white p-3">
-                                            <p className="text-xs font-medium text-slate-700">
-                                                Saved response draft
-                                            </p>
-                                            <p className="mt-1 text-sm text-pretty text-slate-600">
-                                                {review.response_draft}
-                                            </p>
-                                        </div>
-                                    ) : null}
-                                    {review.matched_because.length > 0 ? (
-                                        <ul
-                                            role="list"
-                                            className="mt-3 space-y-0.5 text-xs text-slate-400"
-                                        >
-                                            {review.matched_because.map(
-                                                (reason) => (
-                                                    <li
-                                                        key={`${review.id}-${reason}`}
-                                                    >
-                                                        &middot; {reason}
-                                                    </li>
-                                                ),
-                                            )}
-                                        </ul>
-                                    ) : null}
-                                </article>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Col 2: Live run + clusters */}
-                    <div className="space-y-6">
-                        <div className="rounded-lg border border-slate-950/10 bg-white p-6">
-                            <div className="flex items-center justify-between">
-                                <h2 className="text-sm font-semibold text-slate-950">
-                                    Live run
-                                </h2>
-                                <span
-                                    className={`rounded-md px-2 py-1 text-xs font-medium ${
-                                        runState?.status === 'running'
-                                            ? 'animate-pulse bg-violet-500/10 text-violet-600'
-                                            : 'bg-slate-100 text-slate-500'
-                                    }`}
+                <div className="grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]">
+                    <AdminSurface>
+                        <AdminSurfaceHeader
+                            title="Live run"
+                            description="Assistant messages, tool calls, and system updates stream into one compact feed."
+                            action={
+                                <AdminPill
+                                    className={runStatusClassName(
+                                        runState?.status,
+                                    )}
                                 >
                                     {runState?.status ?? 'idle'}
-                                </span>
-                            </div>
+                                </AdminPill>
+                            }
+                        />
+                        <AdminSurfaceBody className="space-y-4">
                             {runState?.prompt ? (
-                                <div className="mt-4 rounded-md bg-slate-50 px-4 py-3">
-                                    <p className="text-xs font-medium text-slate-500">
+                                <div className="rounded-lg border border-slate-950/8 bg-slate-50/80 px-4 py-3">
+                                    <p className="text-[11px] font-medium tracking-[0.18em] text-slate-400 uppercase">
                                         Prompt
                                     </p>
-                                    <p className="mt-1 text-sm text-pretty text-slate-700">
+                                    <p className="mt-2 text-sm leading-6 text-slate-700">
                                         {runState.prompt}
                                     </p>
                                 </div>
                             ) : null}
-                            <div className="mt-4 space-y-2">
-                                {streamEvents.length > 0 ? (
-                                    streamEvents.map((event, index) => {
+
+                            {streamEvents.length > 0 ? (
+                                <div className="max-h-[38rem] space-y-2 overflow-y-auto pr-1">
+                                    {streamEvents.map((event, index) => {
                                         const isLive =
                                             runState?.status === 'running' &&
-                                            index ===
-                                                streamEvents.length - 1;
+                                            index === streamEvents.length - 1;
 
                                         return (
                                             <div
                                                 key={event.id}
-                                                className={`flex items-start gap-3 rounded-md border px-3 py-2.5 ${
+                                                className={cn(
+                                                    'rounded-lg border px-3 py-3',
                                                     event.is_error
-                                                        ? 'border-red-200 bg-red-50/60'
-                                                        : 'border-slate-950/5 bg-slate-50'
-                                                }`}
-                                            >
-                                                {isLive ? (
-                                                    <Loader2 className="mt-0.5 size-4 shrink-0 animate-spin text-violet-500" />
-                                                ) : (
-                                                    <EventIcon event={event} />
+                                                        ? 'border-red-200 bg-red-50/70'
+                                                        : 'border-slate-950/8 bg-slate-50/80',
                                                 )}
-                                                <div className="min-w-0 flex-1">
-                                                    <div className="flex items-center justify-between gap-4">
-                                                        <p className="text-sm font-medium text-slate-900">
-                                                            {eventKindLabel(
-                                                                event,
+                                            >
+                                                <div className="flex items-start gap-3">
+                                                    <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg border border-slate-950/8 bg-white">
+                                                        <StreamEventIcon
+                                                            event={event}
+                                                            isLive={isLive}
+                                                        />
+                                                    </div>
+                                                    <div className="min-w-0 flex-1">
+                                                        <div className="flex flex-wrap items-center justify-between gap-3">
+                                                            <p className="text-sm font-medium text-slate-900">
+                                                                {eventKindLabel(
+                                                                    event,
+                                                                )}
+                                                            </p>
+                                                            <time className="text-xs text-slate-400">
+                                                                {new Date(
+                                                                    event.created_at,
+                                                                ).toLocaleTimeString()}
+                                                            </time>
+                                                        </div>
+                                                        <p
+                                                            className={cn(
+                                                                'mt-1 text-sm leading-6',
+                                                                event.is_error
+                                                                    ? 'text-red-700'
+                                                                    : event.kind ===
+                                                                        'assistant_text'
+                                                                      ? 'whitespace-pre-wrap text-slate-700'
+                                                                      : 'text-slate-600',
                                                             )}
+                                                        >
+                                                            {eventBody(event)}
                                                         </p>
-                                                        <time className="shrink-0 text-xs text-slate-400">
-                                                            {new Date(
-                                                                event.created_at,
-                                                            ).toLocaleTimeString()}
-                                                        </time>
-                                                    </div>
-                                                    <p
-                                                        className={`mt-1 text-xs text-pretty ${
-                                                            event.kind ===
-                                                            'assistant_text'
-                                                                ? 'whitespace-pre-wrap text-slate-700'
-                                                                : event.is_error
-                                                                  ? 'text-red-700'
-                                                                  : 'text-slate-500'
-                                                        }`}
-                                                    >
-                                                        {eventBody(event)}
-                                                    </p>
-                                                    <div className="mt-2 flex flex-wrap gap-1.5">
-                                                        <span className="rounded-md bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500">
-                                                            {event.action}
-                                                        </span>
-                                                        {event.tool_name ? (
-                                                            <span
-                                                                className={`rounded-md px-2 py-0.5 text-xs ${
-                                                                    event.is_error
-                                                                        ? 'bg-red-100 text-red-700'
-                                                                        : event.kind ===
-                                                                            'tool_call'
-                                                                          ? 'bg-amber-500/10 text-amber-700'
-                                                                          : 'bg-emerald-500/10 text-emerald-700'
-                                                                }`}
-                                                            >
-                                                                {event.tool_name}
-                                                            </span>
-                                                        ) : null}
-                                                    </div>
-                                                    {Array.isArray(
-                                                        event.metadata
-                                                            .tool_names,
-                                                    ) &&
-                                                    event.metadata.tool_names
-                                                        .length > 0 ? (
                                                         <div className="mt-2 flex flex-wrap gap-1.5">
-                                                            {(
+                                                            <span className="rounded-full bg-white px-2 py-1 text-[11px] font-medium tracking-[0.16em] text-slate-500 uppercase ring-1 ring-slate-950/8">
+                                                                {event.action}
+                                                            </span>
+                                                            {event.tool_name ? (
+                                                                <span className="rounded-full bg-white px-2 py-1 text-[11px] font-medium tracking-[0.16em] text-slate-500 uppercase ring-1 ring-slate-950/8">
+                                                                    {
+                                                                        event.tool_name
+                                                                    }
+                                                                </span>
+                                                            ) : null}
+                                                            {Array.isArray(
                                                                 event.metadata
-                                                                    .tool_names as string[]
-                                                            ).map(
-                                                                (toolName) => (
-                                                                    <span
-                                                                        key={`${event.id}-${toolName}`}
-                                                                        className="rounded-md bg-violet-500/10 px-2 py-0.5 text-xs text-violet-600"
-                                                                    >
-                                                                        {
-                                                                            toolName
-                                                                        }
-                                                                    </span>
-                                                                ),
-                                                            )}
-                                                        </div>
-                                                    ) : null}
-                                                    {Array.isArray(
-                                                        event.metadata
-                                                            .resource_names,
-                                                    ) &&
-                                                    event.metadata
-                                                        .resource_names
-                                                        .length > 0 ? (
-                                                        <div className="mt-1.5 flex flex-wrap gap-1.5">
-                                                            {(
+                                                                    .tool_names,
+                                                            )
+                                                                ? (
+                                                                      event
+                                                                          .metadata
+                                                                          .tool_names as string[]
+                                                                  ).map(
+                                                                      (
+                                                                          toolName,
+                                                                      ) => (
+                                                                          <span
+                                                                              key={`${event.id}-${toolName}`}
+                                                                              className="rounded-full bg-sky-50 px-2 py-1 text-[11px] font-medium tracking-[0.16em] text-sky-700 uppercase"
+                                                                          >
+                                                                              {
+                                                                                  toolName
+                                                                              }
+                                                                          </span>
+                                                                      ),
+                                                                  )
+                                                                : null}
+                                                            {Array.isArray(
                                                                 event.metadata
-                                                                    .resource_names as string[]
-                                                            ).map(
-                                                                (
-                                                                    resourceName,
-                                                                ) => (
-                                                                    <span
-                                                                        key={`${event.id}-${resourceName}`}
-                                                                        className="rounded-md bg-slate-200 px-2 py-0.5 text-xs text-slate-600"
-                                                                    >
-                                                                        {
-                                                                            resourceName
-                                                                        }
-                                                                    </span>
-                                                                ),
-                                                            )}
+                                                                    .resource_names,
+                                                            )
+                                                                ? (
+                                                                      event
+                                                                          .metadata
+                                                                          .resource_names as string[]
+                                                                  ).map(
+                                                                      (
+                                                                          resourceName,
+                                                                      ) => (
+                                                                          <span
+                                                                              key={`${event.id}-${resourceName}`}
+                                                                              className="rounded-full bg-slate-200 px-2 py-1 text-[11px] font-medium tracking-[0.16em] text-slate-600 uppercase"
+                                                                          >
+                                                                              {
+                                                                                  resourceName
+                                                                              }
+                                                                          </span>
+                                                                      ),
+                                                                  )
+                                                                : null}
                                                         </div>
-                                                    ) : null}
+                                                    </div>
                                                 </div>
                                             </div>
                                         );
-                                    })
-                                ) : (
-                                    <div className="rounded-md border border-dashed border-slate-950/10 p-6 text-sm text-slate-400">
-                                        Run events will stream here once the
-                                        local helper claims a queued run.
-                                    </div>
-                                )}
-                            </div>
-                        </div>
+                                    })}
+                                </div>
+                            ) : (
+                                <div className="rounded-lg border border-dashed border-slate-950/8 px-4 py-8 text-sm leading-6 text-slate-500">
+                                    Run events will appear here once the local
+                                    helper claims a queued run.
+                                </div>
+                            )}
+                        </AdminSurfaceBody>
+                    </AdminSurface>
 
-                        {/* Clusters */}
-                        <div className="rounded-lg border border-slate-950/10 bg-white p-6">
-                            <h2 className="text-sm font-semibold text-slate-950">
-                                Complaint clusters
-                            </h2>
-                            <div className="mt-4 space-y-3">
-                                {clusters.map((cluster) => (
-                                    <article
-                                        key={cluster.id}
-                                        className="rounded-md bg-slate-50 p-4"
-                                    >
-                                        <div className="flex items-start justify-between gap-4">
-                                            <div>
-                                                {cluster.product ? (
-                                                    <p className="text-xs text-slate-500">
-                                                        {cluster.product}
-                                                    </p>
-                                                ) : null}
-                                                <h3 className="mt-1 text-sm font-semibold text-slate-900">
-                                                    {cluster.title}
-                                                </h3>
-                                            </div>
-                                            <span className="shrink-0 rounded-md bg-slate-100 px-2 py-0.5 text-xs text-slate-600">
-                                                {cluster.review_count} reviews
-                                            </span>
-                                        </div>
-                                        <p className="mt-2 text-sm text-pretty text-slate-600">
-                                            {cluster.summary}
-                                        </p>
-                                        <div className="mt-3 flex flex-wrap gap-1.5">
-                                            <span className="rounded-md bg-amber-500/10 px-2 py-0.5 text-xs text-amber-700">
-                                                severity {cluster.severity}
-                                            </span>
-                                            <span className="rounded-md bg-sky-500/10 px-2 py-0.5 text-xs text-sky-700">
-                                                score {cluster.match_score}
-                                            </span>
-                                        </div>
-                                        {cluster.matched_because.length > 0 ? (
-                                            <ul
-                                                role="list"
-                                                className="mt-2 space-y-0.5 text-xs text-slate-400"
-                                            >
-                                                {cluster.matched_because.map(
-                                                    (reason) => (
-                                                        <li
-                                                            key={`${cluster.id}-${reason}`}
-                                                        >
-                                                            &middot; {reason}
-                                                        </li>
-                                                    ),
-                                                )}
-                                            </ul>
-                                        ) : null}
-                                    </article>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Col 3: Proposals + helper setup + audit log */}
-                    <div className="space-y-6">
-                        {/* Pending proposals */}
-                        <div className="rounded-lg border border-slate-950/10 bg-white p-6">
-                            <h2 className="text-sm font-semibold text-slate-950">
-                                Pending proposals
-                            </h2>
-                            <div className="mt-4 space-y-4">
-                                {pendingProposals.map((proposal) => {
+                    <AdminSurface>
+                        <AdminSurfaceHeader
+                            title="Pending proposals"
+                            description="The next storefront changes waiting for review."
+                            action={
+                                <Link
+                                    href={admin.proposals.index().url}
+                                    className="text-sm font-medium text-slate-500 transition hover:text-slate-950"
+                                >
+                                    Open queue
+                                </Link>
+                            }
+                        />
+                        <AdminSurfaceBody className="space-y-3">
+                            {pendingProposals.length > 0 ? (
+                                pendingProposals.map((proposal) => {
                                     const proposedBody =
                                         proposal.type === 'review_response'
                                             ? proposal.payload.response_draft
@@ -791,21 +821,21 @@ function SignalsPage({
                                     return (
                                         <article
                                             key={proposal.id}
-                                            className="rounded-md bg-slate-50 p-4"
+                                            className="rounded-lg border border-slate-950/8 bg-slate-50/80 p-4"
                                         >
-                                            <div className="flex items-start justify-between gap-4">
-                                                <div>
-                                                    <p className="text-xs text-slate-500">
+                                            <div className="flex items-start justify-between gap-3">
+                                                <div className="min-w-0">
+                                                    <p className="text-[11px] font-medium tracking-[0.18em] text-slate-400 uppercase">
                                                         {proposal.type.replaceAll(
                                                             '_',
                                                             ' ',
                                                         )}
                                                     </p>
-                                                    <h3 className="mt-1 text-sm font-semibold text-slate-900">
+                                                    <h3 className="mt-1 text-sm font-medium text-slate-950">
                                                         {proposal.target_label}
                                                     </h3>
                                                 </div>
-                                                <span className="shrink-0 rounded-md bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-700">
+                                                <span className="rounded-full bg-emerald-50 px-2 py-1 text-[11px] font-semibold text-emerald-700">
                                                     {(
                                                         proposal.confidence *
                                                         100
@@ -813,18 +843,18 @@ function SignalsPage({
                                                     %
                                                 </span>
                                             </div>
-                                            <p className="mt-2 text-sm text-pretty text-slate-600">
+                                            <p className="mt-2 text-sm leading-6 text-slate-600">
                                                 {proposal.rationale}
                                             </p>
                                             {proposedBody ? (
-                                                <div className="mt-3 rounded bg-white p-3">
-                                                    <p className="text-xs font-medium text-slate-500">
+                                                <div className="mt-3 rounded-lg border border-slate-950/8 bg-white px-3 py-3">
+                                                    <p className="text-[11px] font-medium tracking-[0.18em] text-slate-400 uppercase">
                                                         {proposal.type ===
                                                         'review_response'
                                                             ? 'Suggested response'
                                                             : 'Suggested change'}
                                                     </p>
-                                                    <p className="mt-1 text-sm text-pretty text-slate-700">
+                                                    <p className="mt-2 text-sm leading-6 text-slate-700">
                                                         {proposedBody}
                                                     </p>
                                                 </div>
@@ -842,9 +872,9 @@ function SignalsPage({
                                                             ).url,
                                                         )
                                                     }
-                                                    className="rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-900 hover:bg-slate-200"
+                                                    className="rounded-lg bg-slate-950 px-3 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
                                                 >
-                                                    Approve & publish
+                                                    Approve
                                                 </button>
                                                 <button
                                                     type="button"
@@ -858,9 +888,9 @@ function SignalsPage({
                                                             ).url,
                                                         )
                                                     }
-                                                    className="inline-flex items-center gap-1.5 rounded-lg border border-slate-950/10 py-1.5 pl-1.5 pr-3 text-xs font-medium text-slate-600 hover:border-slate-950/30"
+                                                    className="inline-flex items-center gap-2 rounded-lg border border-slate-950/10 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition hover:border-slate-950/20 hover:bg-slate-50"
                                                 >
-                                                    <ShieldX className="size-3 shrink-0" />
+                                                    <ShieldX className="size-4" />
                                                     Reject
                                                 </button>
                                                 {proposal.target_slug ? (
@@ -871,7 +901,7 @@ function SignalsPage({
                                                                     proposal.target_slug,
                                                             }).url
                                                         }
-                                                        className="rounded-lg border border-slate-950/10 px-3 py-1.5 text-xs font-medium text-slate-600 hover:border-slate-950/30"
+                                                        className="rounded-lg border border-slate-950/10 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition hover:border-slate-950/20 hover:bg-slate-50"
                                                     >
                                                         Preview
                                                     </Link>
@@ -879,160 +909,327 @@ function SignalsPage({
                                             </div>
                                         </article>
                                     );
-                                })}
-                            </div>
-                            <Link
-                                href={admin.proposals.index().url}
-                                className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-slate-950"
-                            >
-                                Open proposal queue
-                            </Link>
-                        </div>
-
-                        {/* Local helper setup */}
-                        <div
-                            id="helper-setup"
-                            className="rounded-lg border border-slate-950/10 bg-white p-6"
-                        >
-                            <div className="flex items-center gap-2">
-                                <Terminal className="size-4 shrink-0 text-slate-400" />
-                                <h2 className="text-sm font-semibold text-slate-950">
-                                    Local helper
-                                </h2>
-                            </div>
-                            <p className="mt-1 text-xs text-slate-500">
-                                Heartbeat:{' '}
-                                {helper.latest_device_seen_at ??
-                                    'No check-in yet'}
-                            </p>
-                            <form
-                                className="mt-4 space-y-3"
-                                onSubmit={(event) => {
-                                    event.preventDefault();
-                                    router.post(
-                                        admin.helperToken.store().url,
-                                        { name: helperName },
-                                    );
-                                }}
-                            >
-                                <label className="block text-sm font-medium text-slate-700">
-                                    Helper name
-                                    <input
-                                        value={helperName}
-                                        onChange={(event) =>
-                                            setHelperName(event.target.value)
-                                        }
-                                        className="mt-2 w-full rounded-lg border border-slate-950/10 px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-slate-950/20"
-                                    />
-                                </label>
-                                <button
-                                    type="submit"
-                                    className="rounded-lg border border-slate-950/10 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-                                >
-                                    Generate command
-                                </button>
-                            </form>
-                            {flash.helper_token ? (
-                                <div className="mt-4 space-y-3">
-                                    <div className="rounded-md border border-emerald-200 bg-emerald-50 p-4">
-                                        <div className="flex items-center justify-between gap-3">
-                                            <p className="text-sm font-medium text-emerald-900">
-                                                Launch command for{' '}
-                                                {flash.helper_name}
-                                            </p>
-                                            <button
-                                                type="button"
-                                                onClick={() =>
-                                                    void copy(
-                                                        helperBootstrapCommand,
-                                                    )
-                                                }
-                                                className="inline-flex items-center gap-1.5 rounded-md border border-emerald-200 bg-white py-1 pl-1 pr-2 text-xs font-medium text-slate-700 hover:bg-slate-50"
-                                            >
-                                                {copiedText ===
-                                                helperBootstrapCommand ? (
-                                                    <Check className="size-3 shrink-0" />
-                                                ) : (
-                                                    <Copy className="size-3 shrink-0" />
-                                                )}
-                                                Copy
-                                            </button>
-                                        </div>
-                                        <code className="mt-3 block overflow-x-auto rounded-md bg-slate-950 px-3 py-3 text-xs text-emerald-200">
-                                            {helperBootstrapCommand}
-                                        </code>
-                                    </div>
-                                    <div className="rounded-md border border-slate-950/5 bg-slate-50 p-4">
-                                        <div className="flex items-center justify-between gap-3">
-                                            <p className="text-xs font-medium text-slate-600">
-                                                Rerun-only command
-                                            </p>
-                                            <button
-                                                type="button"
-                                                onClick={() =>
-                                                    void copy(helperRunCommand)
-                                                }
-                                                className="inline-flex items-center gap-1.5 rounded-md border border-slate-950/10 bg-white py-1 pl-1 pr-2 text-xs font-medium text-slate-600 hover:bg-slate-50"
-                                            >
-                                                {copiedText ===
-                                                helperRunCommand ? (
-                                                    <Check className="size-3 shrink-0" />
-                                                ) : (
-                                                    <Copy className="size-3 shrink-0" />
-                                                )}
-                                                Copy
-                                            </button>
-                                        </div>
-                                        <code className="mt-2 block overflow-x-auto rounded-md bg-slate-950 px-3 py-2 text-xs text-slate-300">
-                                            {helperRunCommand}
-                                        </code>
-                                    </div>
-                                </div>
+                                })
                             ) : (
-                                <div className="mt-4 rounded-md bg-slate-50 px-4 py-3 text-xs text-slate-500">
-                                    Generate a command to launch the local
-                                    helper on your machine.
+                                <div className="rounded-lg border border-dashed border-slate-950/8 px-4 py-8 text-sm leading-6 text-slate-500">
+                                    Proposal drafts will appear here after the
+                                    next successful run.
                                 </div>
                             )}
-                        </div>
+                        </AdminSurfaceBody>
+                    </AdminSurface>
+                </div>
 
-                        {/* Audit log */}
-                        <div className="rounded-lg border border-slate-950/10 bg-white p-6">
-                            <h2 className="text-sm font-semibold text-slate-950">
-                                Recent audit events
-                            </h2>
-                            <div className="mt-4 divide-y divide-slate-950/5">
-                                {recentAuditLog.map((entry) => (
-                                    <div key={entry.id} className="py-3">
-                                        <div className="flex items-center justify-between gap-4">
-                                            <p className="text-sm font-medium text-slate-900">
-                                                {entry.action}
-                                            </p>
-                                            <time className="shrink-0 text-xs text-slate-400">
-                                                {entry.created_at}
-                                            </time>
-                                        </div>
-                                        {entry.message ? (
-                                            <p className="mt-1 text-xs text-pretty text-slate-500">
-                                                {entry.message}
-                                            </p>
-                                        ) : null}
-                                        <p className="mt-0.5 text-xs text-slate-400">
-                                            {entry.actor_type}
-                                        </p>
+                <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
+                    <AdminSurface>
+                        <AdminSurfaceHeader
+                            title="Search results"
+                            description="Reviews and complaint clusters tied to the active query."
+                        />
+                        <AdminSurfaceBody className="space-y-4">
+                            <div className="space-y-3">
+                                <div className="flex items-center justify-between gap-3">
+                                    <p className="text-sm font-medium text-slate-950">
+                                        Matching reviews
+                                    </p>
+                                    <span className="text-xs text-slate-400">
+                                        {reviews.length} results
+                                    </span>
+                                </div>
+                                {reviews.length > 0 ? (
+                                    <div className="space-y-2">
+                                        {reviews.map((review) => (
+                                            <article
+                                                key={review.id}
+                                                className="rounded-lg border border-slate-950/8 bg-slate-50/80 p-4"
+                                            >
+                                                <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-slate-400">
+                                                    <span>
+                                                        {review.product}
+                                                    </span>
+                                                    <span>
+                                                        {review.rating}/5 ·
+                                                        score{' '}
+                                                        {review.match_score}
+                                                    </span>
+                                                </div>
+                                                {review.title ? (
+                                                    <h3 className="mt-2 text-sm font-medium text-slate-950">
+                                                        {review.title}
+                                                    </h3>
+                                                ) : null}
+                                                <p className="mt-2 text-sm leading-6 text-slate-600">
+                                                    {review.body}
+                                                </p>
+                                                <div className="mt-3 flex flex-wrap gap-1.5">
+                                                    <span className="rounded-full bg-sky-50 px-2 py-1 text-[11px] font-medium tracking-[0.16em] text-sky-700 uppercase">
+                                                        {review.sentiment}
+                                                    </span>
+                                                    <span className="rounded-full bg-amber-50 px-2 py-1 text-[11px] font-medium tracking-[0.16em] text-amber-700 uppercase">
+                                                        Severity{' '}
+                                                        {review.severity}
+                                                    </span>
+                                                    {review.response_draft_status ? (
+                                                        <span className="rounded-full bg-emerald-50 px-2 py-1 text-[11px] font-medium tracking-[0.16em] text-emerald-700 uppercase">
+                                                            Response{' '}
+                                                            {
+                                                                review.response_draft_status
+                                                            }
+                                                        </span>
+                                                    ) : null}
+                                                </div>
+                                                {review.tags.length > 0 ? (
+                                                    <div className="mt-2 flex flex-wrap gap-1.5">
+                                                        {review.tags.map(
+                                                            (tag) => (
+                                                                <span
+                                                                    key={`${review.id}-${tag.name}`}
+                                                                    className="rounded-full bg-slate-200 px-2 py-1 text-[11px] font-medium tracking-[0.16em] text-slate-600 uppercase"
+                                                                >
+                                                                    {tag.name}
+                                                                </span>
+                                                            ),
+                                                        )}
+                                                    </div>
+                                                ) : null}
+                                                {review.response_draft ? (
+                                                    <div className="mt-3 rounded-lg border border-slate-950/8 bg-white px-3 py-3">
+                                                        <p className="text-[11px] font-medium tracking-[0.18em] text-slate-400 uppercase">
+                                                            Saved response draft
+                                                        </p>
+                                                        <p className="mt-2 text-sm leading-6 text-slate-700">
+                                                            {
+                                                                review.response_draft
+                                                            }
+                                                        </p>
+                                                    </div>
+                                                ) : null}
+                                            </article>
+                                        ))}
                                     </div>
-                                ))}
+                                ) : (
+                                    <div className="rounded-lg border border-dashed border-slate-950/8 px-4 py-8 text-sm leading-6 text-slate-500">
+                                        Search results will appear here after
+                                        you run a query.
+                                    </div>
+                                )}
                             </div>
-                            <Link
-                                href={admin.auditLog().url}
-                                className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-slate-950"
-                            >
-                                Open audit log
-                            </Link>
-                        </div>
+
+                            <div className="border-t border-slate-950/6 pt-4">
+                                <div className="flex items-center justify-between gap-3">
+                                    <p className="text-sm font-medium text-slate-950">
+                                        Complaint clusters
+                                    </p>
+                                    <span className="text-xs text-slate-400">
+                                        {clusters.length} groups
+                                    </span>
+                                </div>
+                                {clusters.length > 0 ? (
+                                    <div className="mt-3 space-y-2">
+                                        {clusters.map((cluster) => (
+                                            <article
+                                                key={cluster.id}
+                                                className="rounded-lg border border-slate-950/8 bg-slate-50/80 p-4"
+                                            >
+                                                <div className="flex items-start justify-between gap-3">
+                                                    <div className="min-w-0">
+                                                        {cluster.product ? (
+                                                            <p className="text-[11px] font-medium tracking-[0.18em] text-slate-400 uppercase">
+                                                                {
+                                                                    cluster.product
+                                                                }
+                                                            </p>
+                                                        ) : null}
+                                                        <h3 className="mt-1 text-sm font-medium text-slate-950">
+                                                            {cluster.title}
+                                                        </h3>
+                                                    </div>
+                                                    <span className="rounded-full bg-white px-2 py-1 text-[11px] font-medium tracking-[0.16em] text-slate-500 uppercase ring-1 ring-slate-950/8">
+                                                        {cluster.review_count}{' '}
+                                                        reviews
+                                                    </span>
+                                                </div>
+                                                <p className="mt-2 text-sm leading-6 text-slate-600">
+                                                    {cluster.summary}
+                                                </p>
+                                                <div className="mt-3 flex flex-wrap gap-1.5">
+                                                    <span className="rounded-full bg-amber-50 px-2 py-1 text-[11px] font-medium tracking-[0.16em] text-amber-700 uppercase">
+                                                        Severity{' '}
+                                                        {cluster.severity}
+                                                    </span>
+                                                    <span className="rounded-full bg-sky-50 px-2 py-1 text-[11px] font-medium tracking-[0.16em] text-sky-700 uppercase">
+                                                        Score{' '}
+                                                        {cluster.match_score}
+                                                    </span>
+                                                </div>
+                                            </article>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="mt-3 rounded-lg border border-dashed border-slate-950/8 px-4 py-8 text-sm leading-6 text-slate-500">
+                                        Cluster summaries will appear here after
+                                        the next query or run.
+                                    </div>
+                                )}
+                            </div>
+                        </AdminSurfaceBody>
+                    </AdminSurface>
+
+                    <div className="space-y-4">
+                        <AdminSurface id="helper-setup">
+                            <AdminSurfaceHeader
+                                title="Local helper"
+                                description="One command to connect the helper, then live heartbeat updates over Echo."
+                            />
+                            <AdminSurfaceBody className="space-y-4">
+                                <div className="rounded-lg border border-slate-950/8 bg-slate-50/80 px-4 py-3">
+                                    <p className="text-[11px] font-medium tracking-[0.18em] text-slate-400 uppercase">
+                                        Heartbeat
+                                    </p>
+                                    <p className="mt-2 text-sm text-slate-700">
+                                        {helperLastSeenAt ?? 'No check-in yet'}
+                                    </p>
+                                </div>
+
+                                {flash.helper_token ? (
+                                    <div className="space-y-3">
+                                        <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4">
+                                            <div className="flex items-center justify-between gap-3">
+                                                <p className="text-sm font-medium text-emerald-900">
+                                                    Launch command for{' '}
+                                                    {flash.helper_name ??
+                                                        helper.default_name}
+                                                </p>
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        void copy(
+                                                            helperBootstrapCommand,
+                                                        )
+                                                    }
+                                                    className="inline-flex items-center gap-2 rounded-md border border-emerald-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50"
+                                                >
+                                                    {copiedText ===
+                                                    helperBootstrapCommand ? (
+                                                        <Check className="size-3.5" />
+                                                    ) : (
+                                                        <Copy className="size-3.5" />
+                                                    )}
+                                                    Copy
+                                                </button>
+                                            </div>
+                                            <code className="mt-3 block overflow-x-auto rounded-lg bg-slate-950 px-3 py-3 text-xs text-emerald-200">
+                                                {helperBootstrapCommand}
+                                            </code>
+                                        </div>
+
+                                        <div className="flex flex-wrap gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    router.post(
+                                                        admin.helperToken.store()
+                                                            .url,
+                                                    )
+                                                }
+                                                className="rounded-lg border border-slate-950/10 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-950/20 hover:bg-slate-50"
+                                            >
+                                                Regenerate helper token
+                                            </button>
+                                        </div>
+
+                                        <div className="rounded-lg border border-slate-950/8 bg-slate-50/80 p-4">
+                                            <div className="flex items-center justify-between gap-3">
+                                                <p className="text-[11px] font-medium tracking-[0.18em] text-slate-400 uppercase">
+                                                    Rerun-only command
+                                                </p>
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        void copy(
+                                                            helperRunCommand,
+                                                        )
+                                                    }
+                                                    className="inline-flex items-center gap-2 rounded-md border border-slate-950/10 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-600 transition hover:border-slate-950/20 hover:bg-slate-50"
+                                                >
+                                                    {copiedText ===
+                                                    helperRunCommand ? (
+                                                        <Check className="size-3.5" />
+                                                    ) : (
+                                                        <Copy className="size-3.5" />
+                                                    )}
+                                                    Copy
+                                                </button>
+                                            </div>
+                                            <code className="mt-3 block overflow-x-auto rounded-lg bg-slate-950 px-3 py-3 text-xs text-slate-300">
+                                                {helperRunCommand}
+                                            </code>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="rounded-lg border border-dashed border-slate-950/8 px-4 py-6 text-sm leading-6 text-slate-500">
+                                        Generate a command to launch the local
+                                        helper on your machine.
+                                    </div>
+                                )}
+                            </AdminSurfaceBody>
+                        </AdminSurface>
+
+                        <AdminSurface>
+                            <AdminSurfaceHeader
+                                title="Recent audit events"
+                                description="A compact look at the latest system activity."
+                                action={
+                                    <Link
+                                        href={admin.auditLog().url}
+                                        className="text-sm font-medium text-slate-500 transition hover:text-slate-950"
+                                    >
+                                        Open audit log
+                                    </Link>
+                                }
+                            />
+                            <AdminSurfaceBody className="space-y-0 p-0">
+                                {recentAuditLog.length > 0 ? (
+                                    recentAuditLog.map((entry, index) => (
+                                        <div
+                                            key={entry.id}
+                                            className={`px-4 py-3 ${
+                                                index === 0
+                                                    ? ''
+                                                    : 'border-t border-slate-950/6'
+                                            }`}
+                                        >
+                                            <div className="flex items-start justify-between gap-4">
+                                                <div className="min-w-0">
+                                                    <p className="text-sm font-medium text-slate-900">
+                                                        {entry.action}
+                                                    </p>
+                                                    {entry.message ? (
+                                                        <p className="mt-1 text-sm leading-5 text-slate-500">
+                                                            {entry.message}
+                                                        </p>
+                                                    ) : null}
+                                                    <p className="mt-1 text-[11px] font-medium tracking-[0.18em] text-slate-400 uppercase">
+                                                        {entry.actor_type}
+                                                    </p>
+                                                </div>
+                                                <time className="shrink-0 text-xs text-slate-400">
+                                                    {entry.created_at}
+                                                </time>
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="px-4 py-8 text-sm leading-6 text-slate-500">
+                                        Audit events will appear here after the
+                                        next run or proposal action.
+                                    </div>
+                                )}
+                            </AdminSurfaceBody>
+                        </AdminSurface>
                     </div>
-                </section>
-            </div>
+                </div>
+            </AdminPage>
         </AppLayout>
     );
 }

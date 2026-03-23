@@ -20,11 +20,26 @@ export function NavMain({ items = [] }: { items: NavItem[] }) {
                             asChild
                             isActive={isCurrentUrl(item.href)}
                             tooltip={{ children: item.title }}
-                            className="rounded-md text-slate-600 hover:bg-slate-100 hover:text-slate-950 data-[active=true]:bg-slate-950 data-[active=true]:text-white"
+                            className="h-auto rounded-lg px-2.5 py-2 text-slate-600 hover:bg-slate-100 hover:text-slate-950 data-[active=true]:bg-slate-950 data-[active=true]:text-white data-[active=true]:shadow-sm"
                         >
-                            <Link href={item.href} prefetch>
-                                {item.icon && <item.icon />}
-                                <span>{item.title}</span>
+                            <Link
+                                href={item.href}
+                                prefetch
+                                className="flex items-start gap-3"
+                            >
+                                {item.icon ? (
+                                    <item.icon className="mt-0.5 size-4 shrink-0" />
+                                ) : null}
+                                <span className="grid min-w-0 flex-1 text-left leading-tight group-data-[collapsible=icon]:hidden">
+                                    <span className="truncate text-sm font-medium">
+                                        {item.title}
+                                    </span>
+                                    {item.description ? (
+                                        <span className="mt-1 truncate text-xs text-slate-400 group-data-[active=true]:text-white/60">
+                                            {item.description}
+                                        </span>
+                                    ) : null}
+                                </span>
                             </Link>
                         </SidebarMenuButton>
                     </SidebarMenuItem>

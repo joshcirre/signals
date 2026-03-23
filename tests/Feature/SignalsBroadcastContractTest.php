@@ -2,8 +2,10 @@
 
 use App\Events\ReviewAnalysisEventBroadcast;
 use App\Events\ReviewAnalysisRunUpdated;
+use App\Events\SignalsHelperHeartbeatUpdated;
 use App\Models\ActionLog;
 use App\Models\ReviewAnalysisRun;
+use App\Models\SignalsDevice;
 
 test('review analysis run updated broadcast uses the private user channel contract', function (): void {
     $run = ReviewAnalysisRun::factory()->create([
@@ -52,4 +54,23 @@ test('review analysis event broadcast uses the private user channel contract', f
                 'tool_name' => 'mcp__signals__log_action',
             ],
         ]);
+});
+
+test('signals helper heartbeat broadcast uses the private user channel contract', function (): void {
+    $device = SignalsDevice::factory()->create([
+        'name' => 'Signals Helper',
+        'last_seen_at' => now(),
+    ]);
+
+    $event = new SignalsHelperHeartbeatUpdated($device);
+
+    expect($event->broadcastAs())->toBe('signals-helper.heartbeat.updated')
+        ->and($event->broadcastOn())->toHaveCount(1)
+        ->and($event->broadcastOn()[0]->name)->toBe('private-signals.user.'.$device->user_id)
+        ->and($event->broadcastWith())->toMatchArray([
+            'id' => $device->id,
+            'name' => 'Signals Helper',
+            'is_active' => $device->is_active,
+        ])
+        ->and($event->broadcastWith()['last_seen_at'])->not->toBeNull();
 });

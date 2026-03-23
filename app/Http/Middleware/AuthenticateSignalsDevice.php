@@ -2,11 +2,13 @@
 
 namespace App\Http\Middleware;
 
+use App\Events\SignalsHelperHeartbeatUpdated;
 use App\Models\SignalsDevice;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Symfony\Component\HttpFoundation\Response;
+use Throwable;
 
 class AuthenticateSignalsDevice
 {
@@ -32,6 +34,12 @@ class AuthenticateSignalsDevice
         $device->forceFill([
             'last_seen_at' => now(),
         ])->save();
+
+        try {
+            event(new SignalsHelperHeartbeatUpdated($device->fresh()));
+        } catch (Throwable $throwable) {
+            report($throwable);
+        }
 
         $request->attributes->set('signalsDevice', $device);
         $request->setUserResolver(fn () => $device->user);

@@ -11,7 +11,7 @@ export function AppContent({ variant = 'sidebar', children, ...props }: Props) {
         return (
             <SidebarInset
                 {...props}
-                className="min-h-screen bg-[radial-gradient(circle_at_top,#dbeafe_0%,transparent_28%),linear-gradient(180deg,#f8fbff_0%,#f7f4ee_60%,#f8fafc_100%)]"
+                className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(15,23,42,0.04),transparent_24%),linear-gradient(180deg,#f7f7f8_0%,#ffffff_28%,#fbfbfc_100%)]"
             >
                 {children}
             </SidebarInset>

@@ -135,7 +135,7 @@ function mergeAssistantEvents(events: RunEventPayload[]): RunEventPayload[] {
         const existingEvent = current[existingIndex];
         const mergedContent =
             event.kind === 'assistant_text'
-                ? event.content ?? existingEvent.content
+                ? (event.content ?? existingEvent.content)
                 : `${existingEvent.content ?? ''}${event.content ?? ''}`;
 
         current[existingIndex] = {
@@ -217,7 +217,10 @@ function findLastRunningToolIndex(
     for (let index = toolActivities.length - 1; index >= 0; index -= 1) {
         const activity = toolActivities[index];
 
-        if (activity.status === 'running' && activity.name === event.tool_name) {
+        if (
+            activity.status === 'running' &&
+            activity.name === event.tool_name
+        ) {
             return index;
         }
     }
@@ -254,7 +257,9 @@ function humanizeAction(action: string): string {
         labels[action] ??
         action
             .split('.')
-            .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
+            .map(
+                (segment) => segment.charAt(0).toUpperCase() + segment.slice(1),
+            )
             .join(' ')
     );
 }
@@ -339,16 +344,10 @@ function toolStatusBadgeClassName(status: ToolActivity['status']): string {
     return 'border-sky-500/20 bg-sky-500/10 text-sky-700';
 }
 
-function SummaryStat({
-    label,
-    value,
-}: {
-    label: string;
-    value: string;
-}) {
+function SummaryStat({ label, value }: { label: string; value: string }) {
     return (
-        <div className="rounded-2xl border border-slate-950/8 bg-white/80 px-4 py-3">
-            <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-slate-400">
+        <div className="rounded-lg border border-slate-950/8 bg-white/80 px-4 py-3">
+            <p className="text-[11px] font-medium tracking-[0.2em] text-slate-400 uppercase">
                 {label}
             </p>
             <p className="mt-2 text-lg font-semibold text-slate-950">{value}</p>
@@ -371,7 +370,7 @@ function ThreadMessage({
                         <Bot className="size-4" />
                     </div>
                 </div>
-                <div className="min-w-0 flex-1 rounded-[26px] rounded-tl-md border border-sky-500/10 bg-sky-50/80 px-5 py-4 shadow-sm shadow-sky-500/5">
+                <div className="min-w-0 flex-1 rounded-xl rounded-tl-md border border-sky-500/10 bg-sky-50/80 px-4 py-3.5 shadow-sm shadow-sky-500/5">
                     <div className="flex items-center justify-between gap-3">
                         <p className="text-sm font-semibold text-sky-900">
                             Assistant
@@ -380,7 +379,7 @@ function ThreadMessage({
                             {formatTimestamp(event.created_at)}
                         </time>
                     </div>
-                    <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-700">
+                    <p className="mt-3 text-sm leading-6 whitespace-pre-wrap text-slate-700">
                         {eventBody(event)}
                     </p>
                 </div>
@@ -395,7 +394,7 @@ function ThreadMessage({
             </div>
             <div
                 className={cn(
-                    'min-w-0 flex-1 rounded-[22px] border px-4 py-3',
+                    'min-w-0 flex-1 rounded-xl border px-4 py-3',
                     event.is_error
                         ? 'border-red-200 bg-red-50/80'
                         : 'border-slate-950/8 bg-slate-50/85',
@@ -413,7 +412,9 @@ function ThreadMessage({
                     <time
                         className={cn(
                             'text-xs',
-                            event.is_error ? 'text-red-500/80' : 'text-slate-400',
+                            event.is_error
+                                ? 'text-red-500/80'
+                                : 'text-slate-400',
                         )}
                     >
                         {formatTimestamp(event.created_at)}
@@ -450,7 +451,7 @@ function ToolWorkbench({
     onSelect: (index: number) => void;
 }) {
     return (
-        <Card className="gap-0 overflow-hidden rounded-[28px] border-slate-950/10 bg-white/90 shadow-[0_24px_70px_-48px_rgba(15,23,42,0.45)]">
+        <Card className="gap-0 overflow-hidden rounded-xl border-slate-950/10 bg-white/90 shadow-[0_18px_50px_-40px_rgba(15,23,42,0.32)]">
             <CardHeader className="gap-3 border-b border-slate-950/8 bg-[linear-gradient(180deg,rgba(248,250,252,0.98),rgba(255,255,255,0.88))] px-5 py-5">
                 <div className="flex items-start justify-between gap-4">
                     <div>
@@ -458,13 +459,13 @@ function ToolWorkbench({
                             Tool Workbench
                         </CardTitle>
                         <CardDescription className="mt-1 text-sm text-slate-500">
-                            One focused tool at a time, with the full trace tucked
-                            underneath.
+                            One focused tool at a time, with the full trace
+                            tucked underneath.
                         </CardDescription>
                     </div>
                     <Badge
                         variant="outline"
-                        className="rounded-full border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.18em] text-slate-500"
+                        className="rounded-full border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium tracking-[0.18em] text-slate-500 uppercase"
                     >
                         {isRunning && toolActivities.length > 1
                             ? 'Auto cycle'
@@ -475,10 +476,10 @@ function ToolWorkbench({
             <CardContent className="space-y-5 px-5 py-5">
                 {activeTool ? (
                     <>
-                        <div className="rounded-[24px] border border-slate-950/10 bg-slate-950 p-4 text-slate-50 shadow-lg shadow-slate-950/8">
+                        <div className="rounded-xl border border-slate-950/10 bg-slate-950 p-4 text-slate-50 shadow-lg shadow-slate-950/8">
                             <div className="flex items-start justify-between gap-3">
                                 <div>
-                                    <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-slate-400">
+                                    <p className="text-[11px] font-medium tracking-[0.22em] text-slate-400 uppercase">
                                         Active step
                                     </p>
                                     <h3 className="mt-2 text-lg font-semibold capitalize">
@@ -488,7 +489,7 @@ function ToolWorkbench({
                                 <Badge
                                     variant="outline"
                                     className={cn(
-                                        'rounded-full px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.16em]',
+                                        'rounded-full px-2.5 py-1 text-[11px] font-medium tracking-[0.16em] uppercase',
                                         toolStatusBadgeClassName(
                                             activeTool.status,
                                         ),
@@ -514,7 +515,10 @@ function ToolWorkbench({
                                 />
                             </div>
                             <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-slate-400">
-                                <span>Started {formatTimestamp(activeTool.startedAt)}</span>
+                                <span>
+                                    Started{' '}
+                                    {formatTimestamp(activeTool.startedAt)}
+                                </span>
                                 <span className="text-slate-600">•</span>
                                 <span>
                                     Finished{' '}
@@ -565,7 +569,7 @@ function ToolWorkbench({
                                         )}
                                     >
                                         <div className="flex items-center gap-2">
-                                            <span className="rounded-full bg-white/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em]">
+                                            <span className="rounded-full bg-white/10 px-1.5 py-0.5 text-[10px] font-semibold tracking-[0.16em] uppercase">
                                                 {(index + 1).toString()}
                                             </span>
                                             <span className="max-w-36 truncate text-xs font-medium capitalize">
@@ -578,9 +582,9 @@ function ToolWorkbench({
                         </div>
                     </>
                 ) : (
-                    <div className="rounded-[24px] border border-dashed border-slate-950/10 bg-slate-50 px-4 py-8 text-sm text-slate-500">
-                        Tool calls will appear here as soon as Codex starts using
-                        the Signals MCP tools.
+                    <div className="rounded-xl border border-dashed border-slate-950/10 bg-slate-50 px-4 py-8 text-sm text-slate-500">
+                        Tool calls will appear here as soon as Codex starts
+                        using the Signals MCP tools.
                     </div>
                 )}
             </CardContent>
@@ -598,16 +602,18 @@ function ToolWorkbenchPanel({
     mono?: boolean;
 }) {
     return (
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
-            <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-400">
+        <div className="rounded-lg border border-white/10 bg-white/5 p-3">
+            <p className="text-[11px] font-medium tracking-[0.18em] text-slate-400 uppercase">
                 {label}
             </p>
             {mono ? (
-                <pre className="mt-2 max-h-56 overflow-y-auto whitespace-pre-wrap break-words text-sm leading-6 text-slate-200">
+                <pre className="mt-2 max-h-56 overflow-y-auto text-sm leading-6 break-words whitespace-pre-wrap text-slate-200">
                     {content}
                 </pre>
             ) : (
-                <p className="mt-2 text-sm leading-6 text-slate-100">{content}</p>
+                <p className="mt-2 text-sm leading-6 text-slate-100">
+                    {content}
+                </p>
             )}
         </div>
     );
@@ -625,7 +631,7 @@ function ToolTrace({
     onSelect: (index: number) => void;
 }) {
     return (
-        <Card className="gap-0 overflow-hidden rounded-[28px] border-slate-950/10 bg-white/90 shadow-[0_24px_70px_-48px_rgba(15,23,42,0.45)]">
+        <Card className="gap-0 overflow-hidden rounded-xl border-slate-950/10 bg-white/90 shadow-[0_18px_50px_-40px_rgba(15,23,42,0.32)]">
             <Collapsible defaultOpen={running || toolActivities.length <= 3}>
                 <CardHeader className="border-b border-slate-950/8 px-5 py-4">
                     <div className="flex items-center justify-between gap-3">
@@ -661,7 +667,7 @@ function ToolTrace({
                                 >
                                     <div
                                         className={cn(
-                                            'overflow-hidden rounded-2xl border transition',
+                                            'overflow-hidden rounded-xl border transition',
                                             index === activeToolIndex
                                                 ? 'border-slate-950/15 bg-slate-50'
                                                 : 'border-slate-200 bg-white',
@@ -675,10 +681,12 @@ function ToolTrace({
                                             >
                                                 <div className="min-w-0">
                                                     <div className="flex items-center gap-2">
-                                                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">
-                                                            {(index + 1).toString()}
+                                                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold tracking-[0.16em] text-slate-500 uppercase">
+                                                            {(
+                                                                index + 1
+                                                            ).toString()}
                                                         </span>
-                                                        <p className="truncate text-sm font-medium capitalize text-slate-900">
+                                                        <p className="truncate text-sm font-medium text-slate-900 capitalize">
                                                             {formatToolName(
                                                                 tool.name,
                                                             )}
@@ -689,7 +697,8 @@ function ToolTrace({
                                                             tool.startedAt,
                                                         )}{' '}
                                                         ·{' '}
-                                                        {tool.status === 'running'
+                                                        {tool.status ===
+                                                        'running'
                                                             ? 'In progress'
                                                             : 'Finished'}
                                                     </p>
@@ -698,7 +707,7 @@ function ToolTrace({
                                                     <Badge
                                                         variant="outline"
                                                         className={cn(
-                                                            'rounded-full px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.16em]',
+                                                            'rounded-full px-2.5 py-1 text-[11px] font-medium tracking-[0.16em] uppercase',
                                                             toolStatusBadgeClassName(
                                                                 tool.status,
                                                             ),
@@ -732,9 +741,9 @@ function ToolTrace({
                                 </Collapsible>
                             ))
                         ) : (
-                            <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-sm text-slate-500">
-                                The full tool trace will appear once the first MCP
-                                call is emitted.
+                            <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-sm text-slate-500">
+                                The full tool trace will appear once the first
+                                MCP call is emitted.
                             </div>
                         )}
                     </CardContent>
@@ -754,16 +763,18 @@ function TraceBlock({
     mono?: boolean;
 }) {
     return (
-        <div className="rounded-2xl border border-slate-200 bg-white p-3">
-            <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-400">
+        <div className="rounded-lg border border-slate-200 bg-white p-3">
+            <p className="text-[11px] font-medium tracking-[0.18em] text-slate-400 uppercase">
                 {label}
             </p>
             {mono ? (
-                <pre className="mt-2 max-h-52 overflow-y-auto whitespace-pre-wrap break-words text-xs leading-5 text-slate-700">
+                <pre className="mt-2 max-h-52 overflow-y-auto text-xs leading-5 break-words whitespace-pre-wrap text-slate-700">
                     {content}
                 </pre>
             ) : (
-                <p className="mt-2 text-sm leading-6 text-slate-700">{content}</p>
+                <p className="mt-2 text-sm leading-6 text-slate-700">
+                    {content}
+                </p>
             )}
         </div>
     );
@@ -771,7 +782,7 @@ function TraceBlock({
 
 function NoticesPanel({ noticeEvents }: { noticeEvents: RunEventPayload[] }) {
     return (
-        <Card className="gap-0 overflow-hidden rounded-[28px] border-slate-950/10 bg-white/90 shadow-[0_24px_70px_-48px_rgba(15,23,42,0.45)]">
+        <Card className="gap-0 overflow-hidden rounded-xl border-slate-950/10 bg-white/90 shadow-[0_18px_50px_-40px_rgba(15,23,42,0.32)]">
             <Collapsible defaultOpen={noticeEvents.length > 0}>
                 <CardHeader className="border-b border-slate-950/8 px-5 py-4">
                     <div className="flex items-center justify-between gap-3">
@@ -804,7 +815,7 @@ function NoticesPanel({ noticeEvents }: { noticeEvents: RunEventPayload[] }) {
                                 {noticeEvents.map((event) => (
                                     <div
                                         key={event.id}
-                                        className="rounded-2xl border border-red-200 bg-red-50/80 px-4 py-3"
+                                        className="rounded-xl border border-red-200 bg-red-50/80 px-4 py-3"
                                     >
                                         <div className="flex items-center justify-between gap-3">
                                             <p className="text-sm font-medium text-red-800">
@@ -816,14 +827,14 @@ function NoticesPanel({ noticeEvents }: { noticeEvents: RunEventPayload[] }) {
                                                 )}
                                             </time>
                                         </div>
-                                        <p className="mt-1 whitespace-pre-wrap text-sm text-red-700">
+                                        <p className="mt-1 text-sm whitespace-pre-wrap text-red-700">
                                             {eventBody(event)}
                                         </p>
                                     </div>
                                 ))}
                             </div>
                         ) : (
-                            <div className="rounded-2xl border border-emerald-200 bg-emerald-50/80 px-4 py-3 text-sm text-emerald-700">
+                            <div className="rounded-xl border border-emerald-200 bg-emerald-50/80 px-4 py-3 text-sm text-emerald-700">
                                 No warnings or stderr notices have been streamed
                                 for this run.
                             </div>
@@ -837,7 +848,9 @@ function NoticesPanel({ noticeEvents }: { noticeEvents: RunEventPayload[] }) {
 
 export default function ReviewAnalysisRunShow({ run }: ReviewRunShowProps) {
     const { auth } = usePage<PageProps>().props;
-    const [runOverride, setRunOverride] = useState<RunUpdatedEvent | null>(null);
+    const [runOverride, setRunOverride] = useState<RunUpdatedEvent | null>(
+        null,
+    );
     const [liveEvents, setLiveEvents] = useState<RunEventPayload[]>([]);
     const [activeToolIndex, setActiveToolIndex] = useState(
         Number.MAX_SAFE_INTEGER,
@@ -1005,10 +1018,10 @@ export default function ReviewAnalysisRunShow({ run }: ReviewRunShowProps) {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`Run #${run.id.toString()}`} />
-            <div className="min-h-full bg-[radial-gradient(circle_at_top_left,_rgba(14,165,233,0.08),_transparent_28%),radial-gradient(circle_at_top_right,_rgba(15,23,42,0.08),_transparent_22%),linear-gradient(180deg,_#f8fafc,_#eef2ff_38%,_#f8fafc)] p-4 md:p-6">
-                <div className="mx-auto max-w-7xl space-y-6">
-                    <Card className="gap-0 overflow-hidden rounded-[32px] border-slate-950/10 bg-white/90 shadow-[0_30px_90px_-48px_rgba(15,23,42,0.45)]">
-                        <CardHeader className="gap-5 border-b border-slate-950/8 bg-[linear-gradient(180deg,rgba(248,250,252,0.98),rgba(255,255,255,0.92))] px-5 py-5 md:px-6">
+            <div className="min-h-full bg-[radial-gradient(circle_at_top_left,_rgba(14,165,233,0.05),_transparent_24%),linear-gradient(180deg,_#f7f7f8,_#ffffff_28%,_#fbfbfc)] p-4 md:p-6">
+                <div className="mx-auto max-w-7xl space-y-5">
+                    <Card className="gap-0 overflow-hidden rounded-xl border-slate-950/10 bg-white/90 shadow-[0_18px_50px_-40px_rgba(15,23,42,0.32)]">
+                        <CardHeader className="gap-4 border-b border-slate-950/8 bg-[linear-gradient(180deg,rgba(248,250,252,0.98),rgba(255,255,255,0.92))] px-4 py-4 md:px-5">
                             <div className="flex flex-wrap items-start justify-between gap-4">
                                 <div className="space-y-3">
                                     <Link
@@ -1022,14 +1035,14 @@ export default function ReviewAnalysisRunShow({ run }: ReviewRunShowProps) {
                                         <div className="flex flex-wrap items-center gap-2">
                                             <Badge
                                                 variant="outline"
-                                                className="rounded-full border-sky-200 bg-sky-50 px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.18em] text-sky-700"
+                                                className="rounded-full border-sky-200 bg-sky-50 px-2.5 py-1 text-[11px] font-medium tracking-[0.18em] text-sky-700 uppercase"
                                             >
                                                 Live analysis
                                             </Badge>
                                             <Badge
                                                 variant="outline"
                                                 className={cn(
-                                                    'rounded-full px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.18em]',
+                                                    'rounded-full px-2.5 py-1 text-[11px] font-medium tracking-[0.18em] uppercase',
                                                     statusBadgeClassName(
                                                         displayRun.status,
                                                     ),
@@ -1051,10 +1064,10 @@ export default function ReviewAnalysisRunShow({ run }: ReviewRunShowProps) {
                                             </Badge>
                                         </div>
                                         <div>
-                                            <h1 className="text-3xl font-semibold tracking-tight text-slate-950">
+                                            <h1 className="text-2xl font-semibold tracking-tight text-slate-950">
                                                 Run #{run.id.toString()}
                                             </h1>
-                                            <p className="mt-2 max-w-3xl text-sm text-pretty leading-6 text-slate-600">
+                                            <p className="mt-2 max-w-3xl text-sm leading-6 text-pretty text-slate-600">
                                                 {displayRun.summary ??
                                                     'Watching the Codex run in a cleaner, compact chat view while Reverb streams updates in real time.'}
                                             </p>
@@ -1075,8 +1088,8 @@ export default function ReviewAnalysisRunShow({ run }: ReviewRunShowProps) {
                                 </div>
                             </div>
                             <div className="grid gap-3 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
-                                <div className="rounded-[26px] bg-slate-950 px-5 py-4 text-white shadow-lg shadow-slate-950/10">
-                                    <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-sky-200/80">
+                                <div className="rounded-xl bg-slate-950 px-4 py-4 text-white shadow-lg shadow-slate-950/10">
+                                    <div className="flex items-center gap-2 text-[11px] font-medium tracking-[0.22em] text-sky-200/80 uppercase">
                                         <MessageSquareText className="size-3.5" />
                                         Mission
                                     </div>
@@ -1108,8 +1121,8 @@ export default function ReviewAnalysisRunShow({ run }: ReviewRunShowProps) {
                     </Card>
 
                     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_24rem]">
-                        <Card className="gap-0 overflow-hidden rounded-[32px] border-slate-950/10 bg-white/90 shadow-[0_30px_90px_-48px_rgba(15,23,42,0.45)]">
-                            <CardHeader className="border-b border-slate-950/8 px-5 py-5 md:px-6">
+                        <Card className="gap-0 overflow-hidden rounded-xl border-slate-950/10 bg-white/90 shadow-[0_18px_50px_-40px_rgba(15,23,42,0.32)]">
+                            <CardHeader className="border-b border-slate-950/8 px-4 py-4 md:px-5">
                                 <div className="flex items-start justify-between gap-4">
                                     <div>
                                         <CardTitle className="text-xl text-slate-950">
@@ -1117,8 +1130,9 @@ export default function ReviewAnalysisRunShow({ run }: ReviewRunShowProps) {
                                         </CardTitle>
                                         <CardDescription className="mt-1 text-sm text-slate-500">
                                             Assistant deltas are merged into a
-                                            readable thread. Operational milestones
-                                            stay lightweight in the same flow.
+                                            readable thread. Operational
+                                            milestones stay lightweight in the
+                                            same flow.
                                         </CardDescription>
                                     </div>
                                     <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-500">
@@ -1127,10 +1141,10 @@ export default function ReviewAnalysisRunShow({ run }: ReviewRunShowProps) {
                                     </div>
                                 </div>
                             </CardHeader>
-                            <CardContent className="px-5 py-6 md:px-6">
+                            <CardContent className="px-4 py-5 md:px-5">
                                 {timelineEvents.length > 0 ? (
                                     <div className="relative space-y-4">
-                                        <div className="absolute bottom-0 left-6 top-0 w-px bg-gradient-to-b from-sky-100 via-slate-200 to-transparent" />
+                                        <div className="absolute top-0 bottom-0 left-6 w-px bg-gradient-to-b from-sky-100 via-slate-200 to-transparent" />
                                         {timelineEvents.map((event) => (
                                             <ThreadMessage
                                                 key={event.id}
@@ -1144,9 +1158,9 @@ export default function ReviewAnalysisRunShow({ run }: ReviewRunShowProps) {
                                         <div ref={timelineEndRef} />
                                     </div>
                                 ) : (
-                                    <div className="rounded-[24px] border border-dashed border-slate-200 bg-slate-50 px-5 py-10 text-sm text-slate-500">
-                                        Waiting for the local helper to claim this
-                                        run and begin streaming activity.
+                                    <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-5 py-10 text-sm text-slate-500">
+                                        Waiting for the local helper to claim
+                                        this run and begin streaming activity.
                                     </div>
                                 )}
                             </CardContent>
@@ -1155,7 +1169,9 @@ export default function ReviewAnalysisRunShow({ run }: ReviewRunShowProps) {
                         <div className="space-y-4">
                             <ToolWorkbench
                                 toolActivities={toolActivities}
-                                resolvedActiveToolIndex={resolvedActiveToolIndex}
+                                resolvedActiveToolIndex={
+                                    resolvedActiveToolIndex
+                                }
                                 activeTool={activeTool}
                                 isRunning={displayRun.status === 'running'}
                                 onPrevious={showPreviousTool}
@@ -1170,7 +1186,7 @@ export default function ReviewAnalysisRunShow({ run }: ReviewRunShowProps) {
                                 onSelect={selectToolAt}
                             />
 
-                            <Card className="gap-0 overflow-hidden rounded-[28px] border-slate-950/10 bg-white/90 shadow-[0_24px_70px_-48px_rgba(15,23,42,0.45)]">
+                            <Card className="gap-0 overflow-hidden rounded-xl border-slate-950/10 bg-white/90 shadow-[0_18px_50px_-40px_rgba(15,23,42,0.32)]">
                                 <CardHeader className="border-b border-slate-950/8 px-5 py-4">
                                     <div className="flex items-center justify-between gap-3">
                                         <div>
@@ -1189,13 +1205,13 @@ export default function ReviewAnalysisRunShow({ run }: ReviewRunShowProps) {
                                 </CardHeader>
                                 <CardContent className="px-5 py-5">
                                     <div className="grid gap-3 text-sm text-slate-600">
-                                        <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                                        <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
                                             Assistant deltas merge into single
                                             messages by `item_id`.
                                         </div>
-                                        <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-                                            Tool calls stay compact by default and
-                                            expand only when needed.
+                                        <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+                                            Tool calls stay compact by default
+                                            and expand only when needed.
                                         </div>
                                     </div>
                                 </CardContent>

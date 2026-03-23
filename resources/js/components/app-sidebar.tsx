@@ -7,7 +7,7 @@ import {
     ScrollText,
     ShoppingBag,
 } from 'lucide-react';
-import AppLogo from '@/components/app-logo';
+import AppLogoIcon from '@/components/app-logo-icon';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
@@ -25,24 +25,28 @@ import type { NavItem } from '@/types';
 
 const mainNavItems: NavItem[] = [
     {
-        title: 'Dashboard',
+        title: 'Overview',
         href: dashboard(),
         icon: LayoutGrid,
+        description: 'Demo path, run status, and next action.',
     },
     {
         title: 'Signals',
         href: '/admin/signals',
         icon: Radar,
+        description: 'Search reviews and monitor live analysis.',
     },
     {
         title: 'Audit Log',
         href: '/admin/audit-log',
         icon: ScrollText,
+        description: 'Track every system and operator action.',
     },
     {
         title: 'Proposals',
         href: '/admin/proposals',
         icon: ClipboardList,
+        description: 'Review and publish storefront changes.',
     },
 ];
 
@@ -62,23 +66,52 @@ const footerNavItems: NavItem[] = [
 export function AppSidebar() {
     return (
         <Sidebar collapsible="icon" variant="inset">
-            <SidebarHeader>
+            <SidebarHeader className="border-b border-slate-950/6 px-2 py-2">
                 <SidebarMenu>
                     <SidebarMenuItem>
-                        <SidebarMenuButton size="lg" asChild>
-                            <Link href={dashboard()} prefetch>
-                                <AppLogo />
+                        <SidebarMenuButton
+                            size="lg"
+                            asChild
+                            className="h-auto rounded-lg px-2.5 py-2 hover:bg-slate-100 data-[state=open]:bg-slate-100"
+                        >
+                            <Link
+                                href={dashboard()}
+                                prefetch
+                                className="flex items-center gap-3"
+                            >
+                                <AppLogoIcon className="size-8 shrink-0" />
+                                <div className="grid flex-1 text-left group-data-[collapsible=icon]:hidden">
+                                    <span className="truncate text-sm font-semibold tracking-tight text-slate-950">
+                                        Signals
+                                    </span>
+                                    <span className="text-[11px] font-medium tracking-[0.2em] text-slate-400 uppercase">
+                                        Admin panel
+                                    </span>
+                                    <span className="truncate text-xs text-slate-500">
+                                        Review, approve, publish.
+                                    </span>
+                                </div>
                             </Link>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                 </SidebarMenu>
             </SidebarHeader>
 
-            <SidebarContent>
+            <SidebarContent className="px-2 py-3">
+                <div className="px-2 pb-2 group-data-[collapsible=icon]:hidden">
+                    <p className="text-[11px] font-medium tracking-[0.2em] text-slate-400 uppercase">
+                        Workspace
+                    </p>
+                </div>
                 <NavMain items={mainNavItems} />
             </SidebarContent>
 
-            <SidebarFooter>
+            <SidebarFooter className="border-t border-slate-950/6 px-2 py-3">
+                <div className="px-2 pb-2 group-data-[collapsible=icon]:hidden">
+                    <p className="text-[11px] font-medium tracking-[0.2em] text-slate-400 uppercase">
+                        Links
+                    </p>
+                </div>
                 <NavFooter items={footerNavItems} className="mt-auto" />
                 <NavUser />
             </SidebarFooter>

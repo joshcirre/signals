@@ -27,17 +27,20 @@ export function NavFooter({
                         <SidebarMenuItem key={item.title}>
                             <SidebarMenuButton
                                 asChild
-                                className="rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-950"
+                                className="h-auto rounded-lg px-2.5 py-2 text-slate-500 hover:bg-slate-100 hover:text-slate-950"
                             >
                                 <a
                                     href={toUrl(item.href)}
                                     target="_blank"
                                     rel="noopener noreferrer"
+                                    className="flex items-center gap-3"
                                 >
                                     {item.icon && (
                                         <item.icon className="size-4 shrink-0" />
                                     )}
-                                    <span>{item.title}</span>
+                                    <span className="text-sm font-medium group-data-[collapsible=icon]:hidden">
+                                        {item.title}
+                                    </span>
                                 </a>
                             </SidebarMenuButton>
                         </SidebarMenuItem>

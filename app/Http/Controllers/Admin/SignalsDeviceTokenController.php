@@ -11,12 +11,13 @@ class SignalsDeviceTokenController extends Controller
 {
     public function __invoke(Request $request, IssueHelperTokenAction $issueHelperToken): RedirectResponse
     {
-        $deviceName = $request->string('name')->toString() ?: 'Signals Helper';
-        $token = $issueHelperToken->handle($request->user(), $deviceName);
+        $token = $issueHelperToken->handle($request->user(), 'Signals Helper');
 
-        return back()->with([
+        $request->session()->put([
             'helper_token' => $token['token'],
-            'helper_name' => $deviceName,
+            'helper_name' => $token['device']->name,
         ]);
+
+        return back();
     }
 }

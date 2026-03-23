@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Actions\Signals\IssueHelperTokenAction;
 use App\Http\Controllers\Controller;
 use App\Models\ActionLog;
 use App\Models\Product;
@@ -18,11 +19,25 @@ use Inertia\Response;
 
 class SignalsController extends Controller
 {
-    public function index(Request $request): Response
+    public function index(Request $request, IssueHelperTokenAction $issueHelperToken): Response
     {
         $search = mb_trim($request->string('q')->toString());
         $terms = $this->expandedSearchTerms($search);
         $user = $request->user();
+        $helperToken = $request->session()->get('helper_token');
+        $helperName = $request->session()->get('helper_name', 'Signals Helper');
+
+        if ($user !== null && ! is_string($helperToken)) {
+            $token = $issueHelperToken->handle($user, 'Signals Helper');
+            $helperToken = $token['token'];
+            $helperName = $token['device']->name;
+
+            $request->session()->put([
+                'helper_token' => $helperToken,
+                'helper_name' => $helperName,
+            ]);
+        }
+
         $latestRun = ReviewAnalysisRun::query()
             ->where('user_id', $user?->id)
             ->with('actionLogs')

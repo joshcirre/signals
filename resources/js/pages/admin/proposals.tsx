@@ -1,8 +1,18 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { PencilLine, Save, ShieldCheck, ShieldX } from 'lucide-react';
 import { useState } from 'react';
+import {
+    AdminHeader,
+    AdminMetric,
+    AdminPage,
+    AdminPill,
+    AdminSurface,
+    AdminSurfaceBody,
+    AdminSurfaceHeader,
+} from '@/components/admin-page';
 import AppLayout from '@/layouts/app-layout';
 import { storeBrand } from '@/lib/brand';
+import { cn } from '@/lib/utils';
 import { dashboard } from '@/routes';
 import admin from '@/routes/admin';
 import productRoutes from '@/routes/products';
@@ -46,6 +56,9 @@ export default function ProposalQueue({
     proposals,
 }: ProposalQueueProps) {
     const statusFilter = filters.status;
+    const [selectedProposalId, setSelectedProposalId] = useState<number | null>(
+        proposals[0]?.id ?? null,
+    );
     const [editingProposalId, setEditingProposalId] = useState<number | null>(
         null,
     );
@@ -54,326 +67,476 @@ export default function ProposalQueue({
         rationale: '',
         confidence: 0.9,
     });
+    const proposalCounts = proposals.reduce(
+        (counts, proposal) => {
+            counts.total += 1;
+            counts[proposal.status as 'pending' | 'applied' | 'rejected'] += 1;
+
+            return counts;
+        },
+        {
+            total: 0,
+            pending: 0,
+            applied: 0,
+            rejected: 0,
+        },
+    );
+    const selectedProposal =
+        proposals.find((proposal) => proposal.id === selectedProposalId) ??
+        proposals[0] ??
+        null;
+    const selectedContent =
+        selectedProposal === null
+            ? ''
+            : selectedProposal.type === 'review_response'
+              ? (selectedProposal.payload.response_draft ?? '')
+              : (selectedProposal.payload.after ?? '');
+    const isEditingSelected =
+        selectedProposal !== null && editingProposalId === selectedProposal.id;
+
+    const beginEditingProposal = (proposalId: number) => {
+        const proposal = proposals.find((item) => item.id === proposalId);
+
+        if (!proposal) {
+            return;
+        }
+
+        form.setData({
+            content:
+                proposal.type === 'review_response'
+                    ? (proposal.payload.response_draft ?? '')
+                    : (proposal.payload.after ?? ''),
+            rationale: proposal.rationale,
+            confidence: proposal.confidence,
+        });
+        setSelectedProposalId(proposal.id);
+        setEditingProposalId(proposal.id);
+    };
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Proposal Queue" />
-            <div className="space-y-4 p-4 md:p-5">
-                {/* Page header */}
-                <div className="flex flex-wrap items-center justify-between gap-4">
-                    <div>
-                        <h1 className="text-sm font-semibold text-slate-950">
-                            Proposal queue
-                        </h1>
-                        <p className="mt-0.5 text-sm text-slate-500">
-                            Review, edit, and publish changes{' '}
-                            {storeBrand.adminName} prepared.
-                        </p>
-                    </div>
-                    <div className="flex items-center gap-1">
-                        {['pending', 'applied', 'rejected', 'all'].map(
-                            (status) => (
-                                <button
-                                    key={status}
-                                    type="button"
-                                    onClick={() =>
-                                        router.get(
-                                            admin.proposals.index().url,
-                                            { status },
-                                            {
-                                                preserveState: true,
-                                                preserveScroll: true,
-                                            },
-                                        )
-                                    }
-                                    className={
-                                        statusFilter === status
-                                            ? 'rounded-md bg-slate-950 px-3 py-1.5 text-xs font-medium text-white'
-                                            : 'rounded-md px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-100'
-                                    }
-                                >
-                                    {status}
-                                </button>
-                            ),
-                        )}
-                    </div>
-                </div>
 
-                {/* Main layout */}
-                <section className="grid gap-4 lg:grid-cols-[0.82fr_1.18fr]">
-                    {/* Left: proposal list */}
-                    <div className="overflow-hidden rounded-lg border border-slate-950/10 bg-white">
-                        <div className="border-b border-slate-950/5 px-4 py-3">
-                            <p className="text-xs font-medium text-slate-500">
-                                {proposals.length} proposal
-                                {proposals.length !== 1 ? 's' : ''}
-                            </p>
-                        </div>
-                        <ul role="list" className="divide-y divide-slate-950/5">
-                            {proposals.map((proposal) => (
-                                <li key={`summary-${proposal.id}`}>
+            <AdminPage>
+                <AdminHeader
+                    eyebrow="Review queue"
+                    title="Proposal queue"
+                    description={
+                        <>
+                            A tighter review surface for the changes{' '}
+                            {storeBrand.adminName} prepared. Pick the next
+                            proposal from the queue, inspect it in the
+                            right-hand pane, then approve, reject, or edit
+                            without losing context.
+                        </>
+                    }
+                    meta={
+                        <>
+                            <AdminPill>
+                                <span className="size-1.5 rounded-full bg-emerald-500" />
+                                {proposalCounts.pending} pending
+                            </AdminPill>
+                            <AdminPill>
+                                <span className="size-1.5 rounded-full bg-slate-300" />
+                                {proposalCounts.total} in current view
+                            </AdminPill>
+                        </>
+                    }
+                    actions={
+                        <div className="flex flex-wrap gap-1 rounded-lg border border-slate-950/8 bg-slate-50 p-1">
+                            {['pending', 'applied', 'rejected', 'all'].map(
+                                (status) => (
                                     <button
+                                        key={status}
                                         type="button"
                                         onClick={() =>
-                                            setEditingProposalId(proposal.id)
+                                            router.get(
+                                                admin.proposals.index().url,
+                                                { status },
+                                                {
+                                                    preserveState: true,
+                                                    preserveScroll: true,
+                                                },
+                                            )
                                         }
-                                        className={`w-full px-4 py-3 text-left ${
-                                            editingProposalId === proposal.id
-                                                ? 'bg-slate-950 text-white'
-                                                : 'hover:bg-slate-50'
-                                        }`}
+                                        className={cn(
+                                            'rounded-md px-3 py-1.5 text-xs font-medium capitalize transition',
+                                            statusFilter === status
+                                                ? 'bg-white text-slate-950 shadow-sm'
+                                                : 'text-slate-500 hover:text-slate-950',
+                                        )}
                                     >
-                                        <p
-                                            className={`text-xs ${editingProposalId === proposal.id ? 'text-white/60' : 'text-slate-400'}`}
-                                        >
-                                            {proposal.type.replaceAll(
-                                                '_',
-                                                ' ',
-                                            )}
-                                        </p>
-                                        <p className="mt-0.5 text-sm font-medium">
-                                            {proposal.target_label}
-                                        </p>
-                                        <p
-                                            className={`mt-0.5 text-xs ${editingProposalId === proposal.id ? 'text-white/50' : 'text-slate-400'}`}
-                                        >
-                                            {proposal.created_at}
-                                        </p>
+                                        {status}
                                     </button>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
+                                ),
+                            )}
+                        </div>
+                    }
+                />
 
-                    {/* Right: proposal details */}
-                    <div className="space-y-3">
-                        {proposals.map((proposal) => {
-                            const content =
-                                proposal.type === 'review_response'
-                                    ? (proposal.payload.response_draft ?? '')
-                                    : (proposal.payload.after ?? '');
-                            const isEditing =
-                                editingProposalId === proposal.id;
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                    <AdminMetric
+                        label="Pending"
+                        value={proposalCounts.pending}
+                        detail="Ready for operator review."
+                    />
+                    <AdminMetric
+                        label="Applied"
+                        value={proposalCounts.applied}
+                        detail="Already published to the storefront."
+                    />
+                    <AdminMetric
+                        label="Rejected"
+                        value={proposalCounts.rejected}
+                        detail="Dismissed during review."
+                    />
+                    <AdminMetric
+                        label="Visible now"
+                        value={proposalCounts.total}
+                        detail="Items in the current filter."
+                    />
+                </div>
 
-                            return (
-                                <article
-                                    key={proposal.id}
-                                    className={`rounded-lg border bg-white p-5 ${
-                                        isEditing
-                                            ? 'border-slate-950/30'
-                                            : 'border-slate-950/10'
-                                    }`}
-                                >
-                                    <div className="flex flex-wrap items-start justify-between gap-3">
-                                        <div>
-                                            <p className="text-xs text-slate-400">
-                                                {proposal.type.replaceAll(
-                                                    '_',
-                                                    ' ',
+                <div className="grid gap-4 xl:grid-cols-[360px_minmax(0,1fr)]">
+                    <AdminSurface className="overflow-hidden xl:sticky xl:top-20 xl:h-fit">
+                        <AdminSurfaceHeader
+                            title="Queue"
+                            description="Select the next proposal to review."
+                            action={
+                                <span className="text-xs font-medium text-slate-400">
+                                    {proposals.length} item
+                                    {proposals.length === 1 ? '' : 's'}
+                                </span>
+                            }
+                        />
+                        <AdminSurfaceBody className="space-y-2">
+                            {proposals.length > 0 ? (
+                                proposals.map((proposal) => (
+                                    <button
+                                        key={proposal.id}
+                                        type="button"
+                                        onClick={() => {
+                                            setSelectedProposalId(proposal.id);
+                                            setEditingProposalId(null);
+                                        }}
+                                        className={cn(
+                                            'w-full rounded-lg border px-3 py-3 text-left transition',
+                                            proposal.id === selectedProposal?.id
+                                                ? 'border-slate-950 bg-slate-950 text-white shadow-sm'
+                                                : 'border-slate-950/8 bg-slate-50/80 text-slate-800 hover:border-slate-950/20 hover:bg-white',
+                                        )}
+                                    >
+                                        <div className="flex items-start justify-between gap-3">
+                                            <div className="min-w-0">
+                                                <p
+                                                    className={cn(
+                                                        'text-[11px] font-medium tracking-[0.18em] uppercase',
+                                                        proposal.id ===
+                                                            selectedProposal?.id
+                                                            ? 'text-white/55'
+                                                            : 'text-slate-400',
+                                                    )}
+                                                >
+                                                    {proposal.type.replaceAll(
+                                                        '_',
+                                                        ' ',
+                                                    )}
+                                                </p>
+                                                <p className="mt-1 truncate text-sm font-medium">
+                                                    {proposal.target_label}
+                                                </p>
+                                            </div>
+                                            <span
+                                                className={cn(
+                                                    'rounded-full px-2 py-1 text-[11px] font-semibold',
+                                                    proposal.id ===
+                                                        selectedProposal?.id
+                                                        ? 'bg-white/10 text-white'
+                                                        : 'bg-white text-slate-500 ring-1 ring-slate-950/8',
                                                 )}
-                                            </p>
-                                            <h2 className="mt-0.5 text-sm font-semibold text-slate-950">
-                                                {proposal.target_label}
-                                            </h2>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <span className="rounded-md bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700">
+                                            >
                                                 {(
                                                     proposal.confidence * 100
                                                 ).toFixed(0)}
                                                 %
                                             </span>
-                                            <span className="rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600">
+                                        </div>
+                                        <div className="mt-3 flex items-center justify-between gap-3 text-xs">
+                                            <span
+                                                className={cn(
+                                                    'capitalize',
+                                                    proposal.id ===
+                                                        selectedProposal?.id
+                                                        ? 'text-white/65'
+                                                        : 'text-slate-400',
+                                                )}
+                                            >
                                                 {proposal.status}
                                             </span>
+                                            <span
+                                                className={cn(
+                                                    proposal.id ===
+                                                        selectedProposal?.id
+                                                        ? 'text-white/45'
+                                                        : 'text-slate-400',
+                                                )}
+                                            >
+                                                {proposal.created_at}
+                                            </span>
                                         </div>
-                                    </div>
+                                    </button>
+                                ))
+                            ) : (
+                                <div className="rounded-lg border border-dashed border-slate-950/8 px-3 py-6 text-sm leading-6 text-slate-500">
+                                    No proposals match the current filter.
+                                </div>
+                            )}
+                        </AdminSurfaceBody>
+                    </AdminSurface>
 
-                                    {isEditing ? (
-                                        <form
-                                            className="mt-4 space-y-3"
-                                            onSubmit={(event) => {
-                                                event.preventDefault();
-                                                form.patch(
-                                                    admin.proposals.update({
-                                                        proposal: proposal.id,
-                                                    }).url,
-                                                    {
-                                                        preserveScroll: true,
-                                                        onSuccess: () => {
-                                                            setEditingProposalId(
-                                                                null,
-                                                            );
-                                                        },
-                                                    },
-                                                );
-                                            }}
-                                        >
-                                            <label className="block text-xs font-medium text-slate-700">
-                                                Proposed content
-                                                <textarea
-                                                    value={form.data.content}
-                                                    onChange={(event) =>
-                                                        form.setData(
-                                                            'content',
-                                                            event.target.value,
-                                                        )
-                                                    }
-                                                    className="mt-1.5 min-h-28 w-full rounded-md border border-slate-950/10 px-3 py-2 text-sm outline-none focus:border-slate-950/30"
-                                                />
-                                            </label>
-                                            <label className="block text-xs font-medium text-slate-700">
-                                                Rationale
-                                                <textarea
-                                                    value={form.data.rationale}
-                                                    onChange={(event) =>
-                                                        form.setData(
-                                                            'rationale',
-                                                            event.target.value,
-                                                        )
-                                                    }
-                                                    className="mt-1.5 min-h-20 w-full rounded-md border border-slate-950/10 px-3 py-2 text-sm outline-none focus:border-slate-950/30"
-                                                />
-                                            </label>
-                                            <label className="block text-xs font-medium text-slate-700">
-                                                Confidence
-                                                <input
-                                                    type="number"
-                                                    min="0"
-                                                    max="1"
-                                                    step="0.01"
-                                                    value={form.data.confidence}
-                                                    onChange={(event) =>
-                                                        form.setData(
-                                                            'confidence',
-                                                            Number(
-                                                                event.target
-                                                                    .value,
-                                                            ),
-                                                        )
-                                                    }
-                                                    className="mt-1.5 w-full rounded-md border border-slate-950/10 px-3 py-2 text-sm outline-none focus:border-slate-950/30"
-                                                />
-                                            </label>
-                                            <div className="flex items-center gap-2">
-                                                <button
-                                                    type="submit"
-                                                    disabled={form.processing}
-                                                    className="inline-flex items-center gap-2 rounded-lg bg-slate-950 py-2 pl-2 pr-3 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60"
-                                                >
-                                                    <Save className="size-4 shrink-0" />
-                                                    Save edits
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() =>
+                    <AdminSurface>
+                        <AdminSurfaceHeader
+                            title={
+                                selectedProposal
+                                    ? selectedProposal.target_label
+                                    : 'Nothing selected'
+                            }
+                            description={
+                                selectedProposal ? (
+                                    <span className="capitalize">
+                                        {selectedProposal.type.replaceAll(
+                                            '_',
+                                            ' ',
+                                        )}{' '}
+                                        · {selectedProposal.status}
+                                    </span>
+                                ) : (
+                                    'Choose a proposal from the queue to inspect it.'
+                                )
+                            }
+                            action={
+                                selectedProposal ? (
+                                    <AdminPill className="border-emerald-200 bg-emerald-50 text-emerald-700">
+                                        {(
+                                            selectedProposal.confidence * 100
+                                        ).toFixed(0)}
+                                        % confidence
+                                    </AdminPill>
+                                ) : null
+                            }
+                        />
+                        <AdminSurfaceBody className="space-y-4">
+                            {selectedProposal ? (
+                                isEditingSelected ? (
+                                    <form
+                                        className="space-y-4"
+                                        onSubmit={(event) => {
+                                            event.preventDefault();
+                                            form.patch(
+                                                admin.proposals.update({
+                                                    proposal:
+                                                        selectedProposal.id,
+                                                }).url,
+                                                {
+                                                    preserveScroll: true,
+                                                    onSuccess: () => {
                                                         setEditingProposalId(
                                                             null,
-                                                        )
-                                                    }
-                                                    className="rounded-lg border border-slate-950/10 px-3 py-2 text-sm font-medium text-slate-600 hover:border-slate-950/30"
-                                                >
-                                                    Cancel
-                                                </button>
-                                            </div>
-                                        </form>
-                                    ) : (
-                                        <>
-                                            <p className="mt-3 text-sm text-pretty text-slate-500">
-                                                {proposal.rationale}
+                                                        );
+                                                    },
+                                                },
+                                            );
+                                        }}
+                                    >
+                                        <label className="block text-xs font-medium tracking-[0.18em] text-slate-400 uppercase">
+                                            Proposed content
+                                            <textarea
+                                                value={form.data.content}
+                                                onChange={(event) =>
+                                                    form.setData(
+                                                        'content',
+                                                        event.target.value,
+                                                    )
+                                                }
+                                                className="mt-2 min-h-36 w-full rounded-lg border border-slate-950/10 bg-white px-3 py-3 text-sm leading-6 text-slate-900 transition outline-none focus:border-slate-950/20 focus:ring-2 focus:ring-slate-950/5"
+                                            />
+                                        </label>
+                                        <label className="block text-xs font-medium tracking-[0.18em] text-slate-400 uppercase">
+                                            Rationale
+                                            <textarea
+                                                value={form.data.rationale}
+                                                onChange={(event) =>
+                                                    form.setData(
+                                                        'rationale',
+                                                        event.target.value,
+                                                    )
+                                                }
+                                                className="mt-2 min-h-28 w-full rounded-lg border border-slate-950/10 bg-white px-3 py-3 text-sm leading-6 text-slate-900 transition outline-none focus:border-slate-950/20 focus:ring-2 focus:ring-slate-950/5"
+                                            />
+                                        </label>
+                                        <label className="block text-xs font-medium tracking-[0.18em] text-slate-400 uppercase">
+                                            Confidence
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                max="1"
+                                                step="0.01"
+                                                value={form.data.confidence}
+                                                onChange={(event) =>
+                                                    form.setData(
+                                                        'confidence',
+                                                        Number(
+                                                            event.target.value,
+                                                        ),
+                                                    )
+                                                }
+                                                className="mt-2 w-full rounded-lg border border-slate-950/10 bg-white px-3 py-2.5 text-sm text-slate-900 transition outline-none focus:border-slate-950/20 focus:ring-2 focus:ring-slate-950/5"
+                                            />
+                                        </label>
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            <button
+                                                type="submit"
+                                                disabled={form.processing}
+                                                className="inline-flex items-center gap-2 rounded-lg bg-slate-950 px-3 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:opacity-60"
+                                            >
+                                                <Save className="size-4" />
+                                                Save edits
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    setEditingProposalId(null)
+                                                }
+                                                className="rounded-lg border border-slate-950/10 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition hover:border-slate-950/20 hover:bg-slate-50"
+                                            >
+                                                Cancel
+                                            </button>
+                                        </div>
+                                    </form>
+                                ) : (
+                                    <>
+                                        <div className="grid gap-3 md:grid-cols-3">
+                                            <AdminMetric
+                                                label="Created"
+                                                value={
+                                                    selectedProposal.created_at
+                                                }
+                                            />
+                                            <AdminMetric
+                                                label="Status"
+                                                value={selectedProposal.status}
+                                                className="capitalize"
+                                            />
+                                            <AdminMetric
+                                                label="Confidence"
+                                                value={`${(
+                                                    selectedProposal.confidence *
+                                                    100
+                                                ).toFixed(0)}%`}
+                                            />
+                                        </div>
+
+                                        <div className="rounded-lg border border-slate-950/8 bg-slate-50/80 p-4">
+                                            <p className="text-[11px] font-medium tracking-[0.2em] text-slate-400 uppercase">
+                                                Rationale
                                             </p>
-                                            <div className="mt-3 rounded bg-slate-50 p-3">
-                                                <p className="text-xs font-medium text-slate-700">
-                                                    {proposal.type ===
-                                                    'review_response'
-                                                        ? 'Suggested response'
-                                                        : 'Suggested change'}
-                                                </p>
-                                                <p className="mt-1.5 text-sm text-pretty text-slate-600">
-                                                    {content}
-                                                </p>
-                                            </div>
-                                            <div className="mt-4 flex flex-wrap items-center gap-2">
-                                                {proposal.status ===
-                                                'pending' ? (
-                                                    <>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => {
-                                                                form.setData({
-                                                                    content,
-                                                                    rationale:
-                                                                        proposal.rationale,
-                                                                    confidence:
-                                                                        proposal.confidence,
-                                                                });
-                                                                setEditingProposalId(
-                                                                    proposal.id,
-                                                                );
-                                                            }}
-                                                            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-950/10 py-1.5 pl-1.5 pr-3 text-xs font-medium text-slate-600 hover:border-slate-950/30"
-                                                        >
-                                                            <PencilLine className="size-4 shrink-0" />
-                                                            Edit
-                                                        </button>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() =>
-                                                                router.post(
-                                                                    admin.proposals.approve(
-                                                                        {
-                                                                            proposal:
-                                                                                proposal.id,
-                                                                        },
-                                                                    ).url,
-                                                                )
-                                                            }
-                                                            className="inline-flex items-center gap-1.5 rounded-lg bg-slate-950 py-1.5 pl-1.5 pr-3 text-xs font-medium text-white hover:bg-slate-800"
-                                                        >
-                                                            <ShieldCheck className="size-4 shrink-0" />
-                                                            Approve
-                                                        </button>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() =>
-                                                                router.post(
-                                                                    admin.proposals.reject(
-                                                                        {
-                                                                            proposal:
-                                                                                proposal.id,
-                                                                        },
-                                                                    ).url,
-                                                                )
-                                                            }
-                                                            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-950/10 py-1.5 pl-1.5 pr-3 text-xs font-medium text-slate-600 hover:border-slate-950/30"
-                                                        >
-                                                            <ShieldX className="size-4 shrink-0" />
-                                                            Reject
-                                                        </button>
-                                                    </>
-                                                ) : null}
-                                                {proposal.target_slug ? (
-                                                    <Link
-                                                        href={
-                                                            productRoutes.show({
-                                                                product:
-                                                                    proposal.target_slug,
-                                                            }).url
+                                            <p className="mt-2 text-sm leading-6 text-slate-600">
+                                                {selectedProposal.rationale}
+                                            </p>
+                                        </div>
+
+                                        <div className="rounded-lg border border-slate-950/8 bg-white p-4">
+                                            <p className="text-[11px] font-medium tracking-[0.2em] text-slate-400 uppercase">
+                                                {selectedProposal.type ===
+                                                'review_response'
+                                                    ? 'Suggested response'
+                                                    : 'Suggested change'}
+                                            </p>
+                                            <p className="mt-2 text-sm leading-6 whitespace-pre-wrap text-slate-700">
+                                                {selectedContent ||
+                                                    'No content attached.'}
+                                            </p>
+                                        </div>
+
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            {selectedProposal.status ===
+                                            'pending' ? (
+                                                <>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            beginEditingProposal(
+                                                                selectedProposal.id,
+                                                            )
                                                         }
-                                                        className="rounded-lg border border-slate-950/10 px-3 py-1.5 text-xs font-medium text-slate-600 hover:border-slate-950/30"
+                                                        className="inline-flex items-center gap-2 rounded-lg border border-slate-950/10 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-950/20 hover:bg-slate-50"
                                                     >
-                                                        Preview storefront
-                                                    </Link>
-                                                ) : null}
-                                            </div>
-                                        </>
-                                    )}
-                                </article>
-                            );
-                        })}
-                    </div>
-                </section>
-            </div>
+                                                        <PencilLine className="size-4" />
+                                                        Edit proposal
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            router.post(
+                                                                admin.proposals.approve(
+                                                                    {
+                                                                        proposal:
+                                                                            selectedProposal.id,
+                                                                    },
+                                                                ).url,
+                                                            )
+                                                        }
+                                                        className="inline-flex items-center gap-2 rounded-lg bg-slate-950 px-3 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
+                                                    >
+                                                        <ShieldCheck className="size-4" />
+                                                        Approve and publish
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            router.post(
+                                                                admin.proposals.reject(
+                                                                    {
+                                                                        proposal:
+                                                                            selectedProposal.id,
+                                                                    },
+                                                                ).url,
+                                                            )
+                                                        }
+                                                        className="inline-flex items-center gap-2 rounded-lg border border-slate-950/10 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition hover:border-slate-950/20 hover:bg-slate-50"
+                                                    >
+                                                        <ShieldX className="size-4" />
+                                                        Reject
+                                                    </button>
+                                                </>
+                                            ) : null}
+
+                                            {selectedProposal.target_slug ? (
+                                                <Link
+                                                    href={
+                                                        productRoutes.show({
+                                                            product:
+                                                                selectedProposal.target_slug,
+                                                        }).url
+                                                    }
+                                                    className="rounded-lg border border-slate-950/10 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition hover:border-slate-950/20 hover:bg-slate-50"
+                                                >
+                                                    Preview storefront
+                                                </Link>
+                                            ) : null}
+                                        </div>
+                                    </>
+                                )
+                            ) : (
+                                <div className="rounded-lg border border-dashed border-slate-950/8 px-4 py-10 text-sm leading-6 text-slate-500">
+                                    No proposal is selected because the queue is
+                                    empty for this filter.
+                                </div>
+                            )}
+                        </AdminSurfaceBody>
+                    </AdminSurface>
+                </div>
+            </AdminPage>
         </AppLayout>
     );
 }
