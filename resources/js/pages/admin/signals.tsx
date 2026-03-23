@@ -63,6 +63,7 @@ interface SignalsProps {
     helper: {
         default_name: string;
         latest_device_seen_at: string | null;
+        latest_device_seen_at_human: string | null;
     };
     latestRun: {
         id: number;
@@ -173,6 +174,7 @@ interface HelperHeartbeatUpdatedEvent {
     id: number;
     name: string;
     last_seen_at: string | null;
+    last_seen_at_human: string | null;
     is_active: boolean;
 }
 
@@ -305,6 +307,9 @@ function SignalsPage({
     const [helperLastSeenAt, setHelperLastSeenAt] = useState(
         helper.latest_device_seen_at,
     );
+    const [helperLastSeenAtHuman, setHelperLastSeenAtHuman] = useState(
+        helper.latest_device_seen_at_human,
+    );
     const [runOverride, setRunOverride] = useState<RunUpdatedEvent | null>(
         null,
     );
@@ -396,6 +401,7 @@ function SignalsPage({
         helperHeartbeatEventName,
         (payload) => {
             setHelperLastSeenAt(payload.last_seen_at);
+            setHelperLastSeenAtHuman(payload.last_seen_at_human);
         },
         [auth.user.id],
     );
@@ -629,8 +635,11 @@ function SignalsPage({
                                 </>
                             ) : (
                                 <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm leading-6 text-emerald-800">
-                                    The helper last checked in at{' '}
-                                    {helperLastSeenAt}.
+                                    The helper last checked in{' '}
+                                    <span title={helperLastSeenAt ?? undefined}>
+                                        {helperLastSeenAtHuman}
+                                    </span>
+                                    .
                                 </div>
                             )}
 

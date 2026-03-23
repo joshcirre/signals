@@ -6,6 +6,7 @@ use App\Events\SignalsHelperHeartbeatUpdated;
 use App\Models\ActionLog;
 use App\Models\ReviewAnalysisRun;
 use App\Models\SignalsDevice;
+use Carbon\CarbonImmutable;
 
 test('review analysis run updated broadcast uses the private user channel contract', function (): void {
     $run = ReviewAnalysisRun::factory()->create([
@@ -57,9 +58,11 @@ test('review analysis event broadcast uses the private user channel contract', f
 });
 
 test('signals helper heartbeat broadcast uses the private user channel contract', function (): void {
+    CarbonImmutable::setTestNow('2026-03-23 06:05:15');
+
     $device = SignalsDevice::factory()->create([
         'name' => 'Signals Helper',
-        'last_seen_at' => now(),
+        'last_seen_at' => now()->subMinute(),
     ]);
 
     $event = new SignalsHelperHeartbeatUpdated($device);
@@ -70,7 +73,10 @@ test('signals helper heartbeat broadcast uses the private user channel contract'
         ->and($event->broadcastWith())->toMatchArray([
             'id' => $device->id,
             'name' => 'Signals Helper',
+            'last_seen_at_human' => '1 minute ago',
             'is_active' => $device->is_active,
         ])
         ->and($event->broadcastWith()['last_seen_at'])->not->toBeNull();
+
+    CarbonImmutable::setTestNow();
 });

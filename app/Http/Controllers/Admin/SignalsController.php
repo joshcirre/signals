@@ -26,6 +26,10 @@ class SignalsController extends Controller
         $user = $request->user();
         $helperToken = $request->session()->get('helper_token');
         $helperName = $request->session()->get('helper_name', 'Signals Helper');
+        $latestDeviceSeenAt = SignalsDevice::query()
+            ->where('user_id', $user?->id)
+            ->latest('last_seen_at')
+            ->first()?->last_seen_at;
 
         if ($user !== null && ! is_string($helperToken)) {
             $token = $issueHelperToken->handle($user, 'Signals Helper');
@@ -110,10 +114,8 @@ class SignalsController extends Controller
             ],
             'helper' => [
                 'default_name' => 'Signals Helper',
-                'latest_device_seen_at' => SignalsDevice::query()
-                    ->where('user_id', $user?->id)
-                    ->latest('last_seen_at')
-                    ->value('last_seen_at'),
+                'latest_device_seen_at' => $latestDeviceSeenAt?->toIso8601String(),
+                'latest_device_seen_at_human' => $latestDeviceSeenAt?->diffForHumans(),
             ],
             'latestRun' => $latestRun ? [
                 'id' => $latestRun->id,

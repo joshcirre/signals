@@ -11,6 +11,9 @@ import { storeBrand } from '@/lib/brand';
 import { login } from '@/routes';
 import { store } from '@/routes/register';
 
+const authInputClassName =
+    'h-11 rounded-xl border-slate-950/10 bg-white px-3.5 shadow-none focus-visible:border-slate-950/20 focus-visible:ring-slate-950/5';
+
 export default function Register() {
     return (
         <AuthLayout
@@ -28,7 +31,12 @@ export default function Register() {
                     <>
                         <div className="grid gap-6">
                             <div className="grid gap-2">
-                                <Label htmlFor="name">Name</Label>
+                                <Label
+                                    htmlFor="name"
+                                    className="text-[11px] font-semibold tracking-[0.18em] text-slate-500 uppercase"
+                                >
+                                    Name
+                                </Label>
                                 <Input
                                     id="name"
                                     type="text"
@@ -38,6 +46,7 @@ export default function Register() {
                                     autoComplete="name"
                                     name="name"
                                     placeholder="Full name"
+                                    className={authInputClassName}
                                 />
                                 <InputError
                                     message={errors.name}
@@ -46,7 +55,12 @@ export default function Register() {
                             </div>
 
                             <div className="grid gap-2">
-                                <Label htmlFor="email">Email address</Label>
+                                <Label
+                                    htmlFor="email"
+                                    className="text-[11px] font-semibold tracking-[0.18em] text-slate-500 uppercase"
+                                >
+                                    Email address
+                                </Label>
                                 <Input
                                     id="email"
                                     type="email"
@@ -55,12 +69,18 @@ export default function Register() {
                                     autoComplete="email"
                                     name="email"
                                     placeholder="email@example.com"
+                                    className={authInputClassName}
                                 />
                                 <InputError message={errors.email} />
                             </div>
 
                             <div className="grid gap-2">
-                                <Label htmlFor="password">Password</Label>
+                                <Label
+                                    htmlFor="password"
+                                    className="text-[11px] font-semibold tracking-[0.18em] text-slate-500 uppercase"
+                                >
+                                    Password
+                                </Label>
                                 <PasswordInput
                                     id="password"
                                     required
@@ -68,12 +88,16 @@ export default function Register() {
                                     autoComplete="new-password"
                                     name="password"
                                     placeholder="Password"
+                                    className={authInputClassName}
                                 />
                                 <InputError message={errors.password} />
                             </div>
 
                             <div className="grid gap-2">
-                                <Label htmlFor="password_confirmation">
+                                <Label
+                                    htmlFor="password_confirmation"
+                                    className="text-[11px] font-semibold tracking-[0.18em] text-slate-500 uppercase"
+                                >
                                     Confirm password
                                 </Label>
                                 <PasswordInput
@@ -83,6 +107,7 @@ export default function Register() {
                                     autoComplete="new-password"
                                     name="password_confirmation"
                                     placeholder="Confirm password"
+                                    className={authInputClassName}
                                 />
                                 <InputError
                                     message={errors.password_confirmation}
@@ -91,8 +116,9 @@ export default function Register() {
 
                             <Button
                                 type="submit"
-                                className="mt-2 h-12 w-full rounded-2xl bg-slate-950 text-sm font-semibold hover:bg-slate-800"
+                                className="mt-2 h-11 w-full rounded-lg bg-slate-950 text-sm font-medium shadow-none hover:bg-slate-800"
                                 tabIndex={5}
+                                disabled={processing}
                                 data-test="register-user-button"
                             >
                                 {processing && <Spinner />}
@@ -100,7 +126,7 @@ export default function Register() {
                             </Button>
                         </div>
 
-                        <div className="text-center text-sm text-slate-500">
+                        <div className="rounded-lg border border-slate-950/8 bg-slate-50/80 px-4 py-3 text-center text-sm text-slate-500">
                             Already have an account?{' '}
                             <TextLink href={login()} tabIndex={6}>
                                 Log in

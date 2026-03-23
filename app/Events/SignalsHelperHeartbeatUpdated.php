@@ -37,6 +37,7 @@ class SignalsHelperHeartbeatUpdated implements ShouldBroadcastNow
             'id' => $this->device->id,
             'name' => $this->device->name,
             'last_seen_at' => $this->device->last_seen_at?->toIso8601String(),
+            'last_seen_at_human' => $this->device->last_seen_at?->diffForHumans(),
             'is_active' => $this->device->is_active,
         ];
     }

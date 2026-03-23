@@ -6,6 +6,7 @@ use App\Models\ReviewTag;
 use App\Models\ReviewTagAssignment;
 use App\Models\SignalsDevice;
 use App\Models\User;
+use Carbon\CarbonImmutable;
 use Inertia\Testing\AssertableInertia as Assert;
 
 test('admin can search review intelligence by hidden tags and product data', function (): void {
@@ -39,17 +40,19 @@ test('admin can search review intelligence by hidden tags and product data', fun
 
 test('new admin sees helper onboarding until a device checks in', function (): void {
     $admin = User::factory()->create();
+    CarbonImmutable::setTestNow('2026-03-23 06:05:15');
 
     $this->actingAs($admin)
         ->get('/admin/signals')
         ->assertSuccessful()
         ->assertInertia(fn (Assert $page): Assert => $page
             ->component('admin/signals')
-            ->where('helper.latest_device_seen_at', null));
+            ->where('helper.latest_device_seen_at', null)
+            ->where('helper.latest_device_seen_at_human', null));
 
     SignalsDevice::factory()->create([
         'user_id' => $admin->id,
-        'last_seen_at' => now(),
+        'last_seen_at' => now()->subMinute(),
     ]);
 
     $this->actingAs($admin)
@@ -57,7 +60,10 @@ test('new admin sees helper onboarding until a device checks in', function (): v
         ->assertSuccessful()
         ->assertInertia(fn (Assert $page): Assert => $page
             ->component('admin/signals')
-            ->where('helper.latest_device_seen_at', fn (?string $value): bool => $value !== null));
+            ->where('helper.latest_device_seen_at', fn (?string $value): bool => $value !== null)
+            ->where('helper.latest_device_seen_at_human', '1 minute ago'));
+
+    CarbonImmutable::setTestNow();
 });
 
 test('signals page auto-provisions a helper token for the demo flow', function (): void {

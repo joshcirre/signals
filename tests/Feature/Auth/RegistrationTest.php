@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use Inertia\Testing\AssertableInertia as Assert;
 use Laravel\Fortify\Features;
 
 beforeEach(function (): void {
@@ -11,6 +12,10 @@ test('registration screen can be rendered', function (): void {
     $response = $this->get(route('register'));
 
     $response->assertOk();
+
+    $response->assertInertia(fn (Assert $page): Assert => $page
+        ->component('auth/register'),
+    );
 });
 
 test('new users can register', function (): void {
