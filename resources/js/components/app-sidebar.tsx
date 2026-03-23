@@ -20,33 +20,29 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import type { NavItem } from '@/types';
 import { dashboard } from '@/routes';
+import type { NavItem } from '@/types';
 
 const mainNavItems: NavItem[] = [
     {
-        title: 'Overview',
+        title: 'Start',
         href: dashboard(),
         icon: LayoutGrid,
-        description: 'Demo path, run status, and next action.',
     },
     {
-        title: 'Signals',
+        title: 'Session',
         href: '/admin/signals',
         icon: Radar,
-        description: 'Search reviews and monitor live analysis.',
     },
     {
-        title: 'Audit Log',
-        href: '/admin/audit-log',
-        icon: ScrollText,
-        description: 'Track every system and operator action.',
-    },
-    {
-        title: 'Proposals',
+        title: 'Review',
         href: '/admin/proposals',
         icon: ClipboardList,
-        description: 'Review and publish storefront changes.',
+    },
+    {
+        title: 'Audit',
+        href: '/admin/audit-log',
+        icon: ScrollText,
     },
 ];
 
@@ -85,10 +81,7 @@ export function AppSidebar() {
                                         Signals
                                     </span>
                                     <span className="text-[11px] font-medium tracking-[0.2em] text-slate-400 uppercase">
-                                        Admin panel
-                                    </span>
-                                    <span className="truncate text-xs text-slate-500">
-                                        Review, approve, publish.
+                                        Minimal demo
                                     </span>
                                 </div>
                             </Link>
@@ -98,20 +91,10 @@ export function AppSidebar() {
             </SidebarHeader>
 
             <SidebarContent className="px-2 py-3">
-                <div className="px-2 pb-2 group-data-[collapsible=icon]:hidden">
-                    <p className="text-[11px] font-medium tracking-[0.2em] text-slate-400 uppercase">
-                        Workspace
-                    </p>
-                </div>
                 <NavMain items={mainNavItems} />
             </SidebarContent>
 
             <SidebarFooter className="border-t border-slate-950/6 px-2 py-3">
-                <div className="px-2 pb-2 group-data-[collapsible=icon]:hidden">
-                    <p className="text-[11px] font-medium tracking-[0.2em] text-slate-400 uppercase">
-                        Links
-                    </p>
-                </div>
                 <NavFooter items={footerNavItems} className="mt-auto" />
                 <NavUser />
             </SidebarFooter>

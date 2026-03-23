@@ -9,10 +9,7 @@ type Props = React.ComponentProps<'main'> & {
 export function AppContent({ variant = 'sidebar', children, ...props }: Props) {
     if (variant === 'sidebar') {
         return (
-            <SidebarInset
-                {...props}
-                className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(15,23,42,0.04),transparent_24%),linear-gradient(180deg,#f7f7f8_0%,#ffffff_28%,#fbfbfc_100%)]"
-            >
+            <SidebarInset {...props} className="min-h-screen bg-[#fcfcfd]">
                 {children}
             </SidebarInset>
         );

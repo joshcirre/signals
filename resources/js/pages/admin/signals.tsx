@@ -12,10 +12,9 @@ import {
     Terminal,
 } from 'lucide-react';
 import type { FormEvent } from 'react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
     AdminHeader,
-    AdminMetric,
     AdminPage,
     AdminPill,
     AdminSurface,
@@ -25,21 +24,33 @@ import {
 import { useClipboard } from '@/hooks/use-clipboard';
 import AppLayout from '@/layouts/app-layout';
 import { cn } from '@/lib/utils';
-import type { BreadcrumbItem } from '@/types';
 import { dashboard } from '@/routes';
 import admin from '@/routes/admin';
-import productRoutes from '@/routes/products';
+import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'Admin Dashboard',
+        title: 'Start',
         href: dashboard(),
     },
     {
-        title: 'Signals',
+        title: 'Session',
         href: admin.signals(),
     },
 ];
+
+const milestoneActions = new Set([
+    'run.queued',
+    'run.claimed',
+    'helper.started',
+    'helper.codex.starting',
+    'mcp.server.ready',
+    'codex.thread.started',
+    'codex.thread.ready',
+    'codex.turn.started',
+    'run.completed',
+    'run.failed',
+]);
 
 interface PageProps {
     appUrl: string;
@@ -106,11 +117,6 @@ interface SignalsProps {
             supporting_review_ids?: number[];
         };
     }>;
-    products: Array<{
-        id: number;
-        name: string;
-        slug: string;
-    }>;
     reviews: Array<{
         id: number;
         product: string | null;
@@ -138,13 +144,6 @@ interface SignalsProps {
         review_count: number;
         matched_because: string[];
         match_score: number;
-    }>;
-    recentAuditLog: Array<{
-        id: number;
-        action: string;
-        actor_type: string;
-        message: string | null;
-        created_at: string;
     }>;
 }
 
@@ -178,23 +177,17 @@ interface HelperHeartbeatUpdatedEvent {
     is_active: boolean;
 }
 
-type SignalsPageProps = Omit<SignalsProps, 'products'>;
-
-function eventKindLabel(event: RunEventPayload): string {
-    if (event.kind === 'assistant_text') {
-        return 'Assistant';
-    }
-
-    if (event.kind === 'tool_call') {
-        return 'Tool call';
-    }
-
-    if (event.kind === 'tool_result') {
-        return 'Tool result';
-    }
-
-    return 'Status';
+interface ToolActivity {
+    id: string;
+    name: string;
+    callContent: string | null;
+    resultContent: string | null;
+    startedAt: string;
+    completedAt: string | null;
+    status: 'running' | 'complete' | 'error';
 }
+
+type SignalsPageProps = Omit<SignalsProps, 'products'>;
 
 function eventBody(event: RunEventPayload): string {
     return (
@@ -221,129 +214,48 @@ function runStatusClassName(status: string | null | undefined): string {
     return 'border-slate-200 bg-slate-50 text-slate-500';
 }
 
-function runKindLabel(kind: string | null | undefined): string {
-    if (kind === 'storefront_adaptation') {
-        return 'Storefront adaptation';
-    }
+function humanizeAction(action: string): string {
+    const labels: Record<string, string> = {
+        'run.queued': 'Queued',
+        'run.claimed': 'Helper claimed the run',
+        'helper.started': 'Helper preparing Codex',
+        'helper.codex.starting': 'Starting Codex session',
+        'mcp.server.ready': 'Signals MCP ready',
+        'codex.thread.started': 'Thread created',
+        'codex.thread.ready': 'Thread ready',
+        'codex.turn.started': 'Analysis started',
+        'run.completed': 'Session completed',
+        'run.failed': 'Session failed',
+    };
 
-    return 'Review analysis';
+    return labels[action] ?? action.replaceAll('.', ' ');
 }
 
-function proposalFieldLabel(field: string | null | undefined): string {
-    if (!field) {
-        return 'Storefront copy';
+function formatTimestamp(value: string | null): string {
+    if (value === null) {
+        return 'Pending';
     }
 
-    return field.replaceAll('_', ' ');
+    return new Date(value).toLocaleTimeString([], {
+        hour: 'numeric',
+        minute: '2-digit',
+    });
 }
 
-function StreamEventIcon({
-    event,
-    isLive,
-}: {
-    event: RunEventPayload;
-    isLive: boolean;
-}) {
-    if (isLive) {
-        return <Loader2 className="size-4 animate-spin text-sky-500" />;
+function formatToolName(toolName: string | null): string {
+    if (!toolName) {
+        return 'Signals tool';
     }
 
-    if (event.is_error) {
-        return <ShieldX className="size-4 text-red-500" />;
-    }
-
-    if (event.kind === 'assistant_text') {
-        return <Bot className="size-4 text-sky-500" />;
-    }
-
-    if (event.kind === 'tool_call') {
-        return <Terminal className="size-4 text-amber-500" />;
-    }
-
-    if (event.kind === 'tool_result') {
-        return <Check className="size-4 text-emerald-500" />;
-    }
-
-    return <Radar className="size-4 text-slate-400" />;
+    return toolName
+        .replace(/^mcp__signals__/, '')
+        .replace(/-tool$/, '')
+        .replaceAll('-', ' ')
+        .replaceAll('_', ' ');
 }
 
-export default function Signals({
-    filters,
-    helper,
-    latestRun,
-    pendingProposals,
-    reviews,
-    clusters,
-    recentAuditLog,
-}: SignalsPageProps) {
-    return (
-        <SignalsPage
-            key={latestRun?.id ?? 'no-run'}
-            filters={filters}
-            helper={helper}
-            latestRun={latestRun}
-            pendingProposals={pendingProposals}
-            reviews={reviews}
-            clusters={clusters}
-            recentAuditLog={recentAuditLog}
-        />
-    );
-}
-
-function SignalsPage({
-    filters,
-    helper,
-    latestRun,
-    pendingProposals,
-    reviews,
-    clusters,
-    recentAuditLog,
-}: SignalsPageProps) {
-    const helperHeartbeatEventName = '.signals-helper.heartbeat.updated';
-    const runUpdatedEventName = '.review-analysis-run.updated';
-    const runEventCreatedEventName = '.review-analysis-event.created';
-    const { appUrl, auth, flash, repositoryUrl } = usePage<PageProps>().props;
-    const [searchTerm, setSearchTerm] = useState(filters.q);
-    const [helperLastSeenAt, setHelperLastSeenAt] = useState(
-        helper.latest_device_seen_at,
-    );
-    const [helperLastSeenAtHuman, setHelperLastSeenAtHuman] = useState(
-        helper.latest_device_seen_at_human,
-    );
-    const [runOverride, setRunOverride] = useState<RunUpdatedEvent | null>(
-        null,
-    );
-    const [liveEvents, setLiveEvents] = useState<RunEventPayload[]>([]);
-    const [copiedText, copy] = useClipboard();
-    const helperServerUrl = appUrl;
-    const helperRunCommand = flash.helper_token
-        ? `SIGNALS_SERVER_URL=${helperServerUrl} \\\nSIGNALS_DEVICE_TOKEN=${flash.helper_token} \\\nnode desktop-helper/index.mjs`
-        : 'Helper token unavailable.';
-    const helperBootstrapCommand = flash.helper_token
-        ? [
-              'tmp_dir="${TMPDIR:-/tmp}/signals-helper"',
-              'rm -rf "$tmp_dir"',
-              `git clone ${repositoryUrl} "$tmp_dir"`,
-              'cd "$tmp_dir"',
-              'npm install --prefix desktop-helper',
-              `SIGNALS_SERVER_URL=${helperServerUrl} SIGNALS_DEVICE_TOKEN=${flash.helper_token} node desktop-helper/index.mjs`,
-          ].join(' && \\\n')
-        : 'Helper token unavailable.';
-    const needsHelperSetup = helperLastSeenAt === null;
-    const runState =
-        latestRun !== null && runOverride?.id === latestRun.id
-            ? {
-                  ...latestRun,
-                  status: runOverride.status,
-                  summary: runOverride.summary,
-              }
-            : latestRun;
-    const events = [...(latestRun?.events ?? []), ...liveEvents].filter(
-        (event, index, allEvents) =>
-            allEvents.findIndex((candidate) => candidate.id === event.id) ===
-            index,
-    );
-    const streamEvents = events.reduce<RunEventPayload[]>((current, event) => {
+function mergeAssistantEvents(events: RunEventPayload[]): RunEventPayload[] {
+    return events.reduce<RunEventPayload[]>((current, event) => {
         const isAssistantTextEvent =
             event.kind === 'assistant_text' ||
             event.kind === 'assistant_text_delta';
@@ -386,6 +298,326 @@ function SignalsPage({
 
         return current;
     }, []);
+}
+
+function buildToolActivities(events: RunEventPayload[]): ToolActivity[] {
+    const toolActivities: ToolActivity[] = [];
+    const activityIndexById = new Map<string, number>();
+
+    for (const event of events) {
+        if (event.kind === 'tool_call') {
+            const activityId =
+                event.tool_id ??
+                `${event.tool_name ?? 'tool'}-${event.id.toString()}`;
+
+            activityIndexById.set(activityId, toolActivities.length);
+            toolActivities.push({
+                id: activityId,
+                name: event.tool_name ?? 'Unknown tool',
+                callContent: event.content,
+                resultContent: null,
+                startedAt: event.created_at,
+                completedAt: null,
+                status: 'running',
+            });
+
+            continue;
+        }
+
+        if (event.kind !== 'tool_result') {
+            continue;
+        }
+
+        const matchingIndex =
+            (event.tool_id !== null
+                ? activityIndexById.get(event.tool_id)
+                : undefined) ?? findLastRunningToolIndex(toolActivities, event);
+
+        if (matchingIndex === undefined) {
+            toolActivities.push({
+                id:
+                    event.tool_id ??
+                    `${event.tool_name ?? 'tool'}-${event.id.toString()}`,
+                name: event.tool_name ?? 'Unknown tool',
+                callContent: null,
+                resultContent: event.content,
+                startedAt: event.created_at,
+                completedAt: event.created_at,
+                status: event.is_error ? 'error' : 'complete',
+            });
+
+            continue;
+        }
+
+        toolActivities[matchingIndex] = {
+            ...toolActivities[matchingIndex],
+            resultContent: event.content,
+            completedAt: event.created_at,
+            status: event.is_error ? 'error' : 'complete',
+        };
+    }
+
+    return toolActivities;
+}
+
+function findLastRunningToolIndex(
+    toolActivities: ToolActivity[],
+    event: RunEventPayload,
+): number | undefined {
+    for (let index = toolActivities.length - 1; index >= 0; index -= 1) {
+        const activity = toolActivities[index];
+
+        if (
+            activity.status === 'running' &&
+            activity.name === event.tool_name
+        ) {
+            return index;
+        }
+    }
+
+    return undefined;
+}
+
+function SessionUserBubble({ content }: { content: string }) {
+    return (
+        <div className="flex justify-end">
+            <div className="max-w-[42rem] rounded-2xl rounded-tr-md bg-slate-950 px-4 py-3 text-sm leading-6 text-white shadow-sm">
+                {content}
+            </div>
+        </div>
+    );
+}
+
+function SessionAssistantBubble({
+    content,
+    createdAt,
+}: {
+    content: string;
+    createdAt: string;
+}) {
+    return (
+        <div className="flex gap-3">
+            <div className="flex size-8 shrink-0 items-center justify-center rounded-full border border-slate-950/10 bg-white text-slate-600">
+                <Bot className="size-4" />
+            </div>
+            <div className="max-w-[42rem] min-w-0 rounded-2xl rounded-tl-md border border-slate-950/8 bg-white px-4 py-3 shadow-sm">
+                <div className="flex items-center justify-between gap-3">
+                    <p className="text-xs font-medium tracking-[0.16em] text-slate-400 uppercase">
+                        Signals
+                    </p>
+                    <time className="text-xs text-slate-400">
+                        {formatTimestamp(createdAt)}
+                    </time>
+                </div>
+                <p className="mt-2 text-sm leading-6 whitespace-pre-wrap text-slate-700">
+                    {content}
+                </p>
+            </div>
+        </div>
+    );
+}
+
+function SessionStatusRow({ event }: { event: RunEventPayload }) {
+    return (
+        <div className="flex items-center gap-3 pl-11">
+            <span
+                className={cn(
+                    'size-2 rounded-full',
+                    event.is_error ? 'bg-red-400' : 'bg-slate-300',
+                )}
+            />
+            <div className="flex min-w-0 flex-1 items-center justify-between gap-3 rounded-full border border-slate-950/6 bg-white/80 px-3 py-2">
+                <p
+                    className={cn(
+                        'truncate text-xs font-medium',
+                        event.is_error ? 'text-red-700' : 'text-slate-500',
+                    )}
+                >
+                    {humanizeAction(event.action)}
+                </p>
+                <time className="shrink-0 text-[11px] text-slate-400">
+                    {formatTimestamp(event.created_at)}
+                </time>
+            </div>
+        </div>
+    );
+}
+
+function ToolPulseCard({
+    tool,
+    latestRunId,
+}: {
+    tool: ToolActivity;
+    latestRunId: number;
+}) {
+    const running = tool.status === 'running';
+    const failed = tool.status === 'error';
+
+    return (
+        <Link
+            href={admin.reviewRuns.show(latestRunId).url}
+            className={cn(
+                'rounded-lg border px-3 py-2 transition',
+                running
+                    ? 'border-sky-200 bg-sky-50 text-sky-700'
+                    : failed
+                      ? 'border-red-200 bg-red-50 text-red-700'
+                      : 'border-slate-950/8 bg-white text-slate-600 hover:border-slate-950/20 hover:bg-slate-50',
+            )}
+        >
+            <div className="flex items-center gap-2">
+                <span
+                    className={cn(
+                        'flex size-6 items-center justify-center rounded-full',
+                        running
+                            ? 'bg-sky-100'
+                            : failed
+                              ? 'bg-red-100'
+                              : 'bg-slate-100',
+                    )}
+                >
+                    {running ? (
+                        <Loader2 className="size-3.5 animate-spin" />
+                    ) : failed ? (
+                        <ShieldX className="size-3.5" />
+                    ) : (
+                        <Terminal className="size-3.5" />
+                    )}
+                </span>
+                <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium capitalize">
+                        {formatToolName(tool.name)}
+                    </p>
+                    <p className="text-xs text-current/70">
+                        {running ? 'Running now' : 'Open full tool trace'}
+                    </p>
+                </div>
+            </div>
+        </Link>
+    );
+}
+
+function ProposalPreview({
+    proposal,
+}: {
+    proposal: SignalsProps['pendingProposals'][number];
+}) {
+    return (
+        <div className="rounded-lg border border-slate-950/7 bg-slate-50 px-3.5 py-3">
+            <div className="flex items-center justify-between gap-3">
+                <p className="truncate text-sm font-medium text-slate-950">
+                    {proposal.target_label}
+                </p>
+                <span className="text-xs font-medium text-slate-400">
+                    {(proposal.confidence * 100).toFixed(0)}%
+                </span>
+            </div>
+            <p className="mt-1 line-clamp-2 text-sm leading-5 text-slate-500">
+                {proposal.rationale}
+            </p>
+        </div>
+    );
+}
+
+export default function Signals({
+    filters,
+    helper,
+    latestRun,
+    pendingProposals,
+    reviews,
+    clusters,
+}: SignalsPageProps) {
+    return (
+        <SignalsPage
+            key={latestRun?.id ?? 'no-run'}
+            filters={filters}
+            helper={helper}
+            latestRun={latestRun}
+            pendingProposals={pendingProposals}
+            reviews={reviews}
+            clusters={clusters}
+        />
+    );
+}
+
+function SignalsPage({
+    filters,
+    helper,
+    latestRun,
+    pendingProposals,
+    reviews,
+    clusters,
+}: SignalsPageProps) {
+    const helperHeartbeatEventName = '.signals-helper.heartbeat.updated';
+    const runUpdatedEventName = '.review-analysis-run.updated';
+    const runEventCreatedEventName = '.review-analysis-event.created';
+    const { appUrl, auth, flash, repositoryUrl } = usePage<PageProps>().props;
+    const [query, setQuery] = useState(filters.q);
+    const [helperLastSeenAt, setHelperLastSeenAt] = useState(
+        helper.latest_device_seen_at,
+    );
+    const [helperLastSeenAtHuman, setHelperLastSeenAtHuman] = useState(
+        helper.latest_device_seen_at_human,
+    );
+    const [runOverride, setRunOverride] = useState<RunUpdatedEvent | null>(
+        null,
+    );
+    const [liveEvents, setLiveEvents] = useState<RunEventPayload[]>([]);
+    const [copiedText, copy] = useClipboard();
+    const composerEndRef = useRef<HTMLDivElement | null>(null);
+    const helperServerUrl = appUrl;
+    const helperBootstrapCommand = flash.helper_token
+        ? [
+              'tmp_dir="${TMPDIR:-/tmp}/signals-helper"',
+              'rm -rf "$tmp_dir"',
+              `git clone ${repositoryUrl} "$tmp_dir"`,
+              'cd "$tmp_dir"',
+              'npm install --prefix desktop-helper',
+              `SIGNALS_SERVER_URL=${helperServerUrl} SIGNALS_DEVICE_TOKEN=${flash.helper_token} node desktop-helper/index.mjs`,
+          ].join(' && \\\n')
+        : 'Helper token unavailable.';
+    const needsHelperSetup = helperLastSeenAt === null;
+    const runState =
+        latestRun !== null && runOverride?.id === latestRun.id
+            ? {
+                  ...latestRun,
+                  status: runOverride.status,
+                  summary: runOverride.summary,
+              }
+            : latestRun;
+    const events = [...(latestRun?.events ?? []), ...liveEvents].filter(
+        (event, index, allEvents) =>
+            allEvents.findIndex((candidate) => candidate.id === event.id) ===
+            index,
+    );
+    const mergedEvents = mergeAssistantEvents(events);
+    const timelineEvents = mergedEvents.filter(
+        (event) =>
+            event.kind === 'assistant_text' ||
+            milestoneActions.has(event.action) ||
+            event.action === 'run.failed',
+    );
+    const toolActivities = buildToolActivities(mergedEvents);
+    const activeTools = toolActivities.filter(
+        (tool) => tool.status === 'running',
+    );
+    const activeOrRecentTools =
+        activeTools.length > 0
+            ? activeTools.slice(-3)
+            : [...toolActivities].slice(-3).reverse();
+    const sessionFocus =
+        typeof runState?.context?.focus === 'string' && runState.context.focus
+            ? runState.context.focus
+            : runState === null && query !== ''
+              ? query
+              : null;
+
+    useEffect(() => {
+        composerEndRef.current?.scrollIntoView({
+            block: 'end',
+            behavior: runState?.status === 'running' ? 'smooth' : 'auto',
+        });
+    }, [runState?.status, timelineEvents.length, activeOrRecentTools.length]);
 
     useEcho<RunUpdatedEvent>(
         `signals.user.${auth.user.id}`,
@@ -418,47 +650,41 @@ function SignalsPage({
                     return current;
                 }
 
-                return [
-                    ...current,
-                    {
-                        id: payload.id,
-                        review_analysis_run_id: payload.review_analysis_run_id,
-                        action: payload.action,
-                        actor_type: payload.actor_type,
-                        kind: payload.kind,
-                        content: payload.content,
-                        tool_id: payload.tool_id,
-                        tool_name: payload.tool_name,
-                        item_id: payload.item_id,
-                        is_error: payload.is_error,
-                        metadata: payload.metadata,
-                        created_at: payload.created_at,
-                    },
-                ];
+                return current.some((event) => event.id === payload.id)
+                    ? current
+                    : [...current, payload];
             });
         },
         [auth.user.id, latestRun?.id],
     );
 
-    const submitSearch = (event: FormEvent) => {
+    const previewEvidence = (event: FormEvent) => {
         event.preventDefault();
 
         router.get(
             admin.signals().url,
-            { q: searchTerm },
+            { q: query },
             { preserveState: true, preserveScroll: true },
         );
     };
 
+    const startSession = () => {
+        router.post(admin.reviewRuns.store().url, {
+            kind: 'review_analysis',
+            focus: query,
+            redirect_to: 'signals',
+        });
+    };
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Signals" />
+            <Head title="Session" />
 
             <AdminPage>
                 <AdminHeader
-                    eyebrow="Review intelligence"
-                    title="Signals"
-                    description="The admin demo should read in one direction: search the review signal, run the analysis, then approve the resulting proposal. This layout keeps those stages visible without the oversized card stack."
+                    eyebrow="Session"
+                    title="Signals session"
+                    description="This is the product surface: focus the issue, start the session, watch the stream, then hand off into review. The full tool trace lives on its own page so the main flow stays readable."
                     meta={
                         <>
                             <AdminPill
@@ -467,7 +693,14 @@ function SignalsPage({
                                 {runState?.status ?? 'idle'}
                             </AdminPill>
                             <AdminPill>
-                                <span className="size-1.5 rounded-full bg-slate-300" />
+                                <span
+                                    className={cn(
+                                        'size-1.5 rounded-full',
+                                        needsHelperSetup
+                                            ? 'bg-amber-400'
+                                            : 'bg-emerald-500',
+                                    )}
+                                />
                                 {needsHelperSetup
                                     ? 'Helper offline'
                                     : 'Helper connected'}
@@ -475,691 +708,204 @@ function SignalsPage({
                         </>
                     }
                     actions={
-                        <>
-                            <button
-                                type="button"
-                                onClick={() =>
-                                    router.post(admin.reviewRuns.store().url, {
-                                        kind: 'review_analysis',
-                                    })
-                                }
-                                className="inline-flex items-center gap-2 rounded-lg bg-slate-950 px-3 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
-                            >
-                                <CirclePlay className="size-4" />
-                                Analyze new reviews
-                            </button>
-                            {latestRun ? (
-                                <Link
-                                    href={
-                                        admin.reviewRuns.show(latestRun.id).url
-                                    }
-                                    className="rounded-lg border border-slate-950/10 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-950/20 hover:bg-slate-50"
-                                >
-                                    Open latest run
-                                </Link>
-                            ) : null}
+                        latestRun ? (
                             <Link
-                                href={admin.proposals.index().url}
-                                className="rounded-lg border border-slate-950/10 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-950/20 hover:bg-slate-50"
+                                href={admin.reviewRuns.show(latestRun.id).url}
+                                className="inline-flex items-center gap-2 rounded-lg border border-slate-950/10 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-950/20 hover:bg-slate-50"
                             >
-                                Proposals
+                                Open tool trace
                             </Link>
-                        </>
+                        ) : null
                     }
                 />
 
-                <div className="grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_360px]">
-                    <AdminSurface>
-                        <AdminSurfaceBody className="space-y-4 p-5">
-                            <div className="space-y-2">
-                                <p className="text-[11px] font-medium tracking-[0.22em] text-slate-400 uppercase">
-                                    Start here
-                                </p>
-                                <h2 className="text-xl font-semibold tracking-tight text-slate-950">
-                                    Search the review signal you want to demo.
-                                </h2>
-                                <p className="max-w-3xl text-sm leading-6 text-slate-600">
-                                    Use a natural-language query to pull in the
-                                    reviews and complaint clusters that matter,
-                                    then queue a run when the helper is online.
-                                </p>
-                            </div>
-
-                            <form
-                                onSubmit={submitSearch}
-                                className="rounded-lg border border-slate-950/8 bg-slate-50/80 p-3"
-                            >
-                                <div className="flex flex-col gap-3 lg:flex-row">
-                                    <div className="min-w-0 flex-1">
-                                        <label
-                                            htmlFor="signals-search"
-                                            className="text-[11px] font-medium tracking-[0.18em] text-slate-400 uppercase"
-                                        >
-                                            Query
-                                        </label>
-                                        <input
-                                            id="signals-search"
-                                            value={searchTerm}
-                                            onChange={(event) =>
-                                                setSearchTerm(
-                                                    event.target.value,
-                                                )
-                                            }
-                                            placeholder="hoodie sizing, shipping delay, comfort..."
-                                            className="mt-2 w-full rounded-lg border border-slate-950/10 bg-white px-3 py-2.5 text-sm text-slate-900 transition outline-none focus:border-slate-950/20 focus:ring-2 focus:ring-slate-950/5"
-                                        />
+                <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
+                    <AdminSurface className="overflow-hidden">
+                        <div className="flex min-h-[calc(100vh-12.5rem)] flex-col">
+                            <div className="border-b border-slate-950/6 px-5 py-4">
+                                <div className="flex flex-wrap items-center justify-between gap-4">
+                                    <div className="space-y-1">
+                                        <p className="text-[10px] font-medium tracking-[0.18em] text-slate-400 uppercase">
+                                            Live workspace
+                                        </p>
+                                        <h2 className="text-lg font-semibold text-slate-950">
+                                            {runState
+                                                ? `Run #${runState.id}`
+                                                : 'No session started yet'}
+                                        </h2>
+                                        <p className="text-sm leading-6 text-slate-500">
+                                            {runState?.summary ??
+                                                'Use the composer below to preview evidence or start a focused review-analysis session.'}
+                                        </p>
                                     </div>
-                                    <button
-                                        type="submit"
-                                        className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-white px-3 py-2.5 text-sm font-medium text-slate-900 ring-1 ring-slate-950/10 transition hover:bg-slate-100"
-                                    >
-                                        <Search className="size-4" />
-                                        Search reviews
-                                    </button>
+                                    <div className="flex flex-wrap gap-2">
+                                        <div className="rounded-full border border-slate-950/8 bg-slate-50 px-3 py-1.5 text-xs text-slate-500">
+                                            {reviews.length} matched reviews
+                                        </div>
+                                        <div className="rounded-full border border-slate-950/8 bg-slate-50 px-3 py-1.5 text-xs text-slate-500">
+                                            {clusters.length} clusters
+                                        </div>
+                                        <div className="rounded-full border border-slate-950/8 bg-slate-50 px-3 py-1.5 text-xs text-slate-500">
+                                            {pendingProposals.length} pending
+                                            proposals
+                                        </div>
+                                    </div>
                                 </div>
-                            </form>
-
-                            <div className="grid gap-3 md:grid-cols-3">
-                                <AdminMetric
-                                    label="Matched reviews"
-                                    value={reviews.length}
-                                    detail="Results for the active query."
-                                />
-                                <AdminMetric
-                                    label="Complaint clusters"
-                                    value={clusters.length}
-                                    detail="Grouped pain points worth checking."
-                                />
-                                <AdminMetric
-                                    label="Pending proposals"
-                                    value={pendingProposals.length}
-                                    detail="Ready for operator review."
-                                />
                             </div>
-                        </AdminSurfaceBody>
-                    </AdminSurface>
 
-                    <AdminSurface>
-                        <AdminSurfaceHeader
-                            title="Next action"
-                            description={
-                                needsHelperSetup
-                                    ? 'Start the helper with the command below. The page will switch to ready as soon as it checks in over Echo.'
-                                    : pendingProposals.length > 0
-                                      ? 'Review the proposals created from the last run.'
-                                      : 'Queue a new run once your query looks right.'
-                            }
-                        />
-                        <AdminSurfaceBody className="space-y-3">
-                            {needsHelperSetup ? (
-                                <>
-                                    <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900">
-                                        Run the helper bootstrap command. As
-                                        soon as the helper starts polling, this
-                                        panel will update to connected
-                                        automatically.
+                            <div className="flex-1 space-y-5 overflow-y-auto bg-[linear-gradient(180deg,#fcfcfd_0%,#f8fafc_100%)] px-5 py-5">
+                                {sessionFocus ? (
+                                    <SessionUserBubble content={sessionFocus} />
+                                ) : null}
+
+                                {activeOrRecentTools.length > 0 ? (
+                                    <div className="space-y-2 pl-11">
+                                        <p className="text-[10px] font-medium tracking-[0.18em] text-slate-400 uppercase">
+                                            Behind the scenes
+                                        </p>
+                                        <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+                                            {activeOrRecentTools.map((tool) => (
+                                                <ToolPulseCard
+                                                    key={tool.id}
+                                                    tool={tool}
+                                                    latestRunId={
+                                                        runState?.id ??
+                                                        latestRun?.id ??
+                                                        0
+                                                    }
+                                                />
+                                            ))}
+                                        </div>
                                     </div>
-                                    <div className="rounded-lg border border-slate-950/8 bg-slate-950 p-4">
-                                        <div className="flex items-center justify-between gap-3">
+                                ) : null}
+
+                                {timelineEvents.length > 0 ? (
+                                    <div className="space-y-3">
+                                        {timelineEvents.map((event) =>
+                                            event.kind === 'assistant_text' ? (
+                                                <SessionAssistantBubble
+                                                    key={event.id}
+                                                    content={eventBody(event)}
+                                                    createdAt={event.created_at}
+                                                />
+                                            ) : (
+                                                <SessionStatusRow
+                                                    key={event.id}
+                                                    event={event}
+                                                />
+                                            ),
+                                        )}
+                                    </div>
+                                ) : (
+                                    <div className="flex min-h-56 items-center justify-center rounded-2xl border border-dashed border-slate-950/10 bg-white/80 px-6 text-center">
+                                        <div className="max-w-md space-y-3">
+                                            <div className="mx-auto flex size-12 items-center justify-center rounded-full border border-slate-950/10 bg-slate-50 text-slate-500">
+                                                <Radar className="size-5" />
+                                            </div>
                                             <div>
-                                                <p className="text-[11px] font-medium tracking-[0.18em] text-slate-400 uppercase">
-                                                    Bootstrap command
+                                                <p className="text-sm font-medium text-slate-950">
+                                                    Start with one issue people
+                                                    can immediately understand
                                                 </p>
-                                                <p className="mt-1 text-sm text-slate-200">
-                                                    Starts the helper with the
-                                                    current Signals token.
+                                                <p className="mt-1 text-sm leading-6 text-slate-500">
+                                                    Good demo prompts are
+                                                    concrete: hoodie sizing,
+                                                    shipping delays, softness,
+                                                    returns confusion.
                                                 </p>
                                             </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {runState?.status === 'running' &&
+                                timelineEvents.length === 0 ? (
+                                    <div className="flex items-center gap-3 pl-11 text-sm text-slate-500">
+                                        <Loader2 className="size-4 animate-spin text-sky-500" />
+                                        Waiting for the helper to stream the
+                                        first update.
+                                    </div>
+                                ) : null}
+
+                                <div ref={composerEndRef} />
+                            </div>
+
+                            <div className="border-t border-slate-950/6 p-4">
+                                <form
+                                    onSubmit={previewEvidence}
+                                    className="space-y-3"
+                                >
+                                    <div className="rounded-2xl border border-slate-950/8 bg-white p-3 shadow-sm">
+                                        <label
+                                            htmlFor="signals-session-query"
+                                            className="text-[10px] font-medium tracking-[0.18em] text-slate-400 uppercase"
+                                        >
+                                            Focus this session
+                                        </label>
+                                        <textarea
+                                            id="signals-session-query"
+                                            value={query}
+                                            onChange={(event) =>
+                                                setQuery(event.target.value)
+                                            }
+                                            rows={2}
+                                            placeholder="Premium hoodie sizing complaints that should become one clear fit-note proposal..."
+                                            className="mt-2 max-h-40 min-h-24 w-full resize-none bg-transparent text-sm leading-6 text-slate-900 outline-none placeholder:text-slate-400"
+                                        />
+                                        <div className="mt-3 flex flex-wrap items-center gap-2">
+                                            <button
+                                                type="submit"
+                                                className="inline-flex items-center gap-2 rounded-lg border border-slate-950/10 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-950/20 hover:bg-slate-50"
+                                            >
+                                                <Search className="size-4" />
+                                                Preview evidence
+                                            </button>
                                             <button
                                                 type="button"
-                                                onClick={() =>
-                                                    void copy(
-                                                        helperBootstrapCommand,
-                                                    )
-                                                }
-                                                className="inline-flex items-center gap-2 rounded-md border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-xs font-medium text-slate-100 transition hover:bg-slate-800"
+                                                onClick={startSession}
+                                                disabled={needsHelperSetup}
+                                                className="inline-flex items-center gap-2 rounded-lg bg-slate-950 px-3 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
                                             >
-                                                {copiedText ===
-                                                helperBootstrapCommand ? (
-                                                    <Check className="size-3.5" />
-                                                ) : (
-                                                    <Copy className="size-3.5" />
-                                                )}
-                                                Copy
+                                                <CirclePlay className="size-4" />
+                                                Start session
                                             </button>
                                         </div>
-                                        <code className="mt-3 block overflow-x-auto text-xs leading-5 break-all whitespace-pre-wrap text-emerald-200">
-                                            {helperBootstrapCommand}
-                                        </code>
                                     </div>
-                                </>
-                            ) : (
-                                <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm leading-6 text-emerald-800">
-                                    The helper last checked in{' '}
-                                    <span title={helperLastSeenAt ?? undefined}>
-                                        {helperLastSeenAtHuman}
-                                    </span>
-                                    .
-                                </div>
-                            )}
-
-                            {runState ? (
-                                <div className="rounded-lg border border-slate-950/8 bg-slate-50/80 px-4 py-3">
-                                    <p className="text-[11px] font-medium tracking-[0.18em] text-slate-400 uppercase">
-                                        Latest run
+                                    <p className="text-xs text-slate-500">
+                                        {needsHelperSetup
+                                            ? 'Helper setup is still required before a live session can stream.'
+                                            : `Helper last checked in ${helperLastSeenAtHuman ?? 'recently'}.`}
                                     </p>
-                                    <p className="mt-2 text-sm font-medium text-slate-950">
-                                        {runState.summary ??
-                                            'Run ready to inspect.'}
-                                    </p>
-                                    <p className="mt-1 text-xs text-slate-400">
-                                        {runKindLabel(runState.kind)} ·{' '}
-                                        Requested {runState.requested_at}
-                                    </p>
-                                </div>
-                            ) : null}
-
-                            <div className="flex flex-wrap gap-2">
-                                <Link
-                                    href={admin.proposals.index().url}
-                                    className="inline-flex items-center gap-2 rounded-lg border border-slate-950/10 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-950/20 hover:bg-slate-50"
-                                >
-                                    Open proposal queue
-                                </Link>
-                                <Link
-                                    href="/"
-                                    className="inline-flex items-center gap-2 rounded-lg border border-slate-950/10 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-950/20 hover:bg-slate-50"
-                                >
-                                    View storefront
-                                </Link>
+                                </form>
                             </div>
-                        </AdminSurfaceBody>
-                    </AdminSurface>
-                </div>
-
-                <div className="grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]">
-                    <AdminSurface>
-                        <AdminSurfaceHeader
-                            title="Live run"
-                            description="Assistant messages, tool calls, and system updates stream into one compact feed."
-                            action={
-                                <AdminPill
-                                    className={runStatusClassName(
-                                        runState?.status,
-                                    )}
-                                >
-                                    {runState?.status ?? 'idle'}
-                                </AdminPill>
-                            }
-                        />
-                        <AdminSurfaceBody className="space-y-4">
-                            {runState?.prompt ? (
-                                <div className="rounded-lg border border-slate-950/8 bg-slate-50/80 px-4 py-3">
-                                    <p className="text-[11px] font-medium tracking-[0.18em] text-slate-400 uppercase">
-                                        Prompt
-                                    </p>
-                                    <p className="mt-2 text-sm leading-6 text-slate-700">
-                                        {runState.prompt}
-                                    </p>
-                                </div>
-                            ) : null}
-
-                            {streamEvents.length > 0 ? (
-                                <div className="max-h-[38rem] space-y-2 overflow-y-auto pr-1">
-                                    {streamEvents.map((event, index) => {
-                                        const isLive =
-                                            runState?.status === 'running' &&
-                                            index === streamEvents.length - 1;
-
-                                        return (
-                                            <div
-                                                key={event.id}
-                                                className={cn(
-                                                    'rounded-lg border px-3 py-3',
-                                                    event.is_error
-                                                        ? 'border-red-200 bg-red-50/70'
-                                                        : 'border-slate-950/8 bg-slate-50/80',
-                                                )}
-                                            >
-                                                <div className="flex items-start gap-3">
-                                                    <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg border border-slate-950/8 bg-white">
-                                                        <StreamEventIcon
-                                                            event={event}
-                                                            isLive={isLive}
-                                                        />
-                                                    </div>
-                                                    <div className="min-w-0 flex-1">
-                                                        <div className="flex flex-wrap items-center justify-between gap-3">
-                                                            <p className="text-sm font-medium text-slate-900">
-                                                                {eventKindLabel(
-                                                                    event,
-                                                                )}
-                                                            </p>
-                                                            <time className="text-xs text-slate-400">
-                                                                {new Date(
-                                                                    event.created_at,
-                                                                ).toLocaleTimeString()}
-                                                            </time>
-                                                        </div>
-                                                        <p
-                                                            className={cn(
-                                                                'mt-1 text-sm leading-6',
-                                                                event.is_error
-                                                                    ? 'text-red-700'
-                                                                    : event.kind ===
-                                                                        'assistant_text'
-                                                                      ? 'whitespace-pre-wrap text-slate-700'
-                                                                      : 'text-slate-600',
-                                                            )}
-                                                        >
-                                                            {eventBody(event)}
-                                                        </p>
-                                                        <div className="mt-2 flex flex-wrap gap-1.5">
-                                                            <span className="rounded-full bg-white px-2 py-1 text-[11px] font-medium tracking-[0.16em] text-slate-500 uppercase ring-1 ring-slate-950/8">
-                                                                {event.action}
-                                                            </span>
-                                                            {event.tool_name ? (
-                                                                <span className="rounded-full bg-white px-2 py-1 text-[11px] font-medium tracking-[0.16em] text-slate-500 uppercase ring-1 ring-slate-950/8">
-                                                                    {
-                                                                        event.tool_name
-                                                                    }
-                                                                </span>
-                                                            ) : null}
-                                                            {Array.isArray(
-                                                                event.metadata
-                                                                    .tool_names,
-                                                            )
-                                                                ? (
-                                                                      event
-                                                                          .metadata
-                                                                          .tool_names as string[]
-                                                                  ).map(
-                                                                      (
-                                                                          toolName,
-                                                                      ) => (
-                                                                          <span
-                                                                              key={`${event.id}-${toolName}`}
-                                                                              className="rounded-full bg-sky-50 px-2 py-1 text-[11px] font-medium tracking-[0.16em] text-sky-700 uppercase"
-                                                                          >
-                                                                              {
-                                                                                  toolName
-                                                                              }
-                                                                          </span>
-                                                                      ),
-                                                                  )
-                                                                : null}
-                                                            {Array.isArray(
-                                                                event.metadata
-                                                                    .resource_names,
-                                                            )
-                                                                ? (
-                                                                      event
-                                                                          .metadata
-                                                                          .resource_names as string[]
-                                                                  ).map(
-                                                                      (
-                                                                          resourceName,
-                                                                      ) => (
-                                                                          <span
-                                                                              key={`${event.id}-${resourceName}`}
-                                                                              className="rounded-full bg-slate-200 px-2 py-1 text-[11px] font-medium tracking-[0.16em] text-slate-600 uppercase"
-                                                                          >
-                                                                              {
-                                                                                  resourceName
-                                                                              }
-                                                                          </span>
-                                                                      ),
-                                                                  )
-                                                                : null}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            ) : (
-                                <div className="rounded-lg border border-dashed border-slate-950/8 px-4 py-8 text-sm leading-6 text-slate-500">
-                                    Run events will appear here once the local
-                                    helper claims a queued run.
-                                </div>
-                            )}
-                        </AdminSurfaceBody>
-                    </AdminSurface>
-
-                    <AdminSurface>
-                        <AdminSurfaceHeader
-                            title="Pending proposals"
-                            description="The next storefront changes waiting for review."
-                            action={
-                                <Link
-                                    href={admin.proposals.index().url}
-                                    className="text-sm font-medium text-slate-500 transition hover:text-slate-950"
-                                >
-                                    Open queue
-                                </Link>
-                            }
-                        />
-                        <AdminSurfaceBody className="space-y-3">
-                            {pendingProposals.length > 0 ? (
-                                pendingProposals.map((proposal) => {
-                                    const proposedBody =
-                                        proposal.type === 'review_response'
-                                            ? proposal.payload.response_draft
-                                            : proposal.payload.after;
-
-                                    return (
-                                        <article
-                                            key={proposal.id}
-                                            className="rounded-lg border border-slate-950/8 bg-slate-50/80 p-4"
-                                        >
-                                            <div className="flex items-start justify-between gap-3">
-                                                <div className="min-w-0">
-                                                    <p className="text-[11px] font-medium tracking-[0.18em] text-slate-400 uppercase">
-                                                        {proposal.type.replaceAll(
-                                                            '_',
-                                                            ' ',
-                                                        )}
-                                                    </p>
-                                                    <h3 className="mt-1 text-sm font-medium text-slate-950">
-                                                        {proposal.target_label}
-                                                    </h3>
-                                                    {proposal.type ===
-                                                    'product_copy_change' ? (
-                                                        <p className="mt-1 text-xs text-slate-400">
-                                                            {proposalFieldLabel(
-                                                                proposal.payload
-                                                                    .field,
-                                                            )}
-                                                        </p>
-                                                    ) : null}
-                                                </div>
-                                                <span className="rounded-full bg-emerald-50 px-2 py-1 text-[11px] font-semibold text-emerald-700">
-                                                    {(
-                                                        proposal.confidence *
-                                                        100
-                                                    ).toFixed(0)}
-                                                    %
-                                                </span>
-                                            </div>
-                                            <p className="mt-2 text-sm leading-6 text-slate-600">
-                                                {proposal.rationale}
-                                            </p>
-                                            {proposedBody ? (
-                                                <div className="mt-3 rounded-lg border border-slate-950/8 bg-white px-3 py-3">
-                                                    <p className="text-[11px] font-medium tracking-[0.18em] text-slate-400 uppercase">
-                                                        {proposal.type ===
-                                                        'review_response'
-                                                            ? 'Suggested response'
-                                                            : 'Suggested change'}
-                                                    </p>
-                                                    <p className="mt-2 text-sm leading-6 text-slate-700">
-                                                        {proposedBody}
-                                                    </p>
-                                                </div>
-                                            ) : null}
-                                            <div className="mt-3 flex flex-wrap gap-2">
-                                                <button
-                                                    type="button"
-                                                    onClick={() =>
-                                                        router.post(
-                                                            admin.proposals.approve(
-                                                                {
-                                                                    proposal:
-                                                                        proposal.id,
-                                                                },
-                                                            ).url,
-                                                        )
-                                                    }
-                                                    className="rounded-lg bg-slate-950 px-3 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
-                                                >
-                                                    Approve
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() =>
-                                                        router.post(
-                                                            admin.proposals.reject(
-                                                                {
-                                                                    proposal:
-                                                                        proposal.id,
-                                                                },
-                                                            ).url,
-                                                        )
-                                                    }
-                                                    className="inline-flex items-center gap-2 rounded-lg border border-slate-950/10 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition hover:border-slate-950/20 hover:bg-slate-50"
-                                                >
-                                                    <ShieldX className="size-4" />
-                                                    Reject
-                                                </button>
-                                                {proposal.target_slug ? (
-                                                    <Link
-                                                        href={
-                                                            productRoutes.show({
-                                                                product:
-                                                                    proposal.target_slug,
-                                                            }).url
-                                                        }
-                                                        className="rounded-lg border border-slate-950/10 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition hover:border-slate-950/20 hover:bg-slate-50"
-                                                    >
-                                                        Preview
-                                                    </Link>
-                                                ) : null}
-                                                {proposal.type ===
-                                                    'product_copy_change' &&
-                                                proposal.target_slug ? (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() =>
-                                                            router.post(
-                                                                admin.reviewRuns.store()
-                                                                    .url,
-                                                                {
-                                                                    kind: 'storefront_adaptation',
-                                                                    proposal_id:
-                                                                        proposal.id,
-                                                                },
-                                                            )
-                                                        }
-                                                        className="rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-sm font-medium text-sky-700 transition hover:bg-sky-100"
-                                                    >
-                                                        Launch storefront
-                                                        adaptation
-                                                    </button>
-                                                ) : null}
-                                            </div>
-                                        </article>
-                                    );
-                                })
-                            ) : (
-                                <div className="rounded-lg border border-dashed border-slate-950/8 px-4 py-8 text-sm leading-6 text-slate-500">
-                                    Proposal drafts will appear here after the
-                                    next successful run.
-                                </div>
-                            )}
-                        </AdminSurfaceBody>
-                    </AdminSurface>
-                </div>
-
-                <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
-                    <AdminSurface>
-                        <AdminSurfaceHeader
-                            title="Search results"
-                            description="Reviews and complaint clusters tied to the active query."
-                        />
-                        <AdminSurfaceBody className="space-y-4">
-                            <div className="space-y-3">
-                                <div className="flex items-center justify-between gap-3">
-                                    <p className="text-sm font-medium text-slate-950">
-                                        Matching reviews
-                                    </p>
-                                    <span className="text-xs text-slate-400">
-                                        {reviews.length} results
-                                    </span>
-                                </div>
-                                {reviews.length > 0 ? (
-                                    <div className="space-y-2">
-                                        {reviews.map((review) => (
-                                            <article
-                                                key={review.id}
-                                                className="rounded-lg border border-slate-950/8 bg-slate-50/80 p-4"
-                                            >
-                                                <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-slate-400">
-                                                    <span>
-                                                        {review.product}
-                                                    </span>
-                                                    <span>
-                                                        {review.rating}/5 ·
-                                                        score{' '}
-                                                        {review.match_score}
-                                                    </span>
-                                                </div>
-                                                {review.title ? (
-                                                    <h3 className="mt-2 text-sm font-medium text-slate-950">
-                                                        {review.title}
-                                                    </h3>
-                                                ) : null}
-                                                <p className="mt-2 text-sm leading-6 text-slate-600">
-                                                    {review.body}
-                                                </p>
-                                                <div className="mt-3 flex flex-wrap gap-1.5">
-                                                    <span className="rounded-full bg-sky-50 px-2 py-1 text-[11px] font-medium tracking-[0.16em] text-sky-700 uppercase">
-                                                        {review.sentiment}
-                                                    </span>
-                                                    <span className="rounded-full bg-amber-50 px-2 py-1 text-[11px] font-medium tracking-[0.16em] text-amber-700 uppercase">
-                                                        Severity{' '}
-                                                        {review.severity}
-                                                    </span>
-                                                    {review.response_draft_status ? (
-                                                        <span className="rounded-full bg-emerald-50 px-2 py-1 text-[11px] font-medium tracking-[0.16em] text-emerald-700 uppercase">
-                                                            Response{' '}
-                                                            {
-                                                                review.response_draft_status
-                                                            }
-                                                        </span>
-                                                    ) : null}
-                                                </div>
-                                                {review.tags.length > 0 ? (
-                                                    <div className="mt-2 flex flex-wrap gap-1.5">
-                                                        {review.tags.map(
-                                                            (tag) => (
-                                                                <span
-                                                                    key={`${review.id}-${tag.name}`}
-                                                                    className="rounded-full bg-slate-200 px-2 py-1 text-[11px] font-medium tracking-[0.16em] text-slate-600 uppercase"
-                                                                >
-                                                                    {tag.name}
-                                                                </span>
-                                                            ),
-                                                        )}
-                                                    </div>
-                                                ) : null}
-                                                {review.response_draft ? (
-                                                    <div className="mt-3 rounded-lg border border-slate-950/8 bg-white px-3 py-3">
-                                                        <p className="text-[11px] font-medium tracking-[0.18em] text-slate-400 uppercase">
-                                                            Saved response draft
-                                                        </p>
-                                                        <p className="mt-2 text-sm leading-6 text-slate-700">
-                                                            {
-                                                                review.response_draft
-                                                            }
-                                                        </p>
-                                                    </div>
-                                                ) : null}
-                                            </article>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <div className="rounded-lg border border-dashed border-slate-950/8 px-4 py-8 text-sm leading-6 text-slate-500">
-                                        Search results will appear here after
-                                        you run a query.
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="border-t border-slate-950/6 pt-4">
-                                <div className="flex items-center justify-between gap-3">
-                                    <p className="text-sm font-medium text-slate-950">
-                                        Complaint clusters
-                                    </p>
-                                    <span className="text-xs text-slate-400">
-                                        {clusters.length} groups
-                                    </span>
-                                </div>
-                                {clusters.length > 0 ? (
-                                    <div className="mt-3 space-y-2">
-                                        {clusters.map((cluster) => (
-                                            <article
-                                                key={cluster.id}
-                                                className="rounded-lg border border-slate-950/8 bg-slate-50/80 p-4"
-                                            >
-                                                <div className="flex items-start justify-between gap-3">
-                                                    <div className="min-w-0">
-                                                        {cluster.product ? (
-                                                            <p className="text-[11px] font-medium tracking-[0.18em] text-slate-400 uppercase">
-                                                                {
-                                                                    cluster.product
-                                                                }
-                                                            </p>
-                                                        ) : null}
-                                                        <h3 className="mt-1 text-sm font-medium text-slate-950">
-                                                            {cluster.title}
-                                                        </h3>
-                                                    </div>
-                                                    <span className="rounded-full bg-white px-2 py-1 text-[11px] font-medium tracking-[0.16em] text-slate-500 uppercase ring-1 ring-slate-950/8">
-                                                        {cluster.review_count}{' '}
-                                                        reviews
-                                                    </span>
-                                                </div>
-                                                <p className="mt-2 text-sm leading-6 text-slate-600">
-                                                    {cluster.summary}
-                                                </p>
-                                                <div className="mt-3 flex flex-wrap gap-1.5">
-                                                    <span className="rounded-full bg-amber-50 px-2 py-1 text-[11px] font-medium tracking-[0.16em] text-amber-700 uppercase">
-                                                        Severity{' '}
-                                                        {cluster.severity}
-                                                    </span>
-                                                    <span className="rounded-full bg-sky-50 px-2 py-1 text-[11px] font-medium tracking-[0.16em] text-sky-700 uppercase">
-                                                        Score{' '}
-                                                        {cluster.match_score}
-                                                    </span>
-                                                </div>
-                                            </article>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <div className="mt-3 rounded-lg border border-dashed border-slate-950/8 px-4 py-8 text-sm leading-6 text-slate-500">
-                                        Cluster summaries will appear here after
-                                        the next query or run.
-                                    </div>
-                                )}
-                            </div>
-                        </AdminSurfaceBody>
+                        </div>
                     </AdminSurface>
 
                     <div className="space-y-4">
-                        <AdminSurface id="helper-setup">
+                        <AdminSurface>
                             <AdminSurfaceHeader
-                                title="Local helper"
-                                description="One command to connect the helper, then live heartbeat updates over Echo."
+                                title={
+                                    needsHelperSetup
+                                        ? 'Helper setup'
+                                        : 'Session handoff'
+                                }
+                                description={
+                                    needsHelperSetup
+                                        ? 'Connect the local helper once, then keep the operator inside the session view.'
+                                        : 'Move from the live session into the next operator action.'
+                                }
                             />
-                            <AdminSurfaceBody className="space-y-4">
-                                <div className="rounded-lg border border-slate-950/8 bg-slate-50/80 px-4 py-3">
-                                    <p className="text-[11px] font-medium tracking-[0.18em] text-slate-400 uppercase">
-                                        Heartbeat
-                                    </p>
-                                    <p className="mt-2 text-sm text-slate-700">
-                                        {helperLastSeenAt ?? 'No check-in yet'}
-                                    </p>
-                                </div>
-
-                                {flash.helper_token ? (
-                                    <div className="space-y-3">
-                                        <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4">
+                            <AdminSurfaceBody className="space-y-3">
+                                {needsHelperSetup ? (
+                                    <>
+                                        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900">
+                                            The session launcher stays disabled
+                                            until the helper checks in.
+                                        </div>
+                                        <div className="rounded-lg border border-slate-950/8 bg-slate-950 p-4 text-slate-50">
                                             <div className="flex items-center justify-between gap-3">
-                                                <p className="text-sm font-medium text-emerald-900">
-                                                    Launch command for{' '}
-                                                    {flash.helper_name ??
-                                                        helper.default_name}
+                                                <p className="text-xs font-medium tracking-[0.16em] text-slate-400 uppercase">
+                                                    Bootstrap command
                                                 </p>
                                                 <button
                                                     type="button"
@@ -1168,7 +914,7 @@ function SignalsPage({
                                                             helperBootstrapCommand,
                                                         )
                                                     }
-                                                    className="inline-flex items-center gap-2 rounded-md border border-emerald-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50"
+                                                    className="inline-flex items-center gap-2 rounded-md border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-xs font-medium text-slate-100 transition hover:bg-slate-800"
                                                 >
                                                     {copiedText ===
                                                     helperBootstrapCommand ? (
@@ -1179,115 +925,139 @@ function SignalsPage({
                                                     Copy
                                                 </button>
                                             </div>
-                                            <code className="mt-3 block overflow-x-auto rounded-lg bg-slate-950 px-3 py-3 text-xs text-emerald-200">
+                                            <code className="mt-3 block overflow-x-auto text-xs leading-5 break-all whitespace-pre-wrap text-emerald-200">
                                                 {helperBootstrapCommand}
                                             </code>
                                         </div>
-
-                                        <div className="flex flex-wrap gap-2">
-                                            <button
-                                                type="button"
-                                                onClick={() =>
-                                                    router.post(
-                                                        admin.helperToken.store()
-                                                            .url,
-                                                    )
-                                                }
-                                                className="rounded-lg border border-slate-950/10 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-950/20 hover:bg-slate-50"
-                                            >
-                                                Regenerate helper token
-                                            </button>
-                                        </div>
-
-                                        <div className="rounded-lg border border-slate-950/8 bg-slate-50/80 p-4">
-                                            <div className="flex items-center justify-between gap-3">
-                                                <p className="text-[11px] font-medium tracking-[0.18em] text-slate-400 uppercase">
-                                                    Rerun-only command
-                                                </p>
-                                                <button
-                                                    type="button"
-                                                    onClick={() =>
-                                                        void copy(
-                                                            helperRunCommand,
-                                                        )
-                                                    }
-                                                    className="inline-flex items-center gap-2 rounded-md border border-slate-950/10 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-600 transition hover:border-slate-950/20 hover:bg-slate-50"
-                                                >
-                                                    {copiedText ===
-                                                    helperRunCommand ? (
-                                                        <Check className="size-3.5" />
-                                                    ) : (
-                                                        <Copy className="size-3.5" />
-                                                    )}
-                                                    Copy
-                                                </button>
-                                            </div>
-                                            <code className="mt-3 block overflow-x-auto rounded-lg bg-slate-950 px-3 py-3 text-xs text-slate-300">
-                                                {helperRunCommand}
-                                            </code>
-                                        </div>
-                                    </div>
+                                    </>
                                 ) : (
-                                    <div className="rounded-lg border border-dashed border-slate-950/8 px-4 py-6 text-sm leading-6 text-slate-500">
-                                        Generate a command to launch the local
-                                        helper on your machine.
-                                    </div>
+                                    <>
+                                        <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm leading-6 text-emerald-800">
+                                            The helper is connected and the
+                                            session view is ready to stream the
+                                            next run.
+                                        </div>
+                                        {latestRun ? (
+                                            <Link
+                                                href={
+                                                    admin.reviewRuns.show(
+                                                        latestRun.id,
+                                                    ).url
+                                                }
+                                                className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-slate-950/10 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-950/20 hover:bg-slate-50"
+                                            >
+                                                Open full tool trace
+                                            </Link>
+                                        ) : null}
+                                        <Link
+                                            href={admin.proposals.index().url}
+                                            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
+                                        >
+                                            Review pending resolutions
+                                        </Link>
+                                    </>
                                 )}
                             </AdminSurfaceBody>
                         </AdminSurface>
 
                         <AdminSurface>
                             <AdminSurfaceHeader
-                                title="Recent audit events"
-                                description="A compact look at the latest system activity."
-                                action={
-                                    <Link
-                                        href={admin.auditLog().url}
-                                        className="text-sm font-medium text-slate-500 transition hover:text-slate-950"
-                                    >
-                                        Open audit log
-                                    </Link>
-                                }
+                                title="Evidence"
+                                description="Show only the proof that supports this session."
                             />
-                            <AdminSurfaceBody className="space-y-0 p-0">
-                                {recentAuditLog.length > 0 ? (
-                                    recentAuditLog.map((entry, index) => (
-                                        <div
-                                            key={entry.id}
-                                            className={`px-4 py-3 ${
-                                                index === 0
-                                                    ? ''
-                                                    : 'border-t border-slate-950/6'
-                                            }`}
-                                        >
-                                            <div className="flex items-start justify-between gap-4">
-                                                <div className="min-w-0">
-                                                    <p className="text-sm font-medium text-slate-900">
-                                                        {entry.action}
+                            <AdminSurfaceBody className="space-y-4">
+                                <div className="space-y-2">
+                                    <p className="text-[10px] font-medium tracking-[0.18em] text-slate-400 uppercase">
+                                        Complaint clusters
+                                    </p>
+                                    {clusters.slice(0, 3).length > 0 ? (
+                                        clusters.slice(0, 3).map((cluster) => (
+                                            <div
+                                                key={cluster.id}
+                                                className="rounded-lg border border-slate-950/7 bg-slate-50 px-3.5 py-3"
+                                            >
+                                                <div className="flex items-center justify-between gap-3">
+                                                    <p className="text-sm font-medium text-slate-950">
+                                                        {cluster.title}
                                                     </p>
-                                                    {entry.message ? (
-                                                        <p className="mt-1 text-sm leading-5 text-slate-500">
-                                                            {entry.message}
-                                                        </p>
-                                                    ) : null}
-                                                    <p className="mt-1 text-[11px] font-medium tracking-[0.18em] text-slate-400 uppercase">
-                                                        {entry.actor_type}
-                                                    </p>
+                                                    <span className="text-xs text-slate-400">
+                                                        {cluster.review_count}{' '}
+                                                        reviews
+                                                    </span>
                                                 </div>
-                                                <time className="shrink-0 text-xs text-slate-400">
-                                                    {entry.created_at}
-                                                </time>
+                                                <p className="mt-1 text-sm leading-5 text-slate-500">
+                                                    {cluster.summary}
+                                                </p>
                                             </div>
-                                        </div>
-                                    ))
-                                ) : (
-                                    <div className="px-4 py-8 text-sm leading-6 text-slate-500">
-                                        Audit events will appear here after the
-                                        next run or proposal action.
-                                    </div>
-                                )}
+                                        ))
+                                    ) : (
+                                        <p className="text-sm text-slate-500">
+                                            Preview evidence with a search to
+                                            pull the most relevant clusters into
+                                            view.
+                                        </p>
+                                    )}
+                                </div>
+
+                                <div className="space-y-2">
+                                    <p className="text-[10px] font-medium tracking-[0.18em] text-slate-400 uppercase">
+                                        Supporting reviews
+                                    </p>
+                                    {reviews.slice(0, 3).length > 0 ? (
+                                        reviews.slice(0, 3).map((review) => (
+                                            <div
+                                                key={review.id}
+                                                className="rounded-lg border border-slate-950/7 bg-white px-3.5 py-3"
+                                            >
+                                                <div className="flex items-center justify-between gap-3">
+                                                    <p className="text-sm font-medium text-slate-950">
+                                                        {review.title ??
+                                                            review.product ??
+                                                            'Review signal'}
+                                                    </p>
+                                                    <span className="text-xs text-slate-400">
+                                                        {review.rating}/5
+                                                    </span>
+                                                </div>
+                                                <p className="mt-1 line-clamp-3 text-sm leading-5 text-slate-500">
+                                                    {review.body}
+                                                </p>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <p className="text-sm text-slate-500">
+                                            No review evidence is visible for
+                                            the current query yet.
+                                        </p>
+                                    )}
+                                </div>
                             </AdminSurfaceBody>
                         </AdminSurface>
+
+                        {pendingProposals.length > 0 ? (
+                            <AdminSurface>
+                                <AdminSurfaceHeader
+                                    title="Ready for review"
+                                    description="The next operator decision stays one click away."
+                                />
+                                <AdminSurfaceBody className="space-y-3">
+                                    {pendingProposals
+                                        .slice(0, 3)
+                                        .map((proposal) => (
+                                            <ProposalPreview
+                                                key={proposal.id}
+                                                proposal={proposal}
+                                            />
+                                        ))}
+                                    <Link
+                                        href={admin.proposals.index().url}
+                                        className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-slate-950/10 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-950/20 hover:bg-slate-50"
+                                    >
+                                        Open review queue
+                                    </Link>
+                                </AdminSurfaceBody>
+                            </AdminSurface>
+                        ) : null}
                     </div>
                 </div>
             </AdminPage>

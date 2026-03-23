@@ -8,11 +8,10 @@ import {
     ChevronLeft,
     ChevronRight,
     CircleAlert,
-    Clock3,
     Loader2,
     MessageSquareText,
     Sparkles,
-    Workflow,
+    Terminal,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
@@ -31,9 +30,9 @@ import {
 } from '@/components/ui/collapsible';
 import AppLayout from '@/layouts/app-layout';
 import { cn } from '@/lib/utils';
-import type { BreadcrumbItem } from '@/types';
 import { dashboard } from '@/routes';
 import admin from '@/routes/admin';
+import type { BreadcrumbItem } from '@/types';
 
 interface PageProps {
     auth: {
@@ -255,15 +254,7 @@ function humanizeAction(action: string): string {
         'run.failed': 'Run failed',
     };
 
-    return (
-        labels[action] ??
-        action
-            .split('.')
-            .map(
-                (segment) => segment.charAt(0).toUpperCase() + segment.slice(1),
-            )
-            .join(' ')
-    );
+    return labels[action] ?? action.replaceAll('.', ' ');
 }
 
 function eventBody(event: RunEventPayload): string {
@@ -280,7 +271,7 @@ function runKindLabel(kind: string): string {
         return 'Storefront adaptation';
     }
 
-    return 'Live analysis';
+    return 'Review analysis';
 }
 
 function formatToolName(toolName: string): string {
@@ -328,117 +319,39 @@ function unwrapStructuredContent(content: string): string {
 
 function statusBadgeClassName(status: string): string {
     if (status === 'completed') {
-        return 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700';
+        return 'border-emerald-200 bg-emerald-50 text-emerald-700';
     }
 
     if (status === 'failed') {
-        return 'border-red-500/20 bg-red-500/10 text-red-700';
+        return 'border-red-200 bg-red-50 text-red-700';
     }
 
     if (status === 'running') {
-        return 'border-sky-500/20 bg-sky-500/10 text-sky-700';
+        return 'border-sky-200 bg-sky-50 text-sky-700';
     }
 
-    return 'border-slate-950/10 bg-white/80 text-slate-600';
+    return 'border-slate-200 bg-slate-50 text-slate-600';
 }
 
 function toolStatusBadgeClassName(status: ToolActivity['status']): string {
     if (status === 'complete') {
-        return 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700';
+        return 'border-emerald-200 bg-emerald-50 text-emerald-700';
     }
 
     if (status === 'error') {
-        return 'border-red-500/20 bg-red-500/10 text-red-700';
+        return 'border-red-200 bg-red-50 text-red-700';
     }
 
-    return 'border-sky-500/20 bg-sky-500/10 text-sky-700';
+    return 'border-sky-200 bg-sky-50 text-sky-700';
 }
 
-function SummaryStat({ label, value }: { label: string; value: string }) {
+function SummaryChip({ label, value }: { label: string; value: string }) {
     return (
-        <div className="rounded-lg border border-slate-950/8 bg-white/80 px-4 py-3">
-            <p className="text-[11px] font-medium tracking-[0.2em] text-slate-400 uppercase">
+        <div className="rounded-lg border border-slate-950/7 bg-slate-50 px-3.5 py-3">
+            <p className="text-[10px] font-medium tracking-[0.18em] text-slate-400 uppercase">
                 {label}
             </p>
-            <p className="mt-2 text-lg font-semibold text-slate-950">{value}</p>
-        </div>
-    );
-}
-
-function ThreadMessage({
-    event,
-    isAssistant,
-}: {
-    event: RunEventPayload;
-    isAssistant: boolean;
-}) {
-    if (isAssistant) {
-        return (
-            <div className="relative flex gap-4 pl-2">
-                <div className="flex w-10 shrink-0 justify-center">
-                    <div className="flex size-10 items-center justify-center rounded-2xl bg-sky-500 text-white shadow-sm">
-                        <Bot className="size-4" />
-                    </div>
-                </div>
-                <div className="min-w-0 flex-1 rounded-xl rounded-tl-md border border-sky-500/10 bg-sky-50/80 px-4 py-3.5 shadow-sm shadow-sky-500/5">
-                    <div className="flex items-center justify-between gap-3">
-                        <p className="text-sm font-semibold text-sky-900">
-                            Assistant
-                        </p>
-                        <time className="text-xs text-slate-400">
-                            {formatTimestamp(event.created_at)}
-                        </time>
-                    </div>
-                    <p className="mt-3 text-sm leading-6 whitespace-pre-wrap text-slate-700">
-                        {eventBody(event)}
-                    </p>
-                </div>
-            </div>
-        );
-    }
-
-    return (
-        <div className="relative flex gap-4 pl-2">
-            <div className="flex w-10 shrink-0 justify-center">
-                <div className="mt-2 size-3 rounded-full border-4 border-white bg-slate-300 shadow-sm" />
-            </div>
-            <div
-                className={cn(
-                    'min-w-0 flex-1 rounded-xl border px-4 py-3',
-                    event.is_error
-                        ? 'border-red-200 bg-red-50/80'
-                        : 'border-slate-950/8 bg-slate-50/85',
-                )}
-            >
-                <div className="flex items-center justify-between gap-3">
-                    <p
-                        className={cn(
-                            'text-sm font-medium',
-                            event.is_error ? 'text-red-800' : 'text-slate-900',
-                        )}
-                    >
-                        {humanizeAction(event.action)}
-                    </p>
-                    <time
-                        className={cn(
-                            'text-xs',
-                            event.is_error
-                                ? 'text-red-500/80'
-                                : 'text-slate-400',
-                        )}
-                    >
-                        {formatTimestamp(event.created_at)}
-                    </time>
-                </div>
-                <p
-                    className={cn(
-                        'mt-1 text-sm text-pretty',
-                        event.is_error ? 'text-red-700' : 'text-slate-600',
-                    )}
-                >
-                    {eventBody(event)}
-                </p>
-            </div>
+            <p className="mt-1 text-sm font-medium text-slate-950">{value}</p>
         </div>
     );
 }
@@ -461,21 +374,21 @@ function ToolWorkbench({
     onSelect: (index: number) => void;
 }) {
     return (
-        <Card className="gap-0 overflow-hidden rounded-xl border-slate-950/10 bg-white/90 shadow-[0_18px_50px_-40px_rgba(15,23,42,0.32)]">
-            <CardHeader className="gap-3 border-b border-slate-950/8 bg-[linear-gradient(180deg,rgba(248,250,252,0.98),rgba(255,255,255,0.88))] px-5 py-5">
+        <Card className="gap-0 overflow-hidden rounded-lg border-slate-950/8 shadow-[0_10px_30px_-24px_rgba(15,23,42,0.18)]">
+            <CardHeader className="border-b border-slate-950/6 px-5 py-4">
                 <div className="flex items-start justify-between gap-4">
                     <div>
-                        <CardTitle className="text-lg text-slate-950">
-                            Tool Workbench
+                        <CardTitle className="text-base text-slate-950">
+                            Tool detail
                         </CardTitle>
                         <CardDescription className="mt-1 text-sm text-slate-500">
-                            One focused tool at a time, with the full trace
-                            tucked underneath.
+                            One tool at a time, with the raw call and result in
+                            view.
                         </CardDescription>
                     </div>
                     <Badge
                         variant="outline"
-                        className="rounded-full border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium tracking-[0.18em] text-slate-500 uppercase"
+                        className="rounded-full border-slate-200 bg-white px-2.5 py-1 text-[10px] font-medium tracking-[0.16em] text-slate-500 uppercase"
                     >
                         {isRunning && toolActivities.length > 1
                             ? 'Auto cycle'
@@ -486,11 +399,11 @@ function ToolWorkbench({
             <CardContent className="space-y-5 px-5 py-5">
                 {activeTool ? (
                     <>
-                        <div className="rounded-xl border border-slate-950/10 bg-slate-950 p-4 text-slate-50 shadow-lg shadow-slate-950/8">
+                        <div className="rounded-lg border border-slate-950/8 bg-slate-950 p-4 text-slate-50">
                             <div className="flex items-start justify-between gap-3">
                                 <div>
-                                    <p className="text-[11px] font-medium tracking-[0.22em] text-slate-400 uppercase">
-                                        Active step
+                                    <p className="text-[10px] font-medium tracking-[0.18em] text-slate-400 uppercase">
+                                        Active tool
                                     </p>
                                     <h3 className="mt-2 text-lg font-semibold capitalize">
                                         {formatToolName(activeTool.name)}
@@ -499,7 +412,7 @@ function ToolWorkbench({
                                 <Badge
                                     variant="outline"
                                     className={cn(
-                                        'rounded-full px-2.5 py-1 text-[11px] font-medium tracking-[0.16em] uppercase',
+                                        'rounded-full px-2.5 py-1 text-[10px] font-medium tracking-[0.16em] uppercase',
                                         toolStatusBadgeClassName(
                                             activeTool.status,
                                         ),
@@ -509,14 +422,14 @@ function ToolWorkbench({
                                 </Badge>
                             </div>
                             <div className="mt-4 grid gap-3">
-                                <ToolWorkbenchPanel
+                                <WorkbenchPanel
                                     label="Call"
                                     content={
                                         activeTool.callContent ??
                                         `Calling ${activeTool.name}`
                                     }
                                 />
-                                <ToolWorkbenchPanel
+                                <WorkbenchPanel
                                     label="Result"
                                     content={prettifyToolContent(
                                         activeTool.resultContent,
@@ -574,7 +487,7 @@ function ToolWorkbench({
                                         className={cn(
                                             'min-w-0 shrink-0 rounded-full border px-3 py-2 text-left transition',
                                             index === resolvedActiveToolIndex
-                                                ? 'border-slate-950 bg-slate-950 text-white shadow-sm'
+                                                ? 'border-slate-950 bg-slate-950 text-white'
                                                 : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50',
                                         )}
                                     >
@@ -592,7 +505,7 @@ function ToolWorkbench({
                         </div>
                     </>
                 ) : (
-                    <div className="rounded-xl border border-dashed border-slate-950/10 bg-slate-50 px-4 py-8 text-sm text-slate-500">
+                    <div className="rounded-lg border border-dashed border-slate-950/10 bg-slate-50 px-4 py-8 text-sm text-slate-500">
                         Tool calls will appear here as soon as Codex starts
                         using the Signals MCP tools.
                     </div>
@@ -602,7 +515,7 @@ function ToolWorkbench({
     );
 }
 
-function ToolWorkbenchPanel({
+function WorkbenchPanel({
     label,
     content,
     mono = false,
@@ -613,7 +526,7 @@ function ToolWorkbenchPanel({
 }) {
     return (
         <div className="rounded-lg border border-white/10 bg-white/5 p-3">
-            <p className="text-[11px] font-medium tracking-[0.18em] text-slate-400 uppercase">
+            <p className="text-[10px] font-medium tracking-[0.18em] text-slate-400 uppercase">
                 {label}
             </p>
             {mono ? (
@@ -641,17 +554,16 @@ function ToolTrace({
     onSelect: (index: number) => void;
 }) {
     return (
-        <Card className="gap-0 overflow-hidden rounded-xl border-slate-950/10 bg-white/90 shadow-[0_18px_50px_-40px_rgba(15,23,42,0.32)]">
+        <Card className="gap-0 overflow-hidden rounded-lg border-slate-950/8 shadow-[0_10px_30px_-24px_rgba(15,23,42,0.18)]">
             <Collapsible defaultOpen={running || toolActivities.length <= 3}>
-                <CardHeader className="border-b border-slate-950/8 px-5 py-4">
+                <CardHeader className="border-b border-slate-950/6 px-5 py-4">
                     <div className="flex items-center justify-between gap-3">
                         <div>
                             <CardTitle className="text-base text-slate-950">
-                                Full Tool Trace
+                                Full trace
                             </CardTitle>
                             <CardDescription className="mt-1 text-sm text-slate-500">
-                                Expand a step when you need the raw inputs or
-                                outputs.
+                                Expand a step only when you need the raw detail.
                             </CardDescription>
                         </div>
                         <CollapsibleTrigger asChild>
@@ -677,7 +589,7 @@ function ToolTrace({
                                 >
                                     <div
                                         className={cn(
-                                            'overflow-hidden rounded-xl border transition',
+                                            'overflow-hidden rounded-lg border transition',
                                             index === activeToolIndex
                                                 ? 'border-slate-950/15 bg-slate-50'
                                                 : 'border-slate-200 bg-white',
@@ -717,7 +629,7 @@ function ToolTrace({
                                                     <Badge
                                                         variant="outline"
                                                         className={cn(
-                                                            'rounded-full px-2.5 py-1 text-[11px] font-medium tracking-[0.16em] uppercase',
+                                                            'rounded-full px-2.5 py-1 text-[10px] font-medium tracking-[0.16em] uppercase',
                                                             toolStatusBadgeClassName(
                                                                 tool.status,
                                                             ),
@@ -751,9 +663,9 @@ function ToolTrace({
                                 </Collapsible>
                             ))
                         ) : (
-                            <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-sm text-slate-500">
-                                The full tool trace will appear once the first
-                                MCP call is emitted.
+                            <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-sm text-slate-500">
+                                The trace will appear once the first MCP call is
+                                emitted.
                             </div>
                         )}
                     </CardContent>
@@ -774,7 +686,7 @@ function TraceBlock({
 }) {
     return (
         <div className="rounded-lg border border-slate-200 bg-white p-3">
-            <p className="text-[11px] font-medium tracking-[0.18em] text-slate-400 uppercase">
+            <p className="text-[10px] font-medium tracking-[0.18em] text-slate-400 uppercase">
                 {label}
             </p>
             {mono ? (
@@ -790,19 +702,79 @@ function TraceBlock({
     );
 }
 
+function SessionNote({ event }: { event: RunEventPayload }) {
+    const isAssistant = event.kind === 'assistant_text';
+
+    if (isAssistant) {
+        return (
+            <div className="rounded-lg border border-slate-950/7 bg-white px-4 py-3">
+                <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                        <span className="flex size-6 items-center justify-center rounded-full border border-slate-950/8 bg-slate-50 text-slate-500">
+                            <Bot className="size-3.5" />
+                        </span>
+                        <p className="text-xs font-medium tracking-[0.16em] text-slate-400 uppercase">
+                            Assistant
+                        </p>
+                    </div>
+                    <time className="text-xs text-slate-400">
+                        {formatTimestamp(event.created_at)}
+                    </time>
+                </div>
+                <p className="mt-2 text-sm leading-6 text-slate-700">
+                    {eventBody(event)}
+                </p>
+            </div>
+        );
+    }
+
+    return (
+        <div
+            className={cn(
+                'rounded-lg border px-4 py-3',
+                event.is_error
+                    ? 'border-red-200 bg-red-50'
+                    : 'border-slate-950/7 bg-slate-50',
+            )}
+        >
+            <div className="flex items-center justify-between gap-3">
+                <p
+                    className={cn(
+                        'text-sm font-medium',
+                        event.is_error ? 'text-red-700' : 'text-slate-900',
+                    )}
+                >
+                    {humanizeAction(event.action)}
+                </p>
+                <time className="text-xs text-slate-400">
+                    {formatTimestamp(event.created_at)}
+                </time>
+            </div>
+            <p
+                className={cn(
+                    'mt-1 text-sm leading-6',
+                    event.is_error ? 'text-red-700' : 'text-slate-500',
+                )}
+            >
+                {eventBody(event)}
+            </p>
+        </div>
+    );
+}
+
 function NoticesPanel({ noticeEvents }: { noticeEvents: RunEventPayload[] }) {
     return (
-        <Card className="gap-0 overflow-hidden rounded-xl border-slate-950/10 bg-white/90 shadow-[0_18px_50px_-40px_rgba(15,23,42,0.32)]">
+        <Card className="gap-0 overflow-hidden rounded-lg border-slate-950/8 shadow-[0_10px_30px_-24px_rgba(15,23,42,0.18)]">
             <Collapsible defaultOpen={noticeEvents.length > 0}>
-                <CardHeader className="border-b border-slate-950/8 px-5 py-4">
+                <CardHeader className="border-b border-slate-950/6 px-5 py-4">
                     <div className="flex items-center justify-between gap-3">
                         <div>
                             <CardTitle className="text-base text-slate-950">
-                                System Notices
+                                Notices
                             </CardTitle>
                             <CardDescription className="mt-1 text-sm text-slate-500">
-                                stderr output, warnings, and helper issues stay
-                                out of the main conversation.
+                                stderr output and helper issues stay separate
+                                from the main trace.
                             </CardDescription>
                         </div>
                         <CollapsibleTrigger asChild>
@@ -819,32 +791,13 @@ function NoticesPanel({ noticeEvents }: { noticeEvents: RunEventPayload[] }) {
                     </div>
                 </CardHeader>
                 <CollapsibleContent>
-                    <CardContent className="px-5 py-5">
+                    <CardContent className="space-y-3 px-5 py-5">
                         {noticeEvents.length > 0 ? (
-                            <div className="space-y-3">
-                                {noticeEvents.map((event) => (
-                                    <div
-                                        key={event.id}
-                                        className="rounded-xl border border-red-200 bg-red-50/80 px-4 py-3"
-                                    >
-                                        <div className="flex items-center justify-between gap-3">
-                                            <p className="text-sm font-medium text-red-800">
-                                                {humanizeAction(event.action)}
-                                            </p>
-                                            <time className="text-xs text-red-500/80">
-                                                {formatTimestamp(
-                                                    event.created_at,
-                                                )}
-                                            </time>
-                                        </div>
-                                        <p className="mt-1 text-sm whitespace-pre-wrap text-red-700">
-                                            {eventBody(event)}
-                                        </p>
-                                    </div>
-                                ))}
-                            </div>
+                            noticeEvents.map((event) => (
+                                <SessionNote key={event.id} event={event} />
+                            ))
                         ) : (
-                            <div className="rounded-xl border border-emerald-200 bg-emerald-50/80 px-4 py-3 text-sm text-emerald-700">
+                            <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
                                 No warnings or stderr notices have been streamed
                                 for this run.
                             </div>
@@ -865,7 +818,7 @@ export default function ReviewAnalysisRunShow({ run }: ReviewRunShowProps) {
     const [activeToolIndex, setActiveToolIndex] = useState(
         Number.MAX_SAFE_INTEGER,
     );
-    const timelineEndRef = useRef<HTMLDivElement | null>(null);
+    const sidebarEndRef = useRef<HTMLDivElement | null>(null);
     const runUpdatedEventName = '.review-analysis-run.updated';
     const runEventCreatedEventName = '.review-analysis-event.created';
     const displayRun =
@@ -904,23 +857,15 @@ export default function ReviewAnalysisRunShow({ run }: ReviewRunShowProps) {
             event.action === 'codex.stderr' ||
             event.action === 'codex.stderr.delta',
     );
-    const milestoneCount = timelineEvents.filter((event) =>
-        milestoneActions.has(event.action),
-    ).length;
-    const assistantMessageCount = timelineEvents.filter(
-        (event) => event.kind === 'assistant_text',
-    ).length;
-    const completedToolCount = toolActivities.filter(
-        (tool) => tool.status === 'complete',
-    ).length;
-    const errorCount = noticeEvents.length;
+    const focus =
+        typeof run.context?.focus === 'string' ? run.context.focus : null;
     const breadcrumbs: BreadcrumbItem[] = [
         {
-            title: 'Admin Dashboard',
+            title: 'Start',
             href: dashboard(),
         },
         {
-            title: 'Signals',
+            title: 'Session',
             href: admin.signals(),
         },
         {
@@ -962,11 +907,11 @@ export default function ReviewAnalysisRunShow({ run }: ReviewRunShowProps) {
     );
 
     useEffect(() => {
-        timelineEndRef.current?.scrollIntoView({
+        sidebarEndRef.current?.scrollIntoView({
             block: 'end',
             behavior: displayRun.status === 'running' ? 'smooth' : 'auto',
         });
-    }, [displayRun.status, events.length]);
+    }, [displayRun.status, timelineEvents.length]);
 
     useEffect(() => {
         if (displayRun.status !== 'running' || toolActivities.length < 2) {
@@ -1028,10 +973,11 @@ export default function ReviewAnalysisRunShow({ run }: ReviewRunShowProps) {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`Run #${run.id.toString()}`} />
-            <div className="min-h-full bg-[radial-gradient(circle_at_top_left,_rgba(14,165,233,0.05),_transparent_24%),linear-gradient(180deg,_#f7f7f8,_#ffffff_28%,_#fbfbfc)] p-4 md:p-6">
-                <div className="mx-auto max-w-7xl space-y-5">
-                    <Card className="gap-0 overflow-hidden rounded-xl border-slate-950/10 bg-white/90 shadow-[0_18px_50px_-40px_rgba(15,23,42,0.32)]">
-                        <CardHeader className="gap-4 border-b border-slate-950/8 bg-[linear-gradient(180deg,rgba(248,250,252,0.98),rgba(255,255,255,0.92))] px-4 py-4 md:px-5">
+
+            <div className="mx-auto w-full max-w-[1440px] px-4 py-5 md:px-6">
+                <div className="space-y-4">
+                    <Card className="gap-0 overflow-hidden rounded-lg border-slate-950/8 shadow-[0_10px_30px_-24px_rgba(15,23,42,0.18)]">
+                        <CardHeader className="gap-4 border-b border-slate-950/6 px-5 py-5">
                             <div className="flex flex-wrap items-start justify-between gap-4">
                                 <div className="space-y-3">
                                     <Link
@@ -1039,20 +985,20 @@ export default function ReviewAnalysisRunShow({ run }: ReviewRunShowProps) {
                                         className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 transition hover:text-slate-900"
                                     >
                                         <ArrowLeft className="size-4" />
-                                        Back to Signals
+                                        Back to Session
                                     </Link>
                                     <div className="space-y-2">
                                         <div className="flex flex-wrap items-center gap-2">
                                             <Badge
                                                 variant="outline"
-                                                className="rounded-full border-sky-200 bg-sky-50 px-2.5 py-1 text-[11px] font-medium tracking-[0.18em] text-sky-700 uppercase"
+                                                className="rounded-full border-sky-200 bg-sky-50 px-2.5 py-1 text-[10px] font-medium tracking-[0.16em] text-sky-700 uppercase"
                                             >
                                                 {runKindLabel(displayRun.kind)}
                                             </Badge>
                                             <Badge
                                                 variant="outline"
                                                 className={cn(
-                                                    'rounded-full px-2.5 py-1 text-[11px] font-medium tracking-[0.18em] uppercase',
+                                                    'rounded-full px-2.5 py-1 text-[10px] font-medium tracking-[0.16em] uppercase',
                                                     statusBadgeClassName(
                                                         displayRun.status,
                                                     ),
@@ -1077,105 +1023,40 @@ export default function ReviewAnalysisRunShow({ run }: ReviewRunShowProps) {
                                             <h1 className="text-2xl font-semibold tracking-tight text-slate-950">
                                                 Run #{run.id.toString()}
                                             </h1>
-                                            <p className="mt-2 max-w-3xl text-sm leading-6 text-pretty text-slate-600">
+                                            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
                                                 {displayRun.summary ??
-                                                    'Watching the Codex run in a cleaner, compact chat view while Reverb streams updates in real time.'}
+                                                    'Focused detail view for the tool trace and live session notes.'}
                                             </p>
                                         </div>
                                     </div>
                                 </div>
-                                <div className="grid min-w-[16rem] gap-3 sm:grid-cols-2">
-                                    <SummaryStat
+                                <div className="grid min-w-[18rem] gap-3 sm:grid-cols-2">
+                                    <SummaryChip
                                         label="Requested"
                                         value={formatTimestamp(
                                             run.requested_at,
                                         )}
                                     />
-                                    <SummaryStat
+                                    <SummaryChip
                                         label="Started"
                                         value={formatTimestamp(run.started_at)}
                                     />
-                                </div>
-                            </div>
-                            <div className="grid gap-3 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
-                                <div className="rounded-xl bg-slate-950 px-4 py-4 text-white shadow-lg shadow-slate-950/10">
-                                    <div className="flex items-center gap-2 text-[11px] font-medium tracking-[0.22em] text-sky-200/80 uppercase">
-                                        <MessageSquareText className="size-3.5" />
-                                        Mission
-                                    </div>
-                                    <p className="mt-3 text-sm leading-6 text-slate-100">
-                                        {run.prompt ??
-                                            'Waiting for the run prompt to be attached.'}
-                                    </p>
-                                </div>
-                                <div className="grid gap-3 sm:grid-cols-2">
-                                    <SummaryStat
-                                        label="Assistant updates"
-                                        value={assistantMessageCount.toString()}
+                                    <SummaryChip
+                                        label="Finished"
+                                        value={formatTimestamp(
+                                            run.completed_at,
+                                        )}
                                     />
-                                    <SummaryStat
-                                        label="Milestones"
-                                        value={milestoneCount.toString()}
-                                    />
-                                    <SummaryStat
+                                    <SummaryChip
                                         label="Tool steps"
-                                        value={`${completedToolCount.toString()}/${toolActivities.length.toString()}`}
-                                    />
-                                    <SummaryStat
-                                        label="Notices"
-                                        value={errorCount.toString()}
+                                        value={toolActivities.length.toString()}
                                     />
                                 </div>
                             </div>
                         </CardHeader>
                     </Card>
 
-                    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_24rem]">
-                        <Card className="gap-0 overflow-hidden rounded-xl border-slate-950/10 bg-white/90 shadow-[0_18px_50px_-40px_rgba(15,23,42,0.32)]">
-                            <CardHeader className="border-b border-slate-950/8 px-4 py-4 md:px-5">
-                                <div className="flex items-start justify-between gap-4">
-                                    <div>
-                                        <CardTitle className="text-xl text-slate-950">
-                                            Conversation
-                                        </CardTitle>
-                                        <CardDescription className="mt-1 text-sm text-slate-500">
-                                            Assistant deltas are merged into a
-                                            readable thread. Operational
-                                            milestones stay lightweight in the
-                                            same flow.
-                                        </CardDescription>
-                                    </div>
-                                    <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-500">
-                                        <Clock3 className="size-3.5" />
-                                        Live scroll enabled
-                                    </div>
-                                </div>
-                            </CardHeader>
-                            <CardContent className="px-4 py-5 md:px-5">
-                                {timelineEvents.length > 0 ? (
-                                    <div className="relative space-y-4">
-                                        <div className="absolute top-0 bottom-0 left-6 w-px bg-gradient-to-b from-sky-100 via-slate-200 to-transparent" />
-                                        {timelineEvents.map((event) => (
-                                            <ThreadMessage
-                                                key={event.id}
-                                                event={event}
-                                                isAssistant={
-                                                    event.kind ===
-                                                    'assistant_text'
-                                                }
-                                            />
-                                        ))}
-                                        <div ref={timelineEndRef} />
-                                    </div>
-                                ) : (
-                                    <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-5 py-10 text-sm text-slate-500">
-                                        Waiting for the local helper to claim
-                                        this run and begin streaming activity.
-                                    </div>
-                                )}
-                            </CardContent>
-                        </Card>
-
+                    <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
                         <div className="space-y-4">
                             <ToolWorkbench
                                 toolActivities={toolActivities}
@@ -1195,35 +1076,73 @@ export default function ReviewAnalysisRunShow({ run }: ReviewRunShowProps) {
                                 running={displayRun.status === 'running'}
                                 onSelect={selectToolAt}
                             />
+                        </div>
 
-                            <Card className="gap-0 overflow-hidden rounded-xl border-slate-950/10 bg-white/90 shadow-[0_18px_50px_-40px_rgba(15,23,42,0.32)]">
-                                <CardHeader className="border-b border-slate-950/8 px-5 py-4">
-                                    <div className="flex items-center justify-between gap-3">
-                                        <div>
-                                            <CardTitle className="text-base text-slate-950">
-                                                Stream Model
-                                            </CardTitle>
-                                            <CardDescription className="mt-1 text-sm text-slate-500">
-                                                Reverb is streaming normalized
-                                                message deltas, tool calls, tool
-                                                results, and system notices into
-                                                this workspace.
-                                            </CardDescription>
-                                        </div>
-                                        <Workflow className="size-4 text-slate-400" />
+                        <div className="space-y-4">
+                            <Card className="gap-0 overflow-hidden rounded-lg border-slate-950/8 shadow-[0_10px_30px_-24px_rgba(15,23,42,0.18)]">
+                                <CardHeader className="border-b border-slate-950/6 px-5 py-4">
+                                    <div className="flex items-center gap-2">
+                                        <MessageSquareText className="size-4 text-slate-400" />
+                                        <CardTitle className="text-base text-slate-950">
+                                            Session brief
+                                        </CardTitle>
                                     </div>
+                                    <CardDescription className="mt-1 text-sm text-slate-500">
+                                        The focus and prompt that shaped this
+                                        run.
+                                    </CardDescription>
                                 </CardHeader>
-                                <CardContent className="px-5 py-5">
-                                    <div className="grid gap-3 text-sm text-slate-600">
-                                        <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
-                                            Assistant deltas merge into single
-                                            messages by `item_id`.
+                                <CardContent className="space-y-3 px-5 py-5">
+                                    {focus ? (
+                                        <div className="rounded-lg border border-slate-950/7 bg-slate-50 px-4 py-3">
+                                            <p className="text-[10px] font-medium tracking-[0.18em] text-slate-400 uppercase">
+                                                Focus
+                                            </p>
+                                            <p className="mt-2 text-sm leading-6 text-slate-700">
+                                                {focus}
+                                            </p>
                                         </div>
-                                        <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
-                                            Tool calls stay compact by default
-                                            and expand only when needed.
-                                        </div>
+                                    ) : null}
+                                    <div className="rounded-lg border border-slate-950/7 bg-white px-4 py-3">
+                                        <p className="text-[10px] font-medium tracking-[0.18em] text-slate-400 uppercase">
+                                            Prompt
+                                        </p>
+                                        <p className="mt-2 text-sm leading-6 text-slate-700">
+                                            {run.prompt ??
+                                                'Waiting for the run prompt to be attached.'}
+                                        </p>
                                     </div>
+                                </CardContent>
+                            </Card>
+
+                            <Card className="gap-0 overflow-hidden rounded-lg border-slate-950/8 shadow-[0_10px_30px_-24px_rgba(15,23,42,0.18)]">
+                                <CardHeader className="border-b border-slate-950/6 px-5 py-4">
+                                    <div className="flex items-center gap-2">
+                                        <Terminal className="size-4 text-slate-400" />
+                                        <CardTitle className="text-base text-slate-950">
+                                            Live notes
+                                        </CardTitle>
+                                    </div>
+                                    <CardDescription className="mt-1 text-sm text-slate-500">
+                                        Assistant messages and milestones from
+                                        the session stream.
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-3 px-5 py-5">
+                                    {timelineEvents.length > 0 ? (
+                                        timelineEvents.map((event) => (
+                                            <SessionNote
+                                                key={event.id}
+                                                event={event}
+                                            />
+                                        ))
+                                    ) : (
+                                        <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-sm text-slate-500">
+                                            Waiting for the helper to claim this
+                                            run and begin streaming activity.
+                                        </div>
+                                    )}
+                                    <div ref={sidebarEndRef} />
                                 </CardContent>
                             </Card>
 

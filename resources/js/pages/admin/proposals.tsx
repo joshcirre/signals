@@ -3,7 +3,6 @@ import { PencilLine, Save, ShieldCheck, ShieldX } from 'lucide-react';
 import { useState } from 'react';
 import {
     AdminHeader,
-    AdminMetric,
     AdminPage,
     AdminPill,
     AdminSurface,
@@ -13,18 +12,18 @@ import {
 import AppLayout from '@/layouts/app-layout';
 import { storeBrand } from '@/lib/brand';
 import { cn } from '@/lib/utils';
-import type { BreadcrumbItem } from '@/types';
 import { dashboard } from '@/routes';
 import admin from '@/routes/admin';
 import productRoutes from '@/routes/products';
+import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'Admin Dashboard',
+        title: 'Start',
         href: dashboard(),
     },
     {
-        title: 'Proposal Queue',
+        title: 'Review',
         href: admin.proposals.index(),
     },
 ];
@@ -124,19 +123,19 @@ export default function ProposalQueue({
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Proposal Queue" />
+            <Head title="Review" />
 
             <AdminPage>
                 <AdminHeader
-                    eyebrow="Review queue"
-                    title="Proposal queue"
+                    eyebrow="Review"
+                    title="Review resolutions"
                     description={
                         <>
-                            A tighter review surface for the changes{' '}
-                            {storeBrand.adminName} prepared. Pick the next
-                            proposal from the queue, inspect it in the
-                            right-hand pane, then approve, reject, or edit
-                            without losing context.
+                            Keep this page operator-simple: choose the best
+                            proposal, make a decision, then move to the
+                            storefront or a follow-up adaptation session.{' '}
+                            {storeBrand.adminName} should never feel like a
+                            cluttered queue manager.
                         </>
                     }
                     meta={
@@ -147,7 +146,7 @@ export default function ProposalQueue({
                             </AdminPill>
                             <AdminPill>
                                 <span className="size-1.5 rounded-full bg-slate-300" />
-                                {proposalCounts.total} in current view
+                                {proposalCounts.total} visible
                             </AdminPill>
                         </>
                     }
@@ -183,34 +182,11 @@ export default function ProposalQueue({
                     }
                 />
 
-                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                    <AdminMetric
-                        label="Pending"
-                        value={proposalCounts.pending}
-                        detail="Ready for operator review."
-                    />
-                    <AdminMetric
-                        label="Applied"
-                        value={proposalCounts.applied}
-                        detail="Already published to the storefront."
-                    />
-                    <AdminMetric
-                        label="Rejected"
-                        value={proposalCounts.rejected}
-                        detail="Dismissed during review."
-                    />
-                    <AdminMetric
-                        label="Visible now"
-                        value={proposalCounts.total}
-                        detail="Items in the current filter."
-                    />
-                </div>
-
-                <div className="grid gap-4 xl:grid-cols-[360px_minmax(0,1fr)]">
-                    <AdminSurface className="overflow-hidden xl:sticky xl:top-20 xl:h-fit">
+                <div className="grid gap-4 xl:grid-cols-[320px_minmax(0,1fr)]">
+                    <AdminSurface className="overflow-hidden xl:sticky xl:top-18 xl:h-fit">
                         <AdminSurfaceHeader
                             title="Queue"
-                            description="Select the next proposal to review."
+                            description="Pick the single proposal worth deciding now."
                             action={
                                 <span className="text-xs font-medium text-slate-400">
                                     {proposals.length} item
@@ -231,15 +207,15 @@ export default function ProposalQueue({
                                         className={cn(
                                             'w-full rounded-lg border px-3 py-3 text-left transition',
                                             proposal.id === selectedProposal?.id
-                                                ? 'border-slate-950 bg-slate-950 text-white shadow-sm'
-                                                : 'border-slate-950/8 bg-slate-50/80 text-slate-800 hover:border-slate-950/20 hover:bg-white',
+                                                ? 'border-slate-950 bg-slate-950 text-white'
+                                                : 'border-slate-950/8 bg-slate-50 text-slate-800 hover:border-slate-950/20 hover:bg-white',
                                         )}
                                     >
                                         <div className="flex items-start justify-between gap-3">
                                             <div className="min-w-0">
                                                 <p
                                                     className={cn(
-                                                        'text-[11px] font-medium tracking-[0.18em] uppercase',
+                                                        'text-[10px] font-medium tracking-[0.18em] uppercase',
                                                         proposal.id ===
                                                             selectedProposal?.id
                                                             ? 'text-white/55'
@@ -254,27 +230,21 @@ export default function ProposalQueue({
                                                 <p className="mt-1 truncate text-sm font-medium">
                                                     {proposal.target_label}
                                                 </p>
-                                                {proposal.type ===
-                                                'product_copy_change' ? (
-                                                    <p
-                                                        className={cn(
-                                                            'mt-1 text-xs',
-                                                            proposal.id ===
-                                                                selectedProposal?.id
-                                                                ? 'text-white/60'
-                                                                : 'text-slate-400',
-                                                        )}
-                                                    >
-                                                        {proposalFieldLabel(
-                                                            proposal.payload
-                                                                .field,
-                                                        )}
-                                                    </p>
-                                                ) : null}
+                                                <p
+                                                    className={cn(
+                                                        'mt-1 line-clamp-2 text-sm leading-5',
+                                                        proposal.id ===
+                                                            selectedProposal?.id
+                                                            ? 'text-white/70'
+                                                            : 'text-slate-500',
+                                                    )}
+                                                >
+                                                    {proposal.rationale}
+                                                </p>
                                             </div>
                                             <span
                                                 className={cn(
-                                                    'rounded-full px-2 py-1 text-[11px] font-semibold',
+                                                    'rounded-full px-2 py-1 text-[10px] font-semibold',
                                                     proposal.id ===
                                                         selectedProposal?.id
                                                         ? 'bg-white/10 text-white'
@@ -293,7 +263,7 @@ export default function ProposalQueue({
                                                     'capitalize',
                                                     proposal.id ===
                                                         selectedProposal?.id
-                                                        ? 'text-white/65'
+                                                        ? 'text-white/60'
                                                         : 'text-slate-400',
                                                 )}
                                             >
@@ -374,7 +344,7 @@ export default function ProposalQueue({
                                             );
                                         }}
                                     >
-                                        <label className="block text-xs font-medium tracking-[0.18em] text-slate-400 uppercase">
+                                        <label className="block text-[10px] font-medium tracking-[0.18em] text-slate-400 uppercase">
                                             Proposed content
                                             <textarea
                                                 value={form.data.content}
@@ -384,10 +354,10 @@ export default function ProposalQueue({
                                                         event.target.value,
                                                     )
                                                 }
-                                                className="mt-2 min-h-36 w-full rounded-lg border border-slate-950/10 bg-white px-3 py-3 text-sm leading-6 text-slate-900 transition outline-none focus:border-slate-950/20 focus:ring-2 focus:ring-slate-950/5"
+                                                className="mt-2 min-h-40 w-full rounded-lg border border-slate-950/10 bg-white px-3 py-3 text-sm leading-6 text-slate-900 outline-none focus:border-slate-950/20 focus:ring-2 focus:ring-slate-950/5"
                                             />
                                         </label>
-                                        <label className="block text-xs font-medium tracking-[0.18em] text-slate-400 uppercase">
+                                        <label className="block text-[10px] font-medium tracking-[0.18em] text-slate-400 uppercase">
                                             Rationale
                                             <textarea
                                                 value={form.data.rationale}
@@ -397,10 +367,10 @@ export default function ProposalQueue({
                                                         event.target.value,
                                                     )
                                                 }
-                                                className="mt-2 min-h-28 w-full rounded-lg border border-slate-950/10 bg-white px-3 py-3 text-sm leading-6 text-slate-900 transition outline-none focus:border-slate-950/20 focus:ring-2 focus:ring-slate-950/5"
+                                                className="mt-2 min-h-28 w-full rounded-lg border border-slate-950/10 bg-white px-3 py-3 text-sm leading-6 text-slate-900 outline-none focus:border-slate-950/20 focus:ring-2 focus:ring-slate-950/5"
                                             />
                                         </label>
-                                        <label className="block text-xs font-medium tracking-[0.18em] text-slate-400 uppercase">
+                                        <label className="block text-[10px] font-medium tracking-[0.18em] text-slate-400 uppercase">
                                             Confidence
                                             <input
                                                 type="number"
@@ -416,7 +386,7 @@ export default function ProposalQueue({
                                                         ),
                                                     )
                                                 }
-                                                className="mt-2 w-full rounded-lg border border-slate-950/10 bg-white px-3 py-2.5 text-sm text-slate-900 transition outline-none focus:border-slate-950/20 focus:ring-2 focus:ring-slate-950/5"
+                                                className="mt-2 w-full rounded-lg border border-slate-950/10 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-slate-950/20 focus:ring-2 focus:ring-slate-950/5"
                                             />
                                         </label>
                                         <div className="flex flex-wrap items-center gap-2">
@@ -442,28 +412,39 @@ export default function ProposalQueue({
                                 ) : (
                                     <>
                                         <div className="grid gap-3 md:grid-cols-3">
-                                            <AdminMetric
-                                                label="Created"
-                                                value={
-                                                    selectedProposal.created_at
-                                                }
-                                            />
-                                            <AdminMetric
-                                                label="Status"
-                                                value={selectedProposal.status}
-                                                className="capitalize"
-                                            />
-                                            <AdminMetric
-                                                label="Confidence"
-                                                value={`${(
-                                                    selectedProposal.confidence *
-                                                    100
-                                                ).toFixed(0)}%`}
-                                            />
+                                            <div className="rounded-lg border border-slate-950/7 bg-slate-50 px-3.5 py-3">
+                                                <p className="text-[10px] font-medium tracking-[0.18em] text-slate-400 uppercase">
+                                                    Created
+                                                </p>
+                                                <p className="mt-1 text-sm font-medium text-slate-950">
+                                                    {
+                                                        selectedProposal.created_at
+                                                    }
+                                                </p>
+                                            </div>
+                                            <div className="rounded-lg border border-slate-950/7 bg-slate-50 px-3.5 py-3">
+                                                <p className="text-[10px] font-medium tracking-[0.18em] text-slate-400 uppercase">
+                                                    Status
+                                                </p>
+                                                <p className="mt-1 text-sm font-medium text-slate-950 capitalize">
+                                                    {selectedProposal.status}
+                                                </p>
+                                            </div>
+                                            <div className="rounded-lg border border-slate-950/7 bg-slate-50 px-3.5 py-3">
+                                                <p className="text-[10px] font-medium tracking-[0.18em] text-slate-400 uppercase">
+                                                    Field
+                                                </p>
+                                                <p className="mt-1 text-sm font-medium text-slate-950">
+                                                    {proposalFieldLabel(
+                                                        selectedProposal.payload
+                                                            .field,
+                                                    )}
+                                                </p>
+                                            </div>
                                         </div>
 
-                                        <div className="rounded-lg border border-slate-950/8 bg-slate-50/80 p-4">
-                                            <p className="text-[11px] font-medium tracking-[0.2em] text-slate-400 uppercase">
+                                        <div className="rounded-lg border border-slate-950/7 bg-slate-50 px-4 py-4">
+                                            <p className="text-[10px] font-medium tracking-[0.18em] text-slate-400 uppercase">
                                                 Rationale
                                             </p>
                                             <p className="mt-2 text-sm leading-6 text-slate-600">
@@ -471,8 +452,8 @@ export default function ProposalQueue({
                                             </p>
                                         </div>
 
-                                        <div className="rounded-lg border border-slate-950/8 bg-white p-4">
-                                            <p className="text-[11px] font-medium tracking-[0.2em] text-slate-400 uppercase">
+                                        <div className="rounded-lg border border-slate-950/7 bg-white px-4 py-4">
+                                            <p className="text-[10px] font-medium tracking-[0.18em] text-slate-400 uppercase">
                                                 {selectedProposal.type ===
                                                 'review_response'
                                                     ? 'Suggested response'
@@ -498,7 +479,7 @@ export default function ProposalQueue({
                                                         className="inline-flex items-center gap-2 rounded-lg border border-slate-950/10 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-950/20 hover:bg-slate-50"
                                                     >
                                                         <PencilLine className="size-4" />
-                                                        Edit proposal
+                                                        Edit
                                                     </button>
                                                     <button
                                                         type="button"
@@ -536,42 +517,50 @@ export default function ProposalQueue({
                                                     </button>
                                                 </>
                                             ) : null}
+                                        </div>
 
-                                            {selectedProposal.target_slug ? (
-                                                <Link
-                                                    href={
-                                                        productRoutes.show({
-                                                            product:
-                                                                selectedProposal.target_slug,
-                                                        }).url
-                                                    }
-                                                    className="rounded-lg border border-slate-950/10 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition hover:border-slate-950/20 hover:bg-slate-50"
-                                                >
-                                                    Preview storefront
-                                                </Link>
-                                            ) : null}
-                                            {selectedProposal.type ===
-                                                'product_copy_change' &&
-                                            selectedProposal.target_slug ? (
-                                                <button
-                                                    type="button"
-                                                    onClick={() =>
-                                                        router.post(
-                                                            admin.reviewRuns.store()
-                                                                .url,
-                                                            {
-                                                                kind: 'storefront_adaptation',
-                                                                proposal_id:
-                                                                    selectedProposal.id,
-                                                            },
-                                                        )
-                                                    }
-                                                    className="inline-flex items-center gap-2 rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-sm font-medium text-sky-700 transition hover:bg-sky-100"
-                                                >
-                                                    <ShieldCheck className="size-4" />
-                                                    Launch storefront adaptation
-                                                </button>
-                                            ) : null}
+                                        <div className="rounded-lg border border-slate-950/7 bg-slate-50 px-4 py-4">
+                                            <p className="text-[10px] font-medium tracking-[0.18em] text-slate-400 uppercase">
+                                                Next step
+                                            </p>
+                                            <div className="mt-3 flex flex-wrap items-center gap-2">
+                                                {selectedProposal.target_slug ? (
+                                                    <Link
+                                                        href={
+                                                            productRoutes.show({
+                                                                product:
+                                                                    selectedProposal.target_slug,
+                                                            }).url
+                                                        }
+                                                        className="rounded-lg border border-slate-950/10 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition hover:border-slate-950/20 hover:bg-slate-50"
+                                                    >
+                                                        Preview storefront
+                                                    </Link>
+                                                ) : null}
+                                                {selectedProposal.type ===
+                                                    'product_copy_change' &&
+                                                selectedProposal.target_slug ? (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            router.post(
+                                                                admin.reviewRuns.store()
+                                                                    .url,
+                                                                {
+                                                                    kind: 'storefront_adaptation',
+                                                                    proposal_id:
+                                                                        selectedProposal.id,
+                                                                },
+                                                            )
+                                                        }
+                                                        className="inline-flex items-center gap-2 rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-sm font-medium text-sky-700 transition hover:bg-sky-100"
+                                                    >
+                                                        <ShieldCheck className="size-4" />
+                                                        Launch adaptation
+                                                        session
+                                                    </button>
+                                                ) : null}
+                                            </div>
                                         </div>
                                     </>
                                 )
