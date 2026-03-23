@@ -9,7 +9,6 @@ import {
     Radar,
     Search,
     ShieldX,
-    Terminal,
 } from 'lucide-react';
 import type { FormEvent } from 'react';
 import { useEffect, useRef, useState } from 'react';
@@ -24,9 +23,18 @@ import {
 import { useClipboard } from '@/hooks/use-clipboard';
 import AppLayout from '@/layouts/app-layout';
 import { cn } from '@/lib/utils';
-import type { BreadcrumbItem } from '@/types';
+import {
+    deriveSessionFeedState,
+    eventBody,
+} from '@/pages/admin/signals-session-feed';
+import type {
+    RunEventPayload,
+    SessionActivityItem,
+    ToolActivity,
+} from '@/pages/admin/signals-session-feed';
 import { dashboard } from '@/routes';
 import admin from '@/routes/admin';
+import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -152,21 +160,6 @@ interface RunUpdatedEvent {
     error_message: string | null;
 }
 
-interface RunEventPayload {
-    id: number;
-    review_analysis_run_id: number;
-    actor_type: string;
-    action: string;
-    kind: string | null;
-    content: string | null;
-    tool_id: string | null;
-    tool_name: string | null;
-    item_id: string | null;
-    is_error: boolean;
-    metadata: Record<string, unknown>;
-    created_at: string;
-}
-
 interface HelperHeartbeatUpdatedEvent {
     id: number;
     name: string;
@@ -175,26 +168,7 @@ interface HelperHeartbeatUpdatedEvent {
     is_active: boolean;
 }
 
-interface ToolActivity {
-    id: string;
-    name: string;
-    callContent: string | null;
-    resultContent: string | null;
-    startedAt: string;
-    completedAt: string | null;
-    status: 'running' | 'complete' | 'error';
-}
-
 type SignalsPageProps = Omit<SignalsProps, 'products'>;
-
-function eventBody(event: RunEventPayload): string {
-    return (
-        event.content ??
-        (typeof event.metadata.message === 'string'
-            ? event.metadata.message
-            : 'No message provided.')
-    );
-}
 
 function runStatusClassName(status: string | null | undefined): string {
     if (status === 'running') {
@@ -252,129 +226,6 @@ function formatToolName(toolName: string | null): string {
         .replaceAll('_', ' ');
 }
 
-function mergeAssistantEvents(events: RunEventPayload[]): RunEventPayload[] {
-    return events.reduce<RunEventPayload[]>((current, event) => {
-        const isAssistantTextEvent =
-            event.kind === 'assistant_text' ||
-            event.kind === 'assistant_text_delta';
-
-        if (!isAssistantTextEvent || event.item_id === null) {
-            current.push(event);
-
-            return current;
-        }
-
-        const existingIndex = current.findIndex(
-            (candidate) =>
-                candidate.item_id === event.item_id &&
-                (candidate.kind === 'assistant_text' ||
-                    candidate.kind === 'assistant_text_delta'),
-        );
-
-        if (existingIndex === -1) {
-            current.push({
-                ...event,
-                kind: 'assistant_text',
-            });
-
-            return current;
-        }
-
-        const existingEvent = current[existingIndex];
-        const mergedContent =
-            event.kind === 'assistant_text'
-                ? (event.content ?? existingEvent.content)
-                : `${existingEvent.content ?? ''}${event.content ?? ''}`;
-
-        current[existingIndex] = {
-            ...existingEvent,
-            ...event,
-            kind: 'assistant_text',
-            action: 'codex.message',
-            content: mergedContent,
-        };
-
-        return current;
-    }, []);
-}
-
-function buildToolActivities(events: RunEventPayload[]): ToolActivity[] {
-    const toolActivities: ToolActivity[] = [];
-    const activityIndexById = new Map<string, number>();
-
-    for (const event of events) {
-        if (event.kind === 'tool_call') {
-            const activityId =
-                event.tool_id ??
-                `${event.tool_name ?? 'tool'}-${event.id.toString()}`;
-
-            activityIndexById.set(activityId, toolActivities.length);
-            toolActivities.push({
-                id: activityId,
-                name: event.tool_name ?? 'Unknown tool',
-                callContent: event.content,
-                resultContent: null,
-                startedAt: event.created_at,
-                completedAt: null,
-                status: 'running',
-            });
-
-            continue;
-        }
-
-        if (event.kind !== 'tool_result') {
-            continue;
-        }
-
-        const matchingIndex =
-            (event.tool_id !== null
-                ? activityIndexById.get(event.tool_id)
-                : undefined) ?? findLastRunningToolIndex(toolActivities, event);
-
-        if (matchingIndex === undefined) {
-            toolActivities.push({
-                id:
-                    event.tool_id ??
-                    `${event.tool_name ?? 'tool'}-${event.id.toString()}`,
-                name: event.tool_name ?? 'Unknown tool',
-                callContent: null,
-                resultContent: event.content,
-                startedAt: event.created_at,
-                completedAt: event.created_at,
-                status: event.is_error ? 'error' : 'complete',
-            });
-
-            continue;
-        }
-
-        toolActivities[matchingIndex] = {
-            ...toolActivities[matchingIndex],
-            resultContent: event.content,
-            completedAt: event.created_at,
-            status: event.is_error ? 'error' : 'complete',
-        };
-    }
-
-    return toolActivities;
-}
-
-function findLastRunningToolIndex(
-    toolActivities: ToolActivity[],
-    event: RunEventPayload,
-): number | undefined {
-    for (let index = toolActivities.length - 1; index >= 0; index -= 1) {
-        const activity = toolActivities[index];
-
-        if (
-            activity.status === 'running' &&
-            activity.name === event.tool_name
-        ) {
-            return index;
-        }
-    }
-
-    return undefined;
-}
 
 function SessionUserBubble({ content }: { content: string }) {
     return (
@@ -389,17 +240,43 @@ function SessionUserBubble({ content }: { content: string }) {
 function SessionAssistantBubble({
     content,
     createdAt,
+    live,
 }: {
     content: string;
     createdAt: string;
+    live?: boolean;
 }) {
     return (
         <div className="flex gap-3">
-            <div className="flex size-7 shrink-0 items-center justify-center rounded-full border border-slate-950/10 bg-white text-slate-500">
-                <Bot className="size-3.5" />
+            <div
+                className={cn(
+                    'flex size-7 shrink-0 items-center justify-center rounded-full border text-slate-500',
+                    live
+                        ? 'border-sky-200 bg-sky-50 text-sky-600'
+                        : 'border-slate-950/10 bg-white',
+                )}
+            >
+                {live ? (
+                    <Loader2 className="size-3.5 animate-spin" />
+                ) : (
+                    <Bot className="size-3.5" />
+                )}
             </div>
-            <div className="min-w-0 max-w-[38rem]">
-                <div className="rounded-sm border border-slate-950/8 bg-white px-4 py-3">
+            <div className="max-w-[38rem] min-w-0">
+                <div
+                    className={cn(
+                        'rounded-sm border px-4 py-3',
+                        live
+                            ? 'border-sky-200 bg-white shadow-[0_0_0_1px_rgba(14,165,233,0.06)]'
+                            : 'border-slate-950/8 bg-white',
+                    )}
+                >
+                    {live ? (
+                        <div className="mb-2 flex items-center gap-2 text-[10px] font-medium tracking-[0.18em] text-sky-600 uppercase">
+                            <span className="size-1.5 rounded-full bg-sky-500" />
+                            Live update
+                        </div>
+                    ) : null}
                     <p className="text-sm leading-6 whitespace-pre-wrap text-slate-700">
                         {content}
                     </p>
@@ -482,6 +359,42 @@ function SessionToolRow({
                 {formatToolName(tool.name)}
             </span>
         </Link>
+    );
+}
+
+function SessionActivityFeed({
+    items,
+    latestRunId,
+}: {
+    items: SessionActivityItem[];
+    latestRunId: number;
+}) {
+    if (items.length === 0) {
+        return null;
+    }
+
+    return (
+        <div className="space-y-2">
+            <div className="pl-10 text-[10px] font-medium tracking-[0.18em] text-slate-400 uppercase">
+                Run activity
+            </div>
+            <div className="space-y-2">
+                {items.map((item) =>
+                    item.type === 'tool' ? (
+                        <SessionToolRow
+                            key={`tool-${item.tool.id}`}
+                            tool={item.tool}
+                            latestRunId={latestRunId}
+                        />
+                    ) : (
+                        <SessionStatusRow
+                            key={item.event.id}
+                            event={item.event}
+                        />
+                    ),
+                )}
+            </div>
+        </div>
     );
 }
 
@@ -578,26 +491,7 @@ function SignalsPage({
             allEvents.findIndex((candidate) => candidate.id === event.id) ===
             index,
     );
-    const mergedEvents = mergeAssistantEvents(events);
-    const timelineEvents = mergedEvents.filter(
-        (event) =>
-            event.kind === 'assistant_text' ||
-            milestoneActions.has(event.action) ||
-            event.action === 'run.failed',
-    );
-    const toolActivities = buildToolActivities(mergedEvents);
-    const streamItems = [
-        ...timelineEvents.map((e) => ({
-            type: 'timeline' as const,
-            event: e,
-            sortKey: e.created_at,
-        })),
-        ...toolActivities.map((t) => ({
-            type: 'tool' as const,
-            tool: t,
-            sortKey: t.startedAt,
-        })),
-    ].sort((a, b) => a.sortKey.localeCompare(b.sortKey));
+    const sessionFeed = deriveSessionFeedState(events, milestoneActions);
     const sessionFocus =
         typeof runState?.context?.focus === 'string' && runState.context.focus
             ? runState.context.focus
@@ -610,7 +504,12 @@ function SignalsPage({
             block: 'end',
             behavior: runState?.status === 'running' ? 'smooth' : 'auto',
         });
-    }, [runState?.status, streamItems.length]);
+    }, [
+        runState?.status,
+        sessionFeed.activityItems.length,
+        sessionFeed.liveAssistantEvent?.content,
+        sessionFeed.liveAssistantEvent?.id,
+    ]);
 
     useEcho<RunUpdatedEvent>(
         `signals.user.${auth.user.id}`,
@@ -727,42 +626,29 @@ function SignalsPage({
                                     <SessionUserBubble content={sessionFocus} />
                                 ) : null}
 
-                                {streamItems.length > 0 ? (
-                                    <div className="space-y-2">
-                                        {streamItems.map((item) =>
-                                            item.type === 'tool' ? (
-                                                <SessionToolRow
-                                                    key={`tool-${item.tool.id}`}
-                                                    tool={item.tool}
-                                                    latestRunId={
-                                                        runState?.id ??
-                                                        latestRun?.id ??
-                                                        0
-                                                    }
-                                                />
-                                            ) : item.event.kind ===
-                                              'assistant_text' ? (
-                                                <SessionAssistantBubble
-                                                    key={item.event.id}
-                                                    content={eventBody(
-                                                        item.event,
-                                                    )}
-                                                    createdAt={
-                                                        item.event.created_at
-                                                    }
-                                                />
-                                            ) : (
-                                                <SessionStatusRow
-                                                    key={item.event.id}
-                                                    event={item.event}
-                                                />
-                                            ),
+                                {sessionFeed.liveAssistantEvent ? (
+                                    <SessionAssistantBubble
+                                        content={eventBody(
+                                            sessionFeed.liveAssistantEvent,
                                         )}
-                                    </div>
+                                        createdAt={
+                                            sessionFeed.liveAssistantEvent
+                                                .created_at
+                                        }
+                                        live={runState?.status === 'running'}
+                                    />
                                 ) : null}
 
+                                <SessionActivityFeed
+                                    items={sessionFeed.activityItems}
+                                    latestRunId={
+                                        runState?.id ?? latestRun?.id ?? 0
+                                    }
+                                />
+
                                 {!sessionFocus &&
-                                streamItems.length === 0 &&
+                                sessionFeed.activityItems.length === 0 &&
+                                sessionFeed.liveAssistantEvent === null &&
                                 runState?.status !== 'running' ? (
                                     <div className="flex min-h-64 items-center justify-center text-center">
                                         <div className="space-y-2">
@@ -776,7 +662,8 @@ function SignalsPage({
                                 ) : null}
 
                                 {runState?.status === 'running' &&
-                                streamItems.length === 0 ? (
+                                sessionFeed.activityItems.length === 0 &&
+                                sessionFeed.liveAssistantEvent === null ? (
                                     <div className="flex items-center gap-2 pl-10 text-xs text-slate-400">
                                         <Loader2 className="size-3.5 animate-spin text-sky-400" />
                                         Waiting for the helper…
