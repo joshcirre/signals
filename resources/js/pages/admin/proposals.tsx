@@ -45,10 +45,19 @@ interface ProposalQueueProps {
         confidence: number;
         created_at: string;
         payload: {
+            field?: string | null;
             after?: string | null;
             response_draft?: string | null;
         };
     }>;
+}
+
+function proposalFieldLabel(field: string | null | undefined): string {
+    if (!field) {
+        return 'Storefront copy';
+    }
+
+    return field.replaceAll('_', ' ');
 }
 
 export default function ProposalQueue({
@@ -245,6 +254,23 @@ export default function ProposalQueue({
                                                 <p className="mt-1 truncate text-sm font-medium">
                                                     {proposal.target_label}
                                                 </p>
+                                                {proposal.type ===
+                                                'product_copy_change' ? (
+                                                    <p
+                                                        className={cn(
+                                                            'mt-1 text-xs',
+                                                            proposal.id ===
+                                                                selectedProposal?.id
+                                                                ? 'text-white/60'
+                                                                : 'text-slate-400',
+                                                        )}
+                                                    >
+                                                        {proposalFieldLabel(
+                                                            proposal.payload
+                                                                .field,
+                                                        )}
+                                                    </p>
+                                                ) : null}
                                             </div>
                                             <span
                                                 className={cn(
@@ -523,6 +549,28 @@ export default function ProposalQueue({
                                                 >
                                                     Preview storefront
                                                 </Link>
+                                            ) : null}
+                                            {selectedProposal.type ===
+                                                'product_copy_change' &&
+                                            selectedProposal.target_slug ? (
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        router.post(
+                                                            admin.reviewRuns.store()
+                                                                .url,
+                                                            {
+                                                                kind: 'storefront_adaptation',
+                                                                proposal_id:
+                                                                    selectedProposal.id,
+                                                            },
+                                                        )
+                                                    }
+                                                    className="inline-flex items-center gap-2 rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-sm font-medium text-sky-700 transition hover:bg-sky-100"
+                                                >
+                                                    <ShieldCheck className="size-4" />
+                                                    Launch storefront adaptation
+                                                </button>
                                             ) : null}
                                         </div>
                                     </>

@@ -21,6 +21,7 @@ test('product page shows fit notes and reviews', function (): void {
     $product = Product::factory()->create([
         'name' => 'Premium Hoodie',
         'slug' => 'premium-hoodie',
+        'short_description' => 'A trim everyday layer with a premium brushed interior.',
         'fit_note' => 'Customers say this hoodie runs small. Consider sizing up for a roomier fit.',
     ]);
 
@@ -33,6 +34,7 @@ test('product page shows fit notes and reviews', function (): void {
 
     $this->get(route('products.show', $product))
         ->assertSuccessful()
+        ->assertSee('A trim everyday layer with a premium brushed interior.')
         ->assertSee('Customers say this hoodie runs small')
         ->assertSee('Loved the fabric but had to size up.');
 });

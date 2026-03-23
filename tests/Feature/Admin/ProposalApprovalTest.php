@@ -58,3 +58,31 @@ test('approving a review response proposal saves the approved draft on the revie
         ->and($review->fresh()->response_draft)->toContain('sorry the fit missed the mark')
         ->and($review->fresh()->response_draft_status)->toBe('approved');
 });
+
+test('approving a product description proposal updates the storefront description fields', function (): void {
+    $admin = User::factory()->create();
+    $product = Product::factory()->create([
+        'short_description' => 'Original lead copy.',
+        'description' => 'Original long description.',
+    ]);
+    $run = ReviewAnalysisRun::factory()->create([
+        'user_id' => $admin->id,
+    ]);
+    $proposal = Proposal::factory()->create([
+        'review_analysis_run_id' => $run->id,
+        'target_id' => $product->id,
+        'payload_json' => [
+            'field' => 'short_description',
+            'before' => 'Original lead copy.',
+            'after' => 'Updated lead copy shaped by the latest fit feedback.',
+            'supporting_review_ids' => [],
+        ],
+    ]);
+
+    $this->actingAs($admin)
+        ->post(route('admin.proposals.approve', $proposal))
+        ->assertRedirect();
+
+    expect($proposal->fresh()->status)->toBe('applied')
+        ->and($product->fresh()->short_description)->toBe('Updated lead copy shaped by the latest fit feedback.');
+});

@@ -19,8 +19,10 @@ class ReviewAnalysisRunShowController extends Controller
             'run' => [
                 'id' => $reviewAnalysisRun->id,
                 'status' => $reviewAnalysisRun->status,
+                'kind' => $reviewAnalysisRun->kind,
                 'summary' => $reviewAnalysisRun->summary,
                 'prompt' => $reviewAnalysisRun->prompt,
+                'context' => $reviewAnalysisRun->context_json,
                 'error_message' => $reviewAnalysisRun->error_message,
                 'requested_at' => $reviewAnalysisRun->requested_at?->toIso8601String(),
                 'started_at' => $reviewAnalysisRun->started_at?->toIso8601String(),

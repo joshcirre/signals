@@ -70,8 +70,10 @@ interface ReviewRunShowProps {
     run: {
         id: number;
         status: string;
+        kind: string;
         summary: string | null;
         prompt: string | null;
+        context: Record<string, unknown> | null;
         error_message: string | null;
         requested_at: string | null;
         started_at: string | null;
@@ -271,6 +273,14 @@ function eventBody(event: RunEventPayload): string {
             ? event.metadata.message
             : 'No message provided.')
     );
+}
+
+function runKindLabel(kind: string): string {
+    if (kind === 'storefront_adaptation') {
+        return 'Storefront adaptation';
+    }
+
+    return 'Live analysis';
 }
 
 function formatToolName(toolName: string): string {
@@ -1037,7 +1047,7 @@ export default function ReviewAnalysisRunShow({ run }: ReviewRunShowProps) {
                                                 variant="outline"
                                                 className="rounded-full border-sky-200 bg-sky-50 px-2.5 py-1 text-[11px] font-medium tracking-[0.18em] text-sky-700 uppercase"
                                             >
-                                                Live analysis
+                                                {runKindLabel(displayRun.kind)}
                                             </Badge>
                                             <Badge
                                                 variant="outline"

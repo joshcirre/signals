@@ -118,8 +118,10 @@ class SignalsController extends Controller
             'latestRun' => $latestRun ? [
                 'id' => $latestRun->id,
                 'status' => $latestRun->status,
+                'kind' => $latestRun->kind,
                 'summary' => $latestRun->summary,
                 'prompt' => $latestRun->prompt,
+                'context' => $latestRun->context_json,
                 'requested_at' => $latestRun->requested_at?->toIso8601String(),
                 'events' => $latestRun->actionLogs()
                     ->latest()

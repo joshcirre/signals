@@ -1,7 +1,5 @@
 import { spawn } from 'node:child_process';
 import { mkdirSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
 import { CodexAppServerClient } from './codex-app-server.mjs';
 
 const serverUrl = process.env.SIGNALS_SERVER_URL;
@@ -10,8 +8,7 @@ const pollIntervalMs = Number(process.env.SIGNALS_POLL_INTERVAL_MS ?? 4000);
 const runOnce = process.env.SIGNALS_RUN_ONCE === '1';
 const requireRun = process.env.SIGNALS_REQUIRE_RUN === '1';
 const runCommand = process.env.SIGNALS_RUN_COMMAND ?? '';
-const helperWorkspace =
-    process.env.SIGNALS_CODEX_CWD ?? join(tmpdir(), 'signals-helper');
+const helperWorkspace = process.env.SIGNALS_CODEX_CWD ?? process.cwd();
 const codexModel = process.env.SIGNALS_CODEX_MODEL ?? 'gpt-5.4';
 const codexReasoningEffort =
     process.env.SIGNALS_CODEX_REASONING_EFFORT ?? 'medium';
@@ -95,7 +92,7 @@ function previewValue(value) {
     }
 }
 
-function buildAnalysisPrompt(basePrompt) {
+function buildReviewAnalysisPrompt(basePrompt) {
     return `${basePrompt}
 
 Use the signals MCP server as the source of truth for products, reviews, resources, and proposal writes.
@@ -113,8 +110,54 @@ Required workflow:
 Aim for a concrete fit-note style proposal when the review evidence supports it.`;
 }
 
-function buildDeveloperInstructions() {
+function buildStorefrontAdaptationPrompt(run) {
+    const context = run.context ?? {};
+    const productName = context.product_name ?? 'the target product';
+    const productSlug = context.product_slug ?? null;
+    const proposalField = context.proposal_field ?? 'fit_note';
+    const proposalAfter = context.proposal_after ?? null;
+    const proposalRationale = context.proposal_rationale ?? null;
+
+    return `${run.prompt}
+
+Use the signals MCP server as the source of truth for the product, review evidence, and pending proposal context before you edit code.
+You are operating inside the Signals repository workspace and may inspect and modify the local codebase.
+
+Required workflow:
+1. Inspect the signals MCP server and confirm the current state of ${productName}${productSlug ? ` (${productSlug})` : ''}.
+2. Review the shared storefront implementation before making edits. Prefer updating existing files over introducing new abstractions.
+3. Reuse existing product fields like short_description, description, fit_note, and faq_items before inventing new structure.
+4. Prefer editing shared storefront React code instead of storing raw HTML in the database.
+5. Make focused code changes that improve where the merchant signal appears and how supporting copy is presented.
+6. Update or add targeted tests for the storefront behavior you change.
+7. Run the smallest useful verification commands before you finish.
+
+Suggested starting files:
+- resources/js/pages/storefront/show.tsx
+- tests/Feature/StorefrontPagesTest.php
+- app/Http/Controllers/Storefront/ProductShowController.php
+
+Business context:
+- Target product: ${productName}
+- Pending proposal field: ${proposalField}
+${proposalAfter ? `- Suggested copy: ${proposalAfter}` : ''}
+${proposalRationale ? `- Rationale: ${proposalRationale}` : ''}`.trim();
+}
+
+function buildDeveloperInstructions(kind) {
+    if (kind === 'storefront_adaptation') {
+        return 'Operate as a Signals storefront engineer. Use the signals MCP server for business truth, then make narrow code changes in the local repository workspace. Prefer shared storefront updates, preserve the existing UI language, and always verify changes with targeted tests.';
+    }
+
     return 'Operate as a merchant Signals analyst. Prefer MCP tools over freeform speculation, do not inspect the local repo or shell for product data, keep reasoning concise, and only produce customer-visible changes through proposal tools.';
+}
+
+function buildRunPrompt(run) {
+    if (run.kind === 'storefront_adaptation') {
+        return buildStorefrontAdaptationPrompt(run);
+    }
+
+    return buildReviewAnalysisPrompt(run.prompt);
 }
 
 function createRunMonitor() {
@@ -654,7 +697,7 @@ async function executeCodexRun(run) {
         await postRunEvent(run.id, formatMcpStatusEvent(reviewOpsServer));
 
         const threadResponse = await client.startThread({
-            developerInstructions: buildDeveloperInstructions(),
+            developerInstructions: buildDeveloperInstructions(run.kind),
             baseInstructions: null,
         });
 
@@ -670,7 +713,7 @@ async function executeCodexRun(run) {
 
         await client.startTurn({
             threadId: threadResponse.thread.id,
-            prompt: buildAnalysisPrompt(run.prompt),
+            prompt: buildRunPrompt(run),
         });
 
         const turnResult = await monitor.completion;

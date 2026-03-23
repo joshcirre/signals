@@ -24,10 +24,39 @@ test('device token may claim a queued review analysis run', function (): void {
         ->postJson(route('api.device.runs.claim'));
 
     $response->assertSuccessful()
-        ->assertJsonPath('run.id', $run->id);
+        ->assertJsonPath('run.id', $run->id)
+        ->assertJsonPath('run.kind', 'review_analysis')
+        ->assertJsonPath('run.context', null);
 
     expect($run->fresh()->status)->toBe('running')
         ->and($run->fresh()->review_ops_device_id)->toBe($device->id);
+});
+
+test('device claim response includes storefront adaptation context', function (): void {
+    $admin = User::factory()->create();
+    $plainTextToken = 'signals-secret-token';
+    SignalsDevice::factory()->create([
+        'user_id' => $admin->id,
+        'name' => 'Signals Helper',
+        'token_hash' => Hash::make($plainTextToken),
+    ]);
+    $run = ReviewAnalysisRun::factory()->create([
+        'user_id' => $admin->id,
+        'status' => 'queued',
+        'kind' => 'storefront_adaptation',
+        'context_json' => [
+            'product_slug' => 'premium-hoodie',
+            'proposal_field' => 'fit_note',
+        ],
+    ]);
+
+    $this->withHeader('Authorization', 'Bearer '.$plainTextToken)
+        ->postJson(route('api.device.runs.claim'))
+        ->assertSuccessful()
+        ->assertJsonPath('run.id', $run->id)
+        ->assertJsonPath('run.kind', 'storefront_adaptation')
+        ->assertJsonPath('run.context.product_slug', 'premium-hoodie')
+        ->assertJsonPath('run.context.proposal_field', 'fit_note');
 });
 
 test('device authentication broadcasts helper heartbeat updates', function (): void {

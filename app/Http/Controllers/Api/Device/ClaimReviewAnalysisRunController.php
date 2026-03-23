@@ -59,7 +59,9 @@ class ClaimReviewAnalysisRunController extends Controller
             'ok' => true,
             'run' => [
                 'id' => $run->id,
+                'kind' => $run->kind,
                 'prompt' => $run->prompt,
+                'context' => $run->context_json,
                 'mcp_url' => route('signals.mcp'),
             ],
         ]);

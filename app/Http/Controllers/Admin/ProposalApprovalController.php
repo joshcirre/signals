@@ -18,9 +18,9 @@ class ProposalApprovalController extends Controller
             $product = Product::query()->findOrFail($proposal->target_id);
             $field = $proposal->payload_json['field'] ?? null;
 
-            if ($field === 'fit_note') {
+            if (in_array($field, ['fit_note', 'short_description', 'description'], true)) {
                 $product->forceFill([
-                    'fit_note' => $proposal->payload_json['after'] ?? $product->fit_note,
+                    $field => $proposal->payload_json['after'] ?? $product->{$field},
                 ])->save();
             }
         }

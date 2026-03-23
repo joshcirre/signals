@@ -5,21 +5,29 @@ namespace App\Actions\Signals;
 use App\Events\ReviewAnalysisEventBroadcast;
 use App\Events\ReviewAnalysisRunUpdated;
 use App\Models\ActionLog;
+use App\Models\Product;
+use App\Models\Proposal;
 use App\Models\ReviewAnalysisRun;
 use App\Models\User;
+use InvalidArgumentException;
 use Throwable;
 
 class QueueReviewAnalysisRunAction
 {
     public function handle(
         User $user,
-        ?string $prompt = null,
+        string $kind = 'review_analysis',
+        ?Proposal $proposal = null,
         ?string $message = null,
     ): ReviewAnalysisRun {
+        $queuedRun = $this->queuedRunAttributes($kind, $proposal);
+
         $run = ReviewAnalysisRun::query()->create([
             'user_id' => $user->id,
             'status' => 'queued',
-            'prompt' => $prompt ?: 'Analyze the latest apparel reviews, confirm any repeated fit problems, and prepare only merchant-facing proposals with a strong preference for a single fit-note update when the evidence is clear.',
+            'kind' => $kind,
+            'prompt' => $queuedRun['prompt'],
+            'context_json' => $queuedRun['context_json'],
             'requested_at' => now(),
         ]);
 
@@ -28,7 +36,7 @@ class QueueReviewAnalysisRunAction
             'actor_type' => 'system',
             'action' => 'run.queued',
             'metadata_json' => [
-                'message' => $message ?: 'Queued Signals run and waiting for a connected local helper to claim it.',
+                'message' => $message ?: $queuedRun['message'],
             ],
         ]);
 
@@ -40,5 +48,53 @@ class QueueReviewAnalysisRunAction
         }
 
         return $run;
+    }
+
+    /**
+     * @return array{prompt: string, message: string, context_json: array<string, mixed>|null}
+     */
+    private function queuedRunAttributes(string $kind, ?Proposal $proposal): array
+    {
+        if ($kind === 'review_analysis') {
+            return [
+                'prompt' => 'Analyze the latest apparel reviews, confirm any repeated fit problems, and prepare only merchant-facing proposals with a strong preference for a single fit-note update when the evidence is clear.',
+                'message' => 'Queued Signals run and waiting for a connected local helper to claim it.',
+                'context_json' => null,
+            ];
+        }
+
+        if ($kind !== 'storefront_adaptation') {
+            throw new InvalidArgumentException('Unsupported Signals run kind.');
+        }
+
+        if ($proposal === null || $proposal->type !== 'product_copy_change' || $proposal->target_type !== 'product') {
+            throw new InvalidArgumentException('Storefront adaptation runs require a pending product copy proposal.');
+        }
+
+        $product = Product::query()->findOrFail($proposal->target_id);
+        $proposalPayload = $proposal->payload_json ?? [];
+        $field = is_string($proposalPayload['field'] ?? null) ? $proposalPayload['field'] : 'fit_note';
+        $after = is_string($proposalPayload['after'] ?? null) ? $proposalPayload['after'] : null;
+
+        return [
+            'prompt' => sprintf(
+                'Start a second Codex session for the %s product page. Use the latest Signals review evidence and the pending %s proposal to adapt the storefront experience so the key guidance is easier to notice.',
+                $product->name,
+                str_replace('_', ' ', $field),
+            ),
+            'message' => 'Queued a storefront adaptation run and waiting for the local helper to open a coding session.',
+            'context_json' => [
+                'product_id' => $product->id,
+                'product_slug' => $product->slug,
+                'product_name' => $product->name,
+                'proposal_id' => $proposal->id,
+                'proposal_type' => $proposal->type,
+                'proposal_field' => $field,
+                'proposal_after' => $after,
+                'proposal_rationale' => $proposal->rationale,
+                'proposal_confidence' => (float) $proposal->confidence,
+                'supporting_review_ids' => $proposalPayload['supporting_review_ids'] ?? [],
+            ],
+        ];
     }
 }

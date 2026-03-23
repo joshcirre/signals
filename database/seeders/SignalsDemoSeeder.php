@@ -76,7 +76,7 @@ class SignalsDemoSeeder extends Seeder
                 'price_cents' => 6200,
                 'short_description' => 'Tapered joggers with stretch and structure for travel days and errands.',
                 'description' => 'Studio Joggers balance comfort and polish with a tapered leg, secure waistband, and enough stretch to move naturally all day.',
-                'hero_image_url' => 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=1200&q=80',
+                'hero_image_url' => 'https://images.pexels.com/photos/32233645/pexels-photo-32233645.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=1200&w=960',
             ],
             [
                 'name' => 'Trail Blend Crewneck',
@@ -84,7 +84,7 @@ class SignalsDemoSeeder extends Seeder
                 'price_cents' => 6900,
                 'short_description' => 'A midweight crewneck that lands between polished and lived-in.',
                 'description' => 'The Trail Blend Crewneck uses a recycled cotton blend with a structured collar and a soft interior. It is the easy layer you leave by the door.',
-                'hero_image_url' => 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=1200&q=80',
+                'hero_image_url' => 'https://images.pexels.com/photos/32233642/pexels-photo-32233642.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=1200&w=960',
             ],
         ])->mapWithKeys(fn (array $product): array => [
             $product['slug'] => Product::query()->updateOrCreate(

@@ -67,8 +67,10 @@ interface SignalsProps {
     latestRun: {
         id: number;
         status: string;
+        kind: string;
         summary: string | null;
         prompt: string | null;
+        context: Record<string, unknown> | null;
         requested_at: string | null;
         events: Array<{
             id: number;
@@ -215,6 +217,22 @@ function runStatusClassName(status: string | null | undefined): string {
     }
 
     return 'border-slate-200 bg-slate-50 text-slate-500';
+}
+
+function runKindLabel(kind: string | null | undefined): string {
+    if (kind === 'storefront_adaptation') {
+        return 'Storefront adaptation';
+    }
+
+    return 'Review analysis';
+}
+
+function proposalFieldLabel(field: string | null | undefined): string {
+    if (!field) {
+        return 'Storefront copy';
+    }
+
+    return field.replaceAll('_', ' ');
 }
 
 function StreamEventIcon({
@@ -455,7 +473,9 @@ function SignalsPage({
                             <button
                                 type="button"
                                 onClick={() =>
-                                    router.post(admin.reviewRuns.store().url)
+                                    router.post(admin.reviewRuns.store().url, {
+                                        kind: 'review_analysis',
+                                    })
                                 }
                                 className="inline-flex items-center gap-2 rounded-lg bg-slate-950 px-3 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
                             >
@@ -624,6 +644,7 @@ function SignalsPage({
                                             'Run ready to inspect.'}
                                     </p>
                                     <p className="mt-1 text-xs text-slate-400">
+                                        {runKindLabel(runState.kind)} ·{' '}
                                         Requested {runState.requested_at}
                                     </p>
                                 </div>
@@ -834,6 +855,15 @@ function SignalsPage({
                                                     <h3 className="mt-1 text-sm font-medium text-slate-950">
                                                         {proposal.target_label}
                                                     </h3>
+                                                    {proposal.type ===
+                                                    'product_copy_change' ? (
+                                                        <p className="mt-1 text-xs text-slate-400">
+                                                            {proposalFieldLabel(
+                                                                proposal.payload
+                                                                    .field,
+                                                            )}
+                                                        </p>
+                                                    ) : null}
                                                 </div>
                                                 <span className="rounded-full bg-emerald-50 px-2 py-1 text-[11px] font-semibold text-emerald-700">
                                                     {(
@@ -905,6 +935,28 @@ function SignalsPage({
                                                     >
                                                         Preview
                                                     </Link>
+                                                ) : null}
+                                                {proposal.type ===
+                                                    'product_copy_change' &&
+                                                proposal.target_slug ? (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            router.post(
+                                                                admin.reviewRuns.store()
+                                                                    .url,
+                                                                {
+                                                                    kind: 'storefront_adaptation',
+                                                                    proposal_id:
+                                                                        proposal.id,
+                                                                },
+                                                            )
+                                                        }
+                                                        className="rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-sm font-medium text-sky-700 transition hover:bg-sky-100"
+                                                    >
+                                                        Launch storefront
+                                                        adaptation
+                                                    </button>
                                                 ) : null}
                                             </div>
                                         </article>

@@ -20,7 +20,9 @@ test('signals demo seeder is idempotent', function (): void {
             'trail-blend-crewneck',
         ])->count())->toBe(4)
         ->and(Product::query()->where('slug', 'studio-joggers')->value('hero_image_url'))
-        ->toBe('https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=1200&q=80')
+        ->toBe('https://images.pexels.com/photos/32233645/pexels-photo-32233645.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=1200&w=960')
+        ->and(Product::query()->where('slug', 'trail-blend-crewneck')->value('hero_image_url'))
+        ->toBe('https://images.pexels.com/photos/32233642/pexels-photo-32233642.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=1200&w=960')
         ->and(Review::query()->count())->toBe(20)
         ->and(Proposal::query()->count())->toBe(2)
         ->and(ReviewAnalysisRun::query()->count())->toBe(1)

@@ -13,7 +13,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'user_id',
     'review_ops_device_id',
     'status',
+    'kind',
     'prompt',
+    'context_json',
     'summary',
     'error_message',
     'requested_at',
@@ -31,6 +33,7 @@ class ReviewAnalysisRun extends Model
             'requested_at' => 'datetime',
             'started_at' => 'datetime',
             'completed_at' => 'datetime',
+            'context_json' => 'array',
         ];
     }
 

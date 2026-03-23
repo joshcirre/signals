@@ -68,7 +68,12 @@ export default function StorefrontShow({
                         <h1 className="mt-3 max-w-[30ch] font-['Fraunces',serif] text-5xl tracking-tight text-balance text-slate-950 lg:max-w-[24ch] lg:text-6xl">
                             {product.name}
                         </h1>
-                        <p className="mt-4 max-w-[48ch] text-base text-pretty text-slate-500">
+                        {product.short_description ? (
+                            <p className="mt-4 max-w-[38ch] text-lg leading-7 text-pretty text-slate-700">
+                                {product.short_description}
+                            </p>
+                        ) : null}
+                        <p className="mt-3 max-w-[48ch] text-base text-pretty text-slate-500">
                             {product.description}
                         </p>
                     </div>

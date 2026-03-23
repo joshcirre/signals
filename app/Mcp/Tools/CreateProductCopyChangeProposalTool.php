@@ -17,6 +17,11 @@ class CreateProductCopyChangeProposalTool extends Tool
     {
         $product = Product::query()->where('slug', $request->string('product_slug')->toString())->firstOrFail();
         $field = $request->string('field')->toString();
+        $before = match ($field) {
+            'short_description' => $product->short_description,
+            'description' => $product->description,
+            default => $product->fit_note,
+        };
 
         $proposal = Proposal::query()->create([
             'review_analysis_run_id' => is_numeric($request->get('review_analysis_run_id'))
@@ -28,7 +33,7 @@ class CreateProductCopyChangeProposalTool extends Tool
             'target_id' => $product->id,
             'payload_json' => [
                 'field' => $field,
-                'before' => $field === 'fit_note' ? $product->fit_note : null,
+                'before' => $before,
                 'after' => $request->string('after')->toString(),
                 'supporting_review_ids' => $request->get('supporting_review_ids') ?? [],
             ],
@@ -48,7 +53,7 @@ class CreateProductCopyChangeProposalTool extends Tool
         return [
             'review_analysis_run_id' => $schema->integer(),
             'product_slug' => $schema->string()->required(),
-            'field' => $schema->string()->enum(['fit_note'])->required(),
+            'field' => $schema->string()->enum(['short_description', 'description', 'fit_note'])->required(),
             'after' => $schema->string()->required(),
             'rationale' => $schema->string()->required(),
             'confidence' => $schema->number(),
