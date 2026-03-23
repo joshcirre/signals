@@ -60,10 +60,6 @@ interface PageProps {
             id: number;
         };
     };
-    flash: {
-        helper_token?: string | null;
-        helper_name?: string | null;
-    };
     [key: string]: unknown;
 }
 
@@ -73,6 +69,8 @@ interface SignalsProps {
     };
     helper: {
         default_name: string;
+        name: string;
+        token: string | null;
         latest_device_seen_at: string | null;
         latest_device_seen_at_human: string | null;
     };
@@ -551,7 +549,7 @@ function SignalsPage({
     const helperHeartbeatEventName = '.signals-helper.heartbeat.updated';
     const runUpdatedEventName = '.review-analysis-run.updated';
     const runEventCreatedEventName = '.review-analysis-event.created';
-    const { appUrl, auth, flash, repositoryUrl } = usePage<PageProps>().props;
+    const { appUrl, auth, repositoryUrl } = usePage<PageProps>().props;
     const [query, setQuery] = useState(filters.q);
     const [helperLastSeenAt, setHelperLastSeenAt] = useState(
         helper.latest_device_seen_at,
@@ -566,14 +564,14 @@ function SignalsPage({
     const [copiedText, copy] = useClipboard();
     const composerEndRef = useRef<HTMLDivElement | null>(null);
     const helperServerUrl = appUrl;
-    const helperBootstrapCommand = flash.helper_token
+    const helperBootstrapCommand = helper.token
         ? [
               'tmp_dir="${TMPDIR:-/tmp}/signals-helper"',
               'rm -rf "$tmp_dir"',
               `git clone ${repositoryUrl} "$tmp_dir"`,
               'cd "$tmp_dir"',
               'npm install --prefix desktop-helper',
-              `SIGNALS_SERVER_URL=${helperServerUrl} SIGNALS_DEVICE_TOKEN=${flash.helper_token} node desktop-helper/index.mjs`,
+              `SIGNALS_SERVER_URL=${helperServerUrl} SIGNALS_DEVICE_TOKEN=${helper.token} node desktop-helper/index.mjs`,
           ].join(' && \\\n')
         : 'Helper token unavailable.';
     const needsHelperSetup = helperLastSeenAt === null;

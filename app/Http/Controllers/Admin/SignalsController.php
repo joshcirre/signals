@@ -115,6 +115,8 @@ class SignalsController extends Controller
             ],
             'helper' => [
                 'default_name' => 'Signals Helper',
+                'name' => $helperName,
+                'token' => $helperToken,
                 'latest_device_seen_at' => $latestDeviceSeenAt?->toIso8601String(),
                 'latest_device_seen_at_human' => $latestDeviceSeenAt?->diffForHumans(),
             ],

@@ -72,6 +72,10 @@ test('signals page auto-provisions a helper token for the demo flow', function (
     $this->actingAs($admin)
         ->get('/admin/signals')
         ->assertSuccessful()
+        ->assertInertia(fn (Assert $page): Assert => $page
+            ->component('admin/signals')
+            ->where('helper.name', 'Signals Helper')
+            ->where('helper.token', fn (?string $value): bool => is_string($value) && $value !== ''))
         ->assertSessionHas('helper_token')
         ->assertSessionHas('helper_name', 'Signals Helper');
 });

@@ -1,6 +1,6 @@
 import { Link } from '@inertiajs/react';
 import type { PropsWithChildren } from 'react';
-import AppLogoIcon from '@/components/app-logo-icon';
+import { BrandMark } from '@/components/brand-mark';
 import {
     Card,
     CardContent,
@@ -20,28 +20,26 @@ export default function AuthCardLayout({
     description?: string;
 }>) {
     return (
-        <div className="flex min-h-svh flex-col items-center justify-center gap-6 bg-muted p-6 md:p-10">
-            <div className="flex w-full max-w-md flex-col gap-6">
+        <div className="flex min-h-svh items-center justify-center bg-[#fcfcfd] px-4 py-8 sm:px-6">
+            <div className="flex w-full max-w-sm flex-col gap-4">
                 <Link
                     href={home()}
-                    className="flex items-center gap-2 self-center font-medium"
+                    className="flex items-center justify-center gap-3 self-center"
                 >
-                    <div className="flex h-9 w-9 items-center justify-center">
-                        <AppLogoIcon className="size-9 fill-current text-black dark:text-white" />
-                    </div>
+                    <BrandMark className="size-9 rounded-lg" />
                 </Link>
 
-                <div className="flex flex-col gap-6">
-                    <Card className="rounded-xl">
-                        <CardHeader className="px-10 pt-8 pb-0 text-center">
-                            <CardTitle className="text-xl">{title}</CardTitle>
-                            <CardDescription>{description}</CardDescription>
-                        </CardHeader>
-                        <CardContent className="px-10 py-8">
-                            {children}
-                        </CardContent>
-                    </Card>
-                </div>
+                <Card className="rounded-lg border-slate-200 shadow-[0_18px_50px_-40px_rgba(15,23,42,0.22)]">
+                    <CardHeader className="px-6 pt-6 pb-0 text-center">
+                        <CardTitle className="text-xl font-semibold tracking-tight text-slate-950">
+                            {title}
+                        </CardTitle>
+                        <CardDescription className="mx-auto max-w-xs text-sm leading-5 text-slate-500">
+                            {description}
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="px-6 py-6">{children}</CardContent>
+                </Card>
             </div>
         </div>
     );

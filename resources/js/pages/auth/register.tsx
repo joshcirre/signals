@@ -12,28 +12,28 @@ import { login } from '@/routes';
 import { store } from '@/routes/register';
 
 const authInputClassName =
-    'h-11 rounded-xl border-slate-950/10 bg-white px-3.5 shadow-none focus-visible:border-slate-950/20 focus-visible:ring-slate-950/5';
+    'h-10 rounded-md border-slate-200 bg-white px-3 shadow-none focus-visible:border-slate-300 focus-visible:ring-slate-950/5';
 
 export default function Register() {
     return (
         <AuthLayout
-            title="Create a Signals admin account"
-            description={`Set up an internal ${storeBrand.name} operator account for Signals.`}
+            title="Create your Signals account"
+            description={`Create the ${storeBrand.name} operator account, then launch the helper.`}
         >
             <Head title="Register" />
             <Form
                 {...store.form()}
                 resetOnSuccess={['password', 'password_confirmation']}
                 disableWhileProcessing
-                className="flex flex-col gap-6"
+                className="flex flex-col gap-5"
             >
                 {({ processing, errors }) => (
                     <>
-                        <div className="grid gap-6">
+                        <div className="grid gap-5">
                             <div className="grid gap-2">
                                 <Label
                                     htmlFor="name"
-                                    className="text-[11px] font-semibold tracking-[0.18em] text-slate-500 uppercase"
+                                    className="text-sm font-medium text-slate-700"
                                 >
                                     Name
                                 </Label>
@@ -57,7 +57,7 @@ export default function Register() {
                             <div className="grid gap-2">
                                 <Label
                                     htmlFor="email"
-                                    className="text-[11px] font-semibold tracking-[0.18em] text-slate-500 uppercase"
+                                    className="text-sm font-medium text-slate-700"
                                 >
                                     Email address
                                 </Label>
@@ -77,7 +77,7 @@ export default function Register() {
                             <div className="grid gap-2">
                                 <Label
                                     htmlFor="password"
-                                    className="text-[11px] font-semibold tracking-[0.18em] text-slate-500 uppercase"
+                                    className="text-sm font-medium text-slate-700"
                                 >
                                     Password
                                 </Label>
@@ -96,7 +96,7 @@ export default function Register() {
                             <div className="grid gap-2">
                                 <Label
                                     htmlFor="password_confirmation"
-                                    className="text-[11px] font-semibold tracking-[0.18em] text-slate-500 uppercase"
+                                    className="text-sm font-medium text-slate-700"
                                 >
                                     Confirm password
                                 </Label>
@@ -116,7 +116,7 @@ export default function Register() {
 
                             <Button
                                 type="submit"
-                                className="mt-2 h-11 w-full rounded-lg bg-slate-950 text-sm font-medium shadow-none hover:bg-slate-800"
+                                className="mt-1 h-10 w-full rounded-md bg-slate-950 text-sm font-medium shadow-none hover:bg-slate-800"
                                 tabIndex={5}
                                 disabled={processing}
                                 data-test="register-user-button"
@@ -126,7 +126,7 @@ export default function Register() {
                             </Button>
                         </div>
 
-                        <div className="rounded-lg border border-slate-950/8 bg-slate-50/80 px-4 py-3 text-center text-sm text-slate-500">
+                        <div className="text-center text-sm text-slate-500">
                             Already have an account?{' '}
                             <TextLink href={login()} tabIndex={6}>
                                 Log in

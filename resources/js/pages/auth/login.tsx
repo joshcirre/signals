@@ -20,7 +20,7 @@ type Props = {
 };
 
 const authInputClassName =
-    'h-11 rounded-xl border-slate-950/10 bg-white px-3.5 shadow-none focus-visible:border-slate-950/20 focus-visible:ring-slate-950/5';
+    'h-10 rounded-md border-slate-200 bg-white px-3 shadow-none focus-visible:border-slate-300 focus-visible:ring-slate-950/5';
 
 export default function Login({
     status,
@@ -30,28 +30,28 @@ export default function Login({
     return (
         <AuthLayout
             title="Enter Signals"
-            description={`Use your ${storeBrand.name} admin account to review proposals, approve storefront changes, and monitor live Codex runs in Signals.`}
+            description={`Use your ${storeBrand.name} admin account to create or run the helper.`}
         >
             <Head title="Log in" />
 
             <Form
                 {...store.form()}
                 resetOnSuccess={['password']}
-                className="flex flex-col gap-6"
+                className="flex flex-col gap-5"
             >
                 {({ processing, errors }) => (
                     <>
                         {status && (
-                            <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">
+                            <div className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm font-medium text-emerald-800">
                                 {status}
                             </div>
                         )}
 
-                        <div className="grid gap-6">
+                        <div className="grid gap-5">
                             <div className="grid gap-2">
                                 <Label
                                     htmlFor="email"
-                                    className="text-[11px] font-semibold tracking-[0.18em] text-slate-500 uppercase"
+                                    className="text-sm font-medium text-slate-700"
                                 >
                                     Email address
                                 </Label>
@@ -73,14 +73,14 @@ export default function Login({
                                 <div className="flex items-center">
                                     <Label
                                         htmlFor="password"
-                                        className="text-[11px] font-semibold tracking-[0.18em] text-slate-500 uppercase"
+                                        className="text-sm font-medium text-slate-700"
                                     >
                                         Password
                                     </Label>
                                     {canResetPassword && (
                                         <TextLink
                                             href={request()}
-                                            className="ml-auto text-[11px] font-semibold tracking-[0.18em] text-slate-500 uppercase no-underline hover:text-slate-950"
+                                            className="ml-auto text-xs font-medium text-slate-500 no-underline hover:text-slate-950"
                                             tabIndex={5}
                                         >
                                             Forgot password?
@@ -99,7 +99,7 @@ export default function Login({
                                 <InputError message={errors.password} />
                             </div>
 
-                            <div className="flex items-center gap-3 rounded-lg border border-slate-950/8 bg-slate-50/80 px-3 py-3">
+                            <div className="flex items-center gap-3">
                                 <Checkbox
                                     id="remember"
                                     name="remember"
@@ -115,7 +115,7 @@ export default function Login({
 
                             <Button
                                 type="submit"
-                                className="mt-2 h-11 w-full rounded-lg bg-slate-950 text-sm font-medium shadow-none hover:bg-slate-800"
+                                className="mt-1 h-10 w-full rounded-md bg-slate-950 text-sm font-medium shadow-none hover:bg-slate-800"
                                 tabIndex={4}
                                 disabled={processing}
                                 data-test="login-button"
@@ -126,7 +126,7 @@ export default function Login({
                         </div>
 
                         {canRegister && (
-                            <div className="rounded-lg border border-slate-950/8 bg-slate-50/80 px-4 py-3 text-center text-sm text-slate-500">
+                            <div className="text-center text-sm text-slate-500">
                                 Don't have an account?{' '}
                                 <TextLink href={register()} tabIndex={5}>
                                     Sign up
