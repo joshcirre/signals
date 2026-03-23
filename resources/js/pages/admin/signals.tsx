@@ -32,9 +32,9 @@ import type {
     SessionActivityItem,
     ToolActivity,
 } from '@/pages/admin/signals-session-feed';
+import type { BreadcrumbItem } from '@/types';
 import admin from '@/routes/admin';
 import { dashboard } from '@/routes/index';
-import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
