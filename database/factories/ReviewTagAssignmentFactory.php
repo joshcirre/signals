@@ -2,6 +2,8 @@
 
 namespace Database\Factories;
 
+use App\Models\Review;
+use App\Models\ReviewTag;
 use App\Models\ReviewTagAssignment;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -18,7 +20,10 @@ class ReviewTagAssignmentFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'review_id' => Review::factory(),
+            'review_tag_id' => ReviewTag::factory(),
+            'confidence' => fake()->randomFloat(3, 0.600, 0.990),
+            'assigned_by' => 'agent',
         ];
     }
 }

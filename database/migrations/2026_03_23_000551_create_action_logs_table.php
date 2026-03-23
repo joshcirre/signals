@@ -13,6 +13,13 @@ return new class extends Migration
     {
         Schema::create('action_logs', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('review_analysis_run_id')->nullable()->constrained()->nullOnDelete();
+            $table->string('actor_type');
+            $table->unsignedBigInteger('actor_id')->nullable();
+            $table->string('action');
+            $table->string('target_type')->nullable();
+            $table->unsignedBigInteger('target_id')->nullable();
+            $table->json('metadata_json')->nullable();
             $table->timestamps();
         });
     }

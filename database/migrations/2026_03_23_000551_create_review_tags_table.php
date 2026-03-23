@@ -13,6 +13,9 @@ return new class extends Migration
     {
         Schema::create('review_tags', function (Blueprint $table) {
             $table->id();
+            $table->string('name');
+            $table->string('normalized_name')->index();
+            $table->string('visibility')->default('internal');
             $table->timestamps();
         });
     }

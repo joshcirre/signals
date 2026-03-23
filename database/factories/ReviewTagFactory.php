@@ -18,7 +18,15 @@ class ReviewTagFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'name' => fake()->words(2, true),
+            'normalized_name' => fake()->randomElement([
+                'Sizing Issue',
+                'Softness Praise',
+                'Shipping Delay',
+                'Packaging Problem',
+                'Quality Praise',
+            ]),
+            'visibility' => 'internal',
         ];
     }
 }

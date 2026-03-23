@@ -13,6 +13,11 @@ return new class extends Migration
     {
         Schema::create('review_clusters', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('product_id')->constrained()->cascadeOnDelete();
+            $table->string('title');
+            $table->text('summary');
+            $table->string('severity')->default('medium');
+            $table->unsignedInteger('review_count')->default(0);
             $table->timestamps();
         });
     }

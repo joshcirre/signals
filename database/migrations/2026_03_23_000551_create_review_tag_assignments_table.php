@@ -13,7 +13,13 @@ return new class extends Migration
     {
         Schema::create('review_tag_assignments', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('review_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('review_tag_id')->constrained()->cascadeOnDelete();
+            $table->decimal('confidence', 4, 3)->default(0.500);
+            $table->string('assigned_by')->default('agent');
             $table->timestamps();
+
+            $table->unique(['review_id', 'review_tag_id']);
         });
     }
 

@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\ActionLog;
+use App\Models\ReviewAnalysisRun;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -18,7 +19,13 @@ class ActionLogFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'review_analysis_run_id' => ReviewAnalysisRun::factory(),
+            'actor_type' => fake()->randomElement(['agent', 'human', 'system']),
+            'actor_id' => null,
+            'action' => fake()->randomElement(['run.queued', 'tool.call', 'proposal.created']),
+            'target_type' => null,
+            'target_id' => null,
+            'metadata_json' => ['message' => fake()->sentence()],
         ];
     }
 }

@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Product;
 use App\Models\ReviewCluster;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -18,7 +19,11 @@ class ReviewClusterFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'product_id' => Product::factory(),
+            'title' => fake()->sentence(3),
+            'summary' => fake()->paragraph(),
+            'severity' => fake()->randomElement(['low', 'medium', 'high']),
+            'review_count' => fake()->numberBetween(2, 8),
         ];
     }
 }

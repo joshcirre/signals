@@ -13,6 +13,15 @@ return new class extends Migration
     {
         Schema::create('review_analysis_runs', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('review_ops_device_id')->nullable()->constrained()->nullOnDelete();
+            $table->string('status')->default('queued');
+            $table->text('prompt')->nullable();
+            $table->text('summary')->nullable();
+            $table->text('error_message')->nullable();
+            $table->timestamp('requested_at')->nullable();
+            $table->timestamp('started_at')->nullable();
+            $table->timestamp('completed_at')->nullable();
             $table->timestamps();
         });
     }

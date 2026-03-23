@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\ReviewAnalysisRun;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -18,7 +19,15 @@ class ReviewAnalysisRunFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'user_id' => User::factory(),
+            'review_ops_device_id' => null,
+            'status' => 'queued',
+            'prompt' => 'Analyze the latest apparel reviews and create merchant-facing proposals.',
+            'summary' => null,
+            'error_message' => null,
+            'requested_at' => now(),
+            'started_at' => null,
+            'completed_at' => null,
         ];
     }
 }

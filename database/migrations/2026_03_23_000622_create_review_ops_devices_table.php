@@ -13,6 +13,11 @@ return new class extends Migration
     {
         Schema::create('review_ops_devices', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->string('name');
+            $table->string('token_hash')->unique();
+            $table->boolean('is_active')->default(true);
+            $table->timestamp('last_seen_at')->nullable();
             $table->timestamps();
         });
     }
