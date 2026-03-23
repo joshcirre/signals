@@ -8,21 +8,31 @@ use App\Models\Product;
 use App\Models\Proposal;
 use App\Models\Review;
 use App\Models\ReviewAnalysisRun;
+use App\Models\SignalsDevice;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class DashboardController extends Controller
 {
-    public function index(): Response
+    public function index(Request $request): Response
     {
+        $user = $request->user();
         $latestRun = ReviewAnalysisRun::query()->latest()->first();
         $latestAppliedProposal = Proposal::query()
             ->whereIn('status', ['applied', 'approved'])
             ->latest('applied_at')
             ->latest('approved_at')
             ->first();
+        $hasConnectedHelper = SignalsDevice::query()
+            ->where('user_id', $user?->id)
+            ->whereNotNull('last_seen_at')
+            ->exists();
 
         return Inertia::render('admin/dashboard', [
+            'onboarding' => [
+                'needs_helper_setup' => ! $hasConnectedHelper,
+            ],
             'stats' => [
                 'products' => Product::query()->count(),
                 'new_reviews' => Review::query()->whereNull('processed_at')->count(),

@@ -25,6 +25,9 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 interface DashboardProps {
+    onboarding: {
+        needs_helper_setup: boolean;
+    };
     stats: {
         products: number;
         new_reviews: number;
@@ -61,6 +64,7 @@ interface StatCard {
 }
 
 export default function AdminDashboard({
+    onboarding,
     stats,
     latestRun,
     latestAppliedChange,
@@ -92,6 +96,47 @@ export default function AdminDashboard({
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Admin Dashboard" />
             <div className="space-y-8 p-4 md:p-6">
+                {onboarding.needs_helper_setup ? (
+                    <section className="rounded-[1.9rem] border border-sky-200 bg-sky-50/90 p-6 text-slate-950 shadow-sm">
+                        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+                            <div className="max-w-3xl">
+                                <Badge className="rounded-full border-sky-300 bg-white/80 px-3 py-1 text-[0.68rem] tracking-[0.24em] text-sky-900 uppercase hover:bg-white/80">
+                                    New demo account
+                                </Badge>
+                                <h2 className="mt-4 text-2xl font-semibold tracking-tight">
+                                    Start the local helper before you run the
+                                    first Signals analysis.
+                                </h2>
+                                <p className="mt-3 text-sm leading-7 text-slate-700">
+                                    The hosted app is ready. Your next step is
+                                    to open Signals, issue a helper token, run
+                                    the Node bridge on your laptop, and then
+                                    click Analyze New Reviews.
+                                </p>
+                            </div>
+                            <div className="flex flex-wrap gap-3">
+                                <Button
+                                    asChild
+                                    className="rounded-full bg-slate-950 hover:bg-slate-800"
+                                >
+                                    <Link href={admin.signals().url}>
+                                        Open Signals setup
+                                    </Link>
+                                </Button>
+                                <Button
+                                    asChild
+                                    variant="outline"
+                                    className="rounded-full border-sky-300 bg-white/80"
+                                >
+                                    <Link href="/">
+                                        Preview the storefront
+                                    </Link>
+                                </Button>
+                            </div>
+                        </div>
+                    </section>
+                ) : null}
+
                 <section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
                     <div className="rounded-[2.2rem] bg-[linear-gradient(135deg,_#112031_0%,_#1b3f74_48%,_#38bdf8_100%)] p-8 text-white shadow-[0_28px_85px_rgba(17,32,49,0.28)]">
                         <Badge className="rounded-full border-white/12 bg-white/12 px-3 py-1 text-[0.68rem] tracking-[0.24em] text-white uppercase hover:bg-white/12">

@@ -165,6 +165,7 @@ export default function Signals({
     const helperRunCommand = flash.helper_token
         ? `SIGNALS_SERVER_URL=${helperServerUrl} \\\nSIGNALS_DEVICE_TOKEN=${flash.helper_token} \\\nnode desktop-helper/index.mjs`
         : 'Issue a helper token to generate the exact launch command.';
+    const needsHelperSetup = helper.latest_device_seen_at === null;
 
     useEffect(() => {
         setRunState(latestRun);
@@ -229,6 +230,66 @@ export default function Signals({
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Signals" />
             <div className="space-y-8 p-4 md:p-6">
+                {needsHelperSetup ? (
+                    <section className="rounded-[1.9rem] border border-amber-200 bg-amber-50/90 p-6 text-amber-950 shadow-sm">
+                        <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+                            <div className="max-w-3xl">
+                                <Badge className="rounded-full border-amber-300 bg-white/80 px-3 py-1 text-[0.68rem] tracking-[0.24em] text-amber-900 uppercase hover:bg-white/80">
+                                    First run setup
+                                </Badge>
+                                <h2 className="mt-4 text-2xl font-semibold tracking-tight text-slate-950">
+                                    Connect the Node bridge once, then this
+                                    account is ready to run Codex live.
+                                </h2>
+                                <p className="mt-3 text-sm leading-7 text-slate-700">
+                                    Issue a helper token from the panel below,
+                                    run the local helper on your machine, wait
+                                    for the heartbeat to appear, and then click
+                                    Analyze New Reviews.
+                                </p>
+                                <div className="mt-4 grid gap-3 text-sm text-slate-700 md:grid-cols-3">
+                                    <div className="rounded-[1.4rem] bg-white/80 px-4 py-4">
+                                        1. Clone the repo and install
+                                        `desktop-helper`.
+                                    </div>
+                                    <div className="rounded-[1.4rem] bg-white/80 px-4 py-4">
+                                        2. Issue a helper token for this
+                                        account.
+                                    </div>
+                                    <div className="rounded-[1.4rem] bg-white/80 px-4 py-4">
+                                        3. Run the helper locally and come back
+                                        here to start analysis.
+                                    </div>
+                                </div>
+                                {flash.helper_token ? (
+                                    <code className="mt-5 block overflow-x-auto rounded-2xl bg-slate-950 px-4 py-4 text-xs text-emerald-200">
+                                        {helperRunCommand}
+                                    </code>
+                                ) : null}
+                            </div>
+                            <div className="flex flex-wrap gap-3">
+                                <Button
+                                    asChild
+                                    className="rounded-full bg-slate-950 hover:bg-slate-800"
+                                >
+                                    <a href="#helper-setup">
+                                        Open helper setup
+                                    </a>
+                                </Button>
+                                <Button
+                                    asChild
+                                    variant="outline"
+                                    className="rounded-full border-amber-300 bg-white/80"
+                                >
+                                    <Link href="/">
+                                        Preview storefront
+                                    </Link>
+                                </Button>
+                            </div>
+                        </div>
+                    </section>
+                ) : null}
+
                 <section className="grid gap-6 lg:grid-cols-[1.25fr_0.75fr]">
                     <div className="rounded-[2rem] bg-[linear-gradient(135deg,_#0f172a_0%,_#1d4ed8_50%,_#38bdf8_100%)] p-7 text-white shadow-[0_24px_70px_rgba(15,23,42,0.28)]">
                         <Badge className="rounded-full border-white/12 bg-white/12 px-3 py-1 text-[0.68rem] tracking-[0.24em] text-white uppercase hover:bg-white/12">
@@ -286,7 +347,10 @@ export default function Signals({
                         </div>
                     </div>
 
-                    <Card className="rounded-[2rem] border-white/80 bg-white/82 py-0 shadow-sm backdrop-blur">
+                    <Card
+                        id="helper-setup"
+                        className="rounded-[2rem] border-white/80 bg-white/82 py-0 shadow-sm backdrop-blur"
+                    >
                         <CardContent className="px-6 py-6">
                             <div className="flex items-center gap-2 text-sm tracking-[0.25em] text-slate-500 uppercase">
                                 <Terminal className="size-4" />
