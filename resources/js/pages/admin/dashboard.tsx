@@ -101,7 +101,7 @@ export default function AdminDashboard({
                             </div>
                             <Link
                                 href={admin.signals().url}
-                                className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-slate-950/10 py-2 pr-3 pl-3 text-sm font-medium text-slate-700 hover:bg-white"
+                                className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-slate-950/10 py-2 pl-3 pr-2 text-sm font-medium text-slate-700 hover:bg-white"
                             >
                                 Open Signals setup
                                 <ArrowRight className="size-4" />

@@ -58,7 +58,7 @@ async function request(path, options = {}) {
 }
 
 async function postRunEvent(runId, payload) {
-    await request(`/api/device/runs/${runId}/events`, {
+    await request(`/api/device/runs/${runId}/stream`, {
         method: 'POST',
         body: JSON.stringify(payload),
     });
@@ -170,13 +170,47 @@ function formatQualifiedMcpToolName(item) {
 function notificationToEvents(notification) {
     const method = notification.method;
     const params = notification.params ?? {};
+    const itemId =
+        params.item_id ??
+        params.itemId ??
+        params.item?.id ??
+        params.id ??
+        null;
 
     switch (method) {
+        case 'agentMessage/delta': {
+            const content =
+                typeof params.delta === 'string'
+                    ? params.delta
+                    : typeof params.text === 'string'
+                      ? params.text
+                      : typeof params.content === 'string'
+                        ? params.content
+                        : '';
+
+            if (content === '') {
+                return [];
+            }
+
+            return [
+                {
+                    action: 'codex.message.delta',
+                    kind: 'assistant_text_delta',
+                    content,
+                    message: content,
+                    item_id: itemId,
+                    metadata: {
+                        item_id: itemId,
+                    },
+                },
+            ];
+        }
         case 'thread/started':
             return [
                 {
                     action: 'codex.thread.started',
                     kind: 'status',
+                    content: 'Started a local Codex app-server thread.',
                     message: 'Started a local Codex app-server thread.',
                     metadata: {
                         thread_id: params.thread?.id ?? null,
@@ -188,6 +222,7 @@ function notificationToEvents(notification) {
                 {
                     action: 'codex.turn.started',
                     kind: 'status',
+                    content: 'Codex started the Signals analysis turn.',
                     message: 'Codex started the Signals analysis turn.',
                     metadata: {
                         turn_id: params.turn?.id ?? null,
@@ -203,6 +238,11 @@ function notificationToEvents(notification) {
                 {
                     action: 'codex.plan.updated',
                     kind: 'status',
+                    content: limitText(
+                        params.explanation ||
+                            steps.join(' | ') ||
+                            'Codex updated its review analysis plan.',
+                    ),
                     message: limitText(
                         params.explanation ||
                             steps.join(' | ') ||
@@ -226,10 +266,15 @@ function notificationToEvents(notification) {
                     {
                         action: 'mcp.tool.started',
                         kind: 'tool_call',
+                        content:
+                            item.server && item.tool
+                                ? `Calling ${item.server}.${item.tool}`
+                                : 'Calling a Signals MCP tool.',
                         message:
                             item.server && item.tool
                                 ? `Calling ${item.server}.${item.tool}`
                                 : 'Calling a Signals MCP tool.',
+                        tool_id: item.id ?? null,
                         tool_name: toolName,
                         metadata: {
                             server_name: item.server,
@@ -245,7 +290,9 @@ function notificationToEvents(notification) {
                     {
                         action: 'codex.command.started',
                         kind: 'tool_call',
+                        content: String(item.command ?? ''),
                         message: `Running local command: ${item.command}`,
+                        tool_id: item.id ?? null,
                         tool_name: 'bash',
                         metadata: {
                             command: item.command,
@@ -260,13 +307,33 @@ function notificationToEvents(notification) {
                     {
                         action: 'codex.web-search.started',
                         kind: 'tool_call',
+                        content: `Running web search: ${item.query}`,
                         message: `Running web search: ${item.query}`,
+                        tool_id: item.id ?? null,
                         tool_name: 'web_search',
                         metadata: {
                             query: item.query,
                         },
                     },
                 ];
+            }
+
+            if (type === 'fileChange') {
+                const changes = Array.isArray(item.changes) ? item.changes : [];
+
+                return changes.map((change) => ({
+                    action: 'codex.file-change.started',
+                    kind: 'tool_call',
+                    content: `Preparing ${change.kind ?? 'change'} for ${change.path ?? 'file'}.`,
+                    message: `Preparing ${change.kind ?? 'change'} for ${change.path ?? 'file'}.`,
+                    tool_id: item.id ?? null,
+                    tool_name: 'file_change',
+                    metadata: {
+                        path: change.path ?? null,
+                        change_kind: change.kind ?? null,
+                        diff: change.diff ?? null,
+                    },
+                }));
             }
 
             return [];
@@ -280,8 +347,11 @@ function notificationToEvents(notification) {
                     {
                         action: 'codex.message',
                         kind: 'assistant_text',
+                        content:
+                            item.text ?? 'Codex returned an assistant message.',
                         message:
                             item.text ?? 'Codex returned an assistant message.',
+                        item_id: item.id ?? itemId,
                     },
                 ];
             }
@@ -293,11 +363,17 @@ function notificationToEvents(notification) {
                     {
                         action: 'mcp.tool.completed',
                         kind: 'tool_result',
+                        content:
+                            previewValue(
+                                item.result?.structuredContent ??
+                                    item.result?.content,
+                            ) || 'Completed a Signals MCP tool call.',
                         message:
                             previewValue(
                                 item.result?.structuredContent ??
                                     item.result?.content,
                             ) || 'Completed a Signals MCP tool call.',
+                        tool_id: item.id ?? null,
                         tool_name: toolName,
                         metadata: {
                             server_name: item.server,
@@ -313,13 +389,62 @@ function notificationToEvents(notification) {
                     {
                         action: 'codex.command.completed',
                         kind: 'tool_result',
+                        content:
+                            previewValue(item.aggregatedOutput) ||
+                            `Command exited with status ${item.status ?? 'unknown'}.`,
                         message:
                             previewValue(item.aggregatedOutput) ||
                             `Command exited with status ${item.status ?? 'unknown'}.`,
+                        tool_id: item.id ?? null,
                         tool_name: 'bash',
                         metadata: {
                             exit_code: item.exitCode ?? null,
                             status: item.status ?? null,
+                        },
+                    },
+                ];
+            }
+
+            if (type === 'fileChange') {
+                const changes = Array.isArray(item.changes) ? item.changes : [];
+
+                return changes.map((change) => ({
+                    action: 'codex.file-change.completed',
+                    kind: 'tool_result',
+                    content: `Modified ${change.path ?? 'file'}.`,
+                    message: `Modified ${change.path ?? 'file'}.`,
+                    tool_id: item.id ?? null,
+                    tool_name: 'file_change',
+                    is_error:
+                        item.status === 'failed' || item.status === 'declined',
+                    metadata: {
+                        path: change.path ?? null,
+                        status: item.status ?? null,
+                    },
+                }));
+            }
+
+            if (type === 'dynamicToolCall') {
+                const content = Array.isArray(item.contentItems)
+                    ? item.contentItems
+                          .map((contentItem) => contentItem?.text ?? '')
+                          .filter(Boolean)
+                          .join('\n')
+                    : '';
+
+                return [
+                    {
+                        action: 'codex.dynamic-tool.completed',
+                        kind: 'tool_result',
+                        content,
+                        message: content || 'Completed a dynamic tool call.',
+                        tool_id: item.id ?? null,
+                        tool_name: item.name ?? 'dynamic_tool',
+                        is_error:
+                            item.status === 'failed' || item.success === false,
+                        metadata: {
+                            status: item.status ?? null,
+                            success: item.success ?? null,
                         },
                     },
                 ];
@@ -332,6 +457,8 @@ function notificationToEvents(notification) {
                 {
                     action: 'codex.error',
                     kind: 'status',
+                    content:
+                        params.message ?? 'Codex app-server reported an error.',
                     message:
                         params.message ?? 'Codex app-server reported an error.',
                 },
@@ -355,6 +482,7 @@ async function executeCustomCommand(run) {
     await postRunEvent(run.id, {
         action: 'helper.custom-command',
         kind: 'status',
+        content: 'Launching the configured SIGNALS_RUN_COMMAND.',
         message: 'Launching the configured SIGNALS_RUN_COMMAND.',
     });
 
@@ -383,6 +511,7 @@ async function executeCustomCommand(run) {
                 await postRunEvent(run.id, {
                     action: 'codex.stdout',
                     kind: 'assistant_text',
+                    content: message,
                     message,
                 });
             } catch (error) {
@@ -401,6 +530,7 @@ async function executeCustomCommand(run) {
                 await postRunEvent(run.id, {
                     action: 'codex.stderr',
                     kind: 'status',
+                    content: message,
                     message,
                 });
             } catch (error) {
@@ -481,6 +611,7 @@ async function executeCodexRun(run) {
                       ? 'codex.error'
                       : 'codex.closed',
             kind: 'status',
+            content: message,
             message,
         }).catch((error) => {
             console.error(error);
@@ -495,6 +626,7 @@ async function executeCodexRun(run) {
         await postRunEvent(run.id, {
             action: 'helper.codex.starting',
             kind: 'status',
+            content: 'Starting a local Codex app-server session for Signals.',
             message: 'Starting a local Codex app-server session for Signals.',
         });
 
@@ -529,6 +661,7 @@ async function executeCodexRun(run) {
         await postRunEvent(run.id, {
             action: 'codex.thread.ready',
             kind: 'status',
+            content: 'Codex thread is ready. Starting the Signals turn now.',
             message: 'Codex thread is ready. Starting the Signals turn now.',
             metadata: {
                 thread_id: threadResponse.thread?.id ?? null,
@@ -558,6 +691,7 @@ async function executeRun(run) {
     await postRunEvent(run.id, {
         action: 'helper.started',
         kind: 'status',
+        content: 'Local helper claimed the run and is preparing Codex.',
         message: 'Local helper claimed the run and is preparing Codex.',
     });
 

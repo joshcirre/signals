@@ -26,15 +26,28 @@ class RecordReviewAnalysisEventController extends Controller
             $metadata = [];
         }
 
+        $kind = $request->string('kind')->toString() ?: ($metadata['kind'] ?? 'status');
+        $content = $request->string('content')->toString() ?: ($metadata['content'] ?? null);
+        $message = $request->string('message')->toString() ?: ($metadata['message'] ?? $content);
+        $toolId = $request->string('tool_id')->toString() ?: ($metadata['tool_id'] ?? null);
+        $toolName = $request->string('tool_name')->toString() ?: ($metadata['tool_name'] ?? null);
+        $itemId = $request->string('item_id')->toString() ?: ($metadata['item_id'] ?? null);
+        $isError = $request->boolean('is_error') || (bool) ($metadata['is_error'] ?? false);
+        $action = $request->string('action')->toString() ?: ($kind === 'assistant_text' ? 'codex.message' : 'signals.stream.chunk');
+
         $event = ActionLog::query()->create([
             'review_analysis_run_id' => $reviewAnalysisRun->id,
             'actor_type' => 'agent',
-            'action' => $request->string('action')->toString(),
+            'action' => $action,
             'metadata_json' => array_filter([
                 ...$metadata,
-                'message' => $request->string('message')->toString() ?: ($metadata['message'] ?? null),
-                'tool_name' => $request->string('tool_name')->toString() ?: ($metadata['tool_name'] ?? null),
-                'kind' => $request->string('kind')->toString() ?: ($metadata['kind'] ?? null),
+                'message' => $message,
+                'content' => $content,
+                'tool_id' => $toolId,
+                'tool_name' => $toolName,
+                'item_id' => $itemId,
+                'kind' => $kind,
+                'is_error' => $isError,
             ], static fn (mixed $value): bool => $value !== null),
         ]);
 

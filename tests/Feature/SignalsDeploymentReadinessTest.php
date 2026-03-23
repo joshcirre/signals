@@ -18,6 +18,15 @@ test('signals page uses the server app url for helper instructions', function ()
             ->where('appUrl', 'https://signals.example.com'));
 });
 
+test('signals app shell exposes the csrf token for echo auth', function (): void {
+    $admin = User::factory()->create();
+
+    $this->actingAs($admin)
+        ->get(route('admin.signals'))
+        ->assertSuccessful()
+        ->assertSee('meta name="csrf-token"', false);
+});
+
 test('hosted deployment check passes for a seeded hosted demo environment', function (): void {
     config()->set('app.url', 'https://signals.example.com');
     config()->set('broadcasting.default', 'reverb');

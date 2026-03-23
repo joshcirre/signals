@@ -42,6 +42,12 @@ class ReviewAnalysisEventBroadcast implements ShouldBroadcastNow
             'action' => $this->event->action,
             'target_type' => $this->event->target_type,
             'target_id' => $this->event->target_id,
+            'kind' => $this->event->metadata_json['kind'] ?? null,
+            'content' => $this->event->metadata_json['content'] ?? ($this->event->metadata_json['message'] ?? null),
+            'tool_id' => $this->event->metadata_json['tool_id'] ?? null,
+            'tool_name' => $this->event->metadata_json['tool_name'] ?? null,
+            'item_id' => $this->event->metadata_json['item_id'] ?? null,
+            'is_error' => (bool) ($this->event->metadata_json['is_error'] ?? false),
             'metadata' => $this->event->metadata_json ?? [],
             'created_at' => $this->event->created_at?->toIso8601String(),
         ];

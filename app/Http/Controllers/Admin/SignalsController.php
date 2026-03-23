@@ -114,8 +114,15 @@ class SignalsController extends Controller
                     ->values()
                     ->map(fn (ActionLog $actionLog): array => [
                         'id' => $actionLog->id,
+                        'review_analysis_run_id' => $actionLog->review_analysis_run_id,
                         'action' => $actionLog->action,
                         'actor_type' => $actionLog->actor_type,
+                        'kind' => $actionLog->metadata_json['kind'] ?? null,
+                        'content' => $actionLog->metadata_json['content'] ?? ($actionLog->metadata_json['message'] ?? null),
+                        'tool_id' => $actionLog->metadata_json['tool_id'] ?? null,
+                        'tool_name' => $actionLog->metadata_json['tool_name'] ?? null,
+                        'item_id' => $actionLog->metadata_json['item_id'] ?? null,
+                        'is_error' => (bool) ($actionLog->metadata_json['is_error'] ?? false),
                         'metadata' => $actionLog->metadata_json ?? [],
                         'created_at' => $actionLog->created_at->toIso8601String(),
                     ]),
