@@ -26,7 +26,7 @@ export function NavUser() {
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <SidebarMenuButton
-                            className="h-11 rounded-lg border border-slate-950/8 bg-white text-slate-800 hover:bg-slate-50 data-[state=open]:bg-slate-50"
+                            className="h-10 rounded-lg border border-slate-950/8 bg-white text-slate-800 hover:bg-slate-50 data-[state=open]:bg-slate-50"
                             data-test="sidebar-menu-button"
                         >
                             <UserInfo user={auth.user} />

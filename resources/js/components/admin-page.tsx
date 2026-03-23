@@ -9,7 +9,7 @@ export function AdminPage({
     return (
         <div
             className={cn(
-                'mx-auto flex w-full max-w-[1600px] flex-col gap-6 px-4 py-4 md:px-6 md:py-6',
+                'mx-auto flex w-full max-w-[1440px] flex-col gap-4 px-4 py-4 md:px-6 md:py-5',
                 className,
             )}
             {...props}
@@ -33,15 +33,15 @@ export function AdminHeader({
     meta?: ReactNode;
 }) {
     return (
-        <div className="flex flex-col gap-4 border-b border-slate-950/6 pb-5 lg:flex-row lg:items-end lg:justify-between">
+        <div className="flex flex-col gap-3 border-b border-slate-950/6 pb-4 lg:flex-row lg:items-end lg:justify-between">
             <div className="space-y-2">
                 {eyebrow ? (
-                    <p className="text-[11px] font-medium tracking-[0.22em] text-slate-400 uppercase">
+                    <p className="text-[10px] font-medium tracking-[0.22em] text-slate-400 uppercase">
                         {eyebrow}
                     </p>
                 ) : null}
                 <div className="space-y-1">
-                    <h1 className="text-2xl font-semibold tracking-tight text-slate-950">
+                    <h1 className="text-xl font-semibold tracking-tight text-slate-950 md:text-2xl">
                         {title}
                     </h1>
                     <div className="max-w-3xl text-sm leading-6 text-slate-600">
@@ -68,7 +68,7 @@ export function AdminSurface({
     return (
         <section
             className={cn(
-                'rounded-xl border border-slate-950/8 bg-white/92 shadow-[0_18px_50px_-40px_rgba(15,23,42,0.32)] backdrop-blur',
+                'rounded-lg border border-slate-950/7 bg-white shadow-[0_10px_30px_-24px_rgba(15,23,42,0.18)]',
                 className,
             )}
         >
@@ -131,14 +131,14 @@ export function AdminMetric({
     return (
         <div
             className={cn(
-                'rounded-lg border border-slate-950/7 bg-slate-50/80 px-4 py-3',
+                'rounded-lg border border-slate-950/7 bg-slate-50 px-3.5 py-3',
                 className,
             )}
         >
-            <p className="text-[11px] font-medium tracking-[0.2em] text-slate-400 uppercase">
+            <p className="text-[10px] font-medium tracking-[0.2em] text-slate-400 uppercase">
                 {label}
             </p>
-            <div className="mt-2 text-lg font-semibold tracking-tight text-slate-950">
+            <div className="mt-1.5 text-base font-semibold tracking-tight text-slate-950 md:text-lg">
                 {value}
             </div>
             {detail ? (
@@ -160,7 +160,7 @@ export function AdminPill({
     return (
         <span
             className={cn(
-                'inline-flex items-center gap-2 rounded-full border border-slate-950/8 bg-white px-2.5 py-1 text-[11px] font-medium tracking-[0.16em] text-slate-500 uppercase',
+                'inline-flex items-center gap-2 rounded-full border border-slate-950/8 bg-white px-2.5 py-1 text-[10px] font-medium tracking-[0.16em] text-slate-500 uppercase',
                 className,
             )}
         >

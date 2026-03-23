@@ -97,6 +97,31 @@ test('queueing a storefront adaptation run stores the proposal context', functio
         ]);
 });
 
+test('signals workspace can queue a focused run and stay on the signals page', function (): void {
+    $admin = User::factory()->create();
+
+    $response = $this->actingAs($admin)
+        ->post(route('admin.review-runs.store'), [
+            'kind' => 'review_analysis',
+            'focus' => 'Premium hoodie sizing complaints',
+            'redirect_to' => 'signals',
+        ]);
+
+    $run = ReviewAnalysisRun::query()
+        ->where('user_id', $admin->id)
+        ->latest('id')
+        ->firstOrFail();
+
+    $response->assertRedirect(route('admin.signals', [
+        'q' => 'Premium hoodie sizing complaints',
+    ]));
+
+    expect($run->prompt)->toContain('Focus area: Premium hoodie sizing complaints')
+        ->and($run->context_json)->toMatchArray([
+            'focus' => 'Premium hoodie sizing complaints',
+        ]);
+});
+
 test('admin cannot open another users review analysis run chat page', function (): void {
     $admin = User::factory()->create();
     $run = ReviewAnalysisRun::factory()->create();

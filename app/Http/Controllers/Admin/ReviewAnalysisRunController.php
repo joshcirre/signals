@@ -13,6 +13,7 @@ class ReviewAnalysisRunController extends Controller
     public function __invoke(StoreReviewAnalysisRunRequest $request, QueueReviewAnalysisRunAction $queueReviewAnalysisRun): RedirectResponse
     {
         $kind = $request->string('kind')->toString() ?: 'review_analysis';
+        $focus = mb_trim($request->string('focus')->toString());
         $proposal = null;
 
         if ($kind === 'storefront_adaptation') {
@@ -22,7 +23,19 @@ class ReviewAnalysisRunController extends Controller
                 ->firstOrFail();
         }
 
-        $run = $queueReviewAnalysisRun->handle($request->user(), $kind, $proposal);
+        $run = $queueReviewAnalysisRun->handle(
+            $request->user(),
+            $kind,
+            $proposal,
+            null,
+            $focus !== '' ? $focus : null,
+        );
+
+        if ($request->string('redirect_to')->toString() === 'signals') {
+            $parameters = $focus !== '' ? ['q' => $focus] : [];
+
+            return to_route('admin.signals', $parameters);
+        }
 
         return to_route('admin.review-runs.show', $run);
     }

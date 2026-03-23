@@ -16,11 +16,28 @@ class QueueReviewAnalysisRunAction
 {
     public function handle(
         User $user,
-        string $kind = 'review_analysis',
-        ?Proposal $proposal = null,
+        ?string $kindOrPrompt = 'review_analysis',
+        Proposal|string|null $proposalOrMessage = null,
         ?string $message = null,
+        ?string $focus = null,
     ): ReviewAnalysisRun {
-        $queuedRun = $this->queuedRunAttributes($kind, $proposal);
+        $normalizedKindOrPrompt = $kindOrPrompt ?? 'review_analysis';
+        $kind = in_array($normalizedKindOrPrompt, ['review_analysis', 'storefront_adaptation'], true)
+            ? $normalizedKindOrPrompt
+            : 'review_analysis';
+        $promptOverride = $kind === $normalizedKindOrPrompt
+            ? null
+            : $normalizedKindOrPrompt;
+        $proposal = $proposalOrMessage instanceof Proposal
+            ? $proposalOrMessage
+            : null;
+        $queueMessage = is_string($proposalOrMessage) ? $proposalOrMessage : $message;
+        $queuedRun = $this->queuedRunAttributes(
+            $kind,
+            $proposal,
+            $promptOverride,
+            $focus,
+        );
 
         $run = ReviewAnalysisRun::query()->create([
             'user_id' => $user->id,
@@ -36,7 +53,7 @@ class QueueReviewAnalysisRunAction
             'actor_type' => 'system',
             'action' => 'run.queued',
             'metadata_json' => [
-                'message' => $message ?: $queuedRun['message'],
+                'message' => $queueMessage ?: $queuedRun['message'],
             ],
         ]);
 
@@ -53,13 +70,36 @@ class QueueReviewAnalysisRunAction
     /**
      * @return array{prompt: string, message: string, context_json: array<string, mixed>|null}
      */
-    private function queuedRunAttributes(string $kind, ?Proposal $proposal): array
-    {
+    private function queuedRunAttributes(
+        string $kind,
+        ?Proposal $proposal,
+        ?string $promptOverride = null,
+        ?string $focus = null,
+    ): array {
         if ($kind === 'review_analysis') {
+            $basePrompt = 'Analyze the latest apparel reviews, confirm any repeated fit problems, and prepare only merchant-facing proposals with a strong preference for a single fit-note update when the evidence is clear.';
+            $normalizedFocus = is_string($focus) ? mb_trim($focus) : '';
+
+            if (is_string($promptOverride) && $promptOverride !== '') {
+                return [
+                    'prompt' => $promptOverride,
+                    'message' => 'Queued Signals run and waiting for a connected local helper to claim it.',
+                    'context_json' => $normalizedFocus === ''
+                        ? null
+                        : ['focus' => $normalizedFocus],
+                ];
+            }
+
             return [
-                'prompt' => 'Analyze the latest apparel reviews, confirm any repeated fit problems, and prepare only merchant-facing proposals with a strong preference for a single fit-note update when the evidence is clear.',
-                'message' => 'Queued Signals run and waiting for a connected local helper to claim it.',
-                'context_json' => null,
+                'prompt' => $normalizedFocus === ''
+                    ? $basePrompt
+                    : $basePrompt."\n\nFocus area: ".$normalizedFocus,
+                'message' => $normalizedFocus === ''
+                    ? 'Queued Signals run and waiting for a connected local helper to claim it.'
+                    : 'Queued a focused Signals run and waiting for a connected local helper to claim it.',
+                'context_json' => $normalizedFocus === ''
+                    ? null
+                    : ['focus' => $normalizedFocus],
             ];
         }
 

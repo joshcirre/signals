@@ -44,6 +44,7 @@ class SignalsController extends Controller
 
         $latestRun = ReviewAnalysisRun::query()
             ->where('user_id', $user?->id)
+            ->where('kind', 'review_analysis')
             ->with('actionLogs')
             ->latest()
             ->first();
@@ -127,7 +128,7 @@ class SignalsController extends Controller
                 'requested_at' => $latestRun->requested_at?->toIso8601String(),
                 'events' => $latestRun->actionLogs()
                     ->latest()
-                    ->limit(20)
+                    ->limit(60)
                     ->get()
                     ->reverse()
                     ->values()
