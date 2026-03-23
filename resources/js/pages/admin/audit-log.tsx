@@ -1,6 +1,9 @@
 import { Head } from '@inertiajs/react';
 import { Bot, ShieldCheck, TerminalSquare } from 'lucide-react';
 import AppLayout from '@/layouts/app-layout';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
+import { storeBrand } from '@/lib/brand';
 import { dashboard } from '@/routes';
 import admin from '@/routes/admin';
 import type { BreadcrumbItem } from '@/types';
@@ -39,23 +42,33 @@ export default function AuditLog({ entries }: AuditLogPageProps) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Audit Log" />
             <div className="space-y-8 p-4 md:p-6">
-                <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
-                    <div className="flex flex-wrap items-end justify-between gap-4">
-                        <div>
-                            <p className="text-sm uppercase tracking-[0.25em] text-slate-500">Governance</p>
-                            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950">
-                                Every Codex and human action stays visible.
-                            </h1>
+                <Card className="rounded-[2rem] border-white/80 bg-white/82 py-0 shadow-sm backdrop-blur">
+                    <CardContent className="px-6 py-6">
+                        <div className="flex flex-wrap items-end justify-between gap-4">
+                            <div>
+                                <Badge className="rounded-full border-slate-200 bg-slate-50 px-3 py-1 text-[0.68rem] tracking-[0.24em] text-slate-700 uppercase hover:bg-slate-50">
+                                    {storeBrand.adminName}
+                                </Badge>
+                                <p className="text-sm tracking-[0.25em] text-slate-500 uppercase">
+                                    Governance
+                                </p>
+                                <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950">
+                                    Every Codex and human action stays visible.
+                                </h1>
+                            </div>
+                            <div className="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white">
+                                {entries.length} recent events
+                            </div>
                         </div>
-                        <div className="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white">
-                            {entries.length} recent events
-                        </div>
-                    </div>
-                </section>
+                    </CardContent>
+                </Card>
 
                 <section className="space-y-4">
                     {entries.map((entry) => {
-                        const Icon = actorIcons[entry.actor_type as keyof typeof actorIcons] ?? TerminalSquare;
+                        const Icon =
+                            actorIcons[
+                                entry.actor_type as keyof typeof actorIcons
+                            ] ?? TerminalSquare;
 
                         return (
                             <article
@@ -68,33 +81,49 @@ export default function AuditLog({ entries }: AuditLogPageProps) {
                                             <Icon className="size-5" />
                                         </div>
                                         <div>
-                                            <p className="text-xs uppercase tracking-[0.25em] text-slate-500">
+                                            <p className="text-xs tracking-[0.25em] text-slate-500 uppercase">
                                                 {entry.actor_type}
                                             </p>
                                             <h2 className="mt-2 text-lg font-semibold text-slate-950">
                                                 {entry.action}
                                             </h2>
                                             <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-                                                {String(entry.metadata.message ?? 'No message recorded.')}
+                                                {String(
+                                                    entry.metadata.message ??
+                                                        'No message recorded.',
+                                                )}
                                             </p>
                                         </div>
                                     </div>
                                     <div className="text-right text-sm text-slate-500">
-                                        <p>{new Date(entry.created_at).toLocaleString()}</p>
-                                        {entry.target_type && entry.target_id ? (
+                                        <p>
+                                            {new Date(
+                                                entry.created_at,
+                                            ).toLocaleString()}
+                                        </p>
+                                        {entry.target_type &&
+                                        entry.target_id ? (
                                             <p className="mt-1">
-                                                {entry.target_type} #{entry.target_id}
+                                                {entry.target_type} #
+                                                {entry.target_id}
                                             </p>
                                         ) : null}
                                     </div>
                                 </div>
 
-                                {Object.entries(entry.metadata).filter(([key]) => key !== 'message').length > 0 ? (
+                                {Object.entries(entry.metadata).filter(
+                                    ([key]) => key !== 'message',
+                                ).length > 0 ? (
                                     <div className="mt-4 rounded-2xl bg-slate-50 p-4 text-sm text-slate-700">
-                                        <pre className="overflow-x-auto whitespace-pre-wrap break-words">
+                                        <pre className="overflow-x-auto break-words whitespace-pre-wrap">
                                             {JSON.stringify(
                                                 Object.fromEntries(
-                                                    Object.entries(entry.metadata).filter(([key]) => key !== 'message'),
+                                                    Object.entries(
+                                                        entry.metadata,
+                                                    ).filter(
+                                                        ([key]) =>
+                                                            key !== 'message',
+                                                    ),
                                                 ),
                                                 null,
                                                 2,

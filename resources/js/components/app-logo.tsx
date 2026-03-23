@@ -1,14 +1,16 @@
-import AppLogoIcon from '@/components/app-logo-icon';
+import { BrandMark } from '@/components/brand-mark';
+import { storeBrand } from '@/lib/brand';
 
 export default function AppLogo() {
     return (
         <>
-            <div className="flex aspect-square size-8 items-center justify-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground">
-                <AppLogoIcon className="size-5 fill-current text-white dark:text-black" />
-            </div>
-            <div className="ml-1 grid flex-1 text-left text-sm">
-                <span className="mb-0.5 truncate leading-tight font-semibold">
-                    Laravel Starter Kit
+            <BrandMark className="size-10 rounded-2xl" />
+            <div className="ml-2 grid flex-1 text-left">
+                <span className="truncate text-sm font-semibold tracking-tight text-slate-950">
+                    {storeBrand.adminName}
+                </span>
+                <span className="truncate text-xs text-slate-500">
+                    {storeBrand.accent}
                 </span>
             </div>
         </>

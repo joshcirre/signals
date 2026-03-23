@@ -2,12 +2,51 @@ import type { SVGAttributes } from 'react';
 
 export default function AppLogoIcon(props: SVGAttributes<SVGElement>) {
     return (
-        <svg {...props} viewBox="0 0 40 42" xmlns="http://www.w3.org/2000/svg">
-            <path
-                fillRule="evenodd"
-                clipRule="evenodd"
-                d="M17.2 5.63325L8.6 0.855469L0 5.63325V32.1434L16.2 41.1434L32.4 32.1434V23.699L40 19.4767V9.85547L31.4 5.07769L22.8 9.85547V18.2999L17.2 21.411V5.63325ZM38 18.2999L32.4 21.411V15.2545L38 12.1434V18.2999ZM36.9409 10.4439L31.4 13.5221L25.8591 10.4439L31.4 7.36561L36.9409 10.4439ZM24.8 18.2999V12.1434L30.4 15.2545V21.411L24.8 18.2999ZM23.8 20.0323L29.3409 23.1105L16.2 30.411L10.6591 27.3328L23.8 20.0323ZM7.6 27.9212L15.2 32.1434V38.2999L2 30.9666V7.92116L7.6 11.0323V27.9212ZM8.6 9.29991L3.05913 6.22165L8.6 3.14339L14.1409 6.22165L8.6 9.29991ZM30.4 24.8101L17.2 32.1434V38.2999L30.4 30.9666V24.8101ZM9.6 11.0323L15.2 7.92117V22.5221L9.6 25.6333V11.0323Z"
+        <svg {...props} viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+            <rect
+                x="1.5"
+                y="1.5"
+                width="37"
+                height="37"
+                rx="14"
+                fill="url(#northstarGradient)"
             />
+            <path
+                d="M20 7.5L22.676 15.324L30.5 18L22.676 20.676L20 28.5L17.324 20.676L9.5 18L17.324 15.324L20 7.5Z"
+                fill="white"
+                fillOpacity="0.95"
+            />
+            <path
+                d="M20 12.75L21.781 17.219L26.25 19L21.781 20.781L20 25.25L18.219 20.781L13.75 19L18.219 17.219L20 12.75Z"
+                fill="#BFE7FF"
+            />
+            <path
+                d="M11 30.25H29"
+                stroke="rgba(255,255,255,0.42)"
+                strokeLinecap="round"
+            />
+            <rect
+                x="1.5"
+                y="1.5"
+                width="37"
+                height="37"
+                rx="14"
+                stroke="rgba(255,255,255,0.18)"
+            />
+            <defs>
+                <linearGradient
+                    id="northstarGradient"
+                    x1="6"
+                    y1="3.5"
+                    x2="31.5"
+                    y2="36.5"
+                    gradientUnits="userSpaceOnUse"
+                >
+                    <stop stopColor="#112031" />
+                    <stop offset="0.58" stopColor="#1D4ED8" />
+                    <stop offset="1" stopColor="#7DD3FC" />
+                </linearGradient>
+            </defs>
         </svg>
     );
 }
