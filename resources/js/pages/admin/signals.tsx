@@ -34,6 +34,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 interface PageProps {
     appUrl: string;
+    repositoryUrl: string;
     auth: {
         user: {
             id: number;
@@ -153,12 +154,17 @@ export default function Signals({
     clusters,
     recentAuditLog,
 }: SignalsProps) {
-    const { appUrl, auth, flash } = usePage<PageProps>().props;
+    const { appUrl, auth, flash, repositoryUrl } = usePage<PageProps>().props;
     const [searchTerm, setSearchTerm] = useState(filters.q);
     const [helperName, setHelperName] = useState(helper.default_name);
     const [runState, setRunState] = useState(latestRun);
     const [events, setEvents] = useState(latestRun?.events ?? []);
     const helperServerUrl = appUrl;
+    const helperCloneCommand = `git clone ${repositoryUrl}`;
+    const helperInstallCommand = `cd signals\nnpm install --prefix desktop-helper`;
+    const helperRunCommand = flash.helper_token
+        ? `SIGNALS_SERVER_URL=${helperServerUrl} \\\nSIGNALS_DEVICE_TOKEN=${flash.helper_token} \\\nnode desktop-helper/index.mjs`
+        : 'Issue a helper token to generate the exact launch command.';
 
     useEffect(() => {
         setRunState(latestRun);
@@ -321,6 +327,22 @@ export default function Signals({
                                         'No helper has checked in yet.'}
                                 </p>
                             </div>
+                            <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+                                <p className="font-semibold text-slate-900">
+                                    Fresh machine setup
+                                </p>
+                                <p className="mt-2">
+                                    Clone the repo once, install the helper
+                                    dependencies, then run the helper with the
+                                    token from this page.
+                                </p>
+                                <code className="mt-3 block overflow-x-auto rounded-xl bg-white px-3 py-3 text-xs text-slate-900">
+                                    {helperCloneCommand}
+                                </code>
+                                <code className="mt-3 block overflow-x-auto rounded-xl bg-white px-3 py-3 text-xs text-slate-900">
+                                    {helperInstallCommand}
+                                </code>
+                            </div>
                             {flash.helper_token ? (
                                 <div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-950">
                                     <p className="font-semibold">
@@ -333,10 +355,19 @@ export default function Signals({
                                         Start the local helper
                                     </p>
                                     <code className="mt-2 block overflow-x-auto rounded-xl bg-slate-950 px-3 py-3 text-xs text-emerald-200">
-                                        {`SIGNALS_SERVER_URL=${helperServerUrl} \\\nSIGNALS_DEVICE_TOKEN=${flash.helper_token} \\\nnode desktop-helper/index.mjs`}
+                                        {helperRunCommand}
                                     </code>
                                 </div>
-                            ) : null}
+                            ) : (
+                                <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
+                                    <p className="font-semibold text-slate-900">
+                                        Run command
+                                    </p>
+                                    <code className="mt-2 block overflow-x-auto rounded-xl bg-slate-950 px-3 py-3 text-xs text-slate-200">
+                                        {helperRunCommand}
+                                    </code>
+                                </div>
+                            )}
                         </CardContent>
                     </Card>
                 </section>

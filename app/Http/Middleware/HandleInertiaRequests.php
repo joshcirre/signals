@@ -39,6 +39,7 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
             'name' => config('app.name'),
             'appUrl' => $request->root(),
+            'repositoryUrl' => 'https://github.com/joshcirre/signals.git',
             'auth' => [
                 'user' => $request->user(),
             ],
