@@ -125,6 +125,7 @@ class SignalsController extends Controller
                 'status' => $latestRun->status,
                 'kind' => $latestRun->kind,
                 'summary' => $latestRun->summary,
+                'error_message' => $latestRun->error_message,
                 'prompt' => $latestRun->prompt,
                 'context' => $latestRun->context_json,
                 'requested_at' => $latestRun->requested_at?->toIso8601String(),
