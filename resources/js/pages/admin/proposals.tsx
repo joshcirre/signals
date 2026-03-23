@@ -13,10 +13,10 @@ import {
 import AppLayout from '@/layouts/app-layout';
 import { storeBrand } from '@/lib/brand';
 import { cn } from '@/lib/utils';
+import type { BreadcrumbItem } from '@/types';
 import { dashboard } from '@/routes';
 import admin from '@/routes/admin';
 import productRoutes from '@/routes/products';
-import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
