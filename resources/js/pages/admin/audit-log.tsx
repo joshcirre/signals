@@ -62,7 +62,6 @@ export default function AuditLog({ entries }: AuditLogPageProps) {
                 <AdminHeader
                     eyebrow="System history"
                     title="Audit log"
-                    description="A denser event feed for every Codex, human, and system action. Important metadata stays available, but the page reads like a clean operational timeline instead of a wall of cards."
                     meta={
                         <AdminPill>
                             <span className="size-1.5 rounded-full bg-slate-300" />
@@ -95,10 +94,7 @@ export default function AuditLog({ entries }: AuditLogPageProps) {
                 </div>
 
                 <AdminSurface>
-                    <AdminSurfaceHeader
-                        title="Event timeline"
-                        description="Newest events first, with structured metadata available on demand."
-                    />
+                    <AdminSurfaceHeader title="Event timeline" />
                     <AdminSurfaceBody className="space-y-0 p-0">
                         {entries.length > 0 ? (
                             entries.map((entry, index) => {
@@ -125,7 +121,7 @@ export default function AuditLog({ entries }: AuditLogPageProps) {
                                     >
                                         <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                                             <div className="flex min-w-0 gap-3">
-                                                <div className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-slate-950/8 bg-slate-50 text-slate-500">
+                                                <div className="flex size-9 shrink-0 items-center justify-center rounded-sm border border-slate-950/8 bg-slate-50 text-slate-500">
                                                     <Icon className="size-4" />
                                                 </div>
                                                 <div className="min-w-0">
@@ -133,7 +129,7 @@ export default function AuditLog({ entries }: AuditLogPageProps) {
                                                         <p className="text-sm font-medium text-slate-950">
                                                             {entry.action}
                                                         </p>
-                                                        <span className="rounded-full bg-slate-100 px-2 py-1 text-[11px] font-medium tracking-[0.16em] text-slate-500 uppercase">
+                                                        <span className="rounded-sm bg-slate-100 px-2 py-1 text-[11px] font-medium tracking-[0.16em] text-slate-500 uppercase">
                                                             {entry.actor_type}
                                                         </span>
                                                     </div>
@@ -162,7 +158,7 @@ export default function AuditLog({ entries }: AuditLogPageProps) {
                                         </div>
 
                                         {hasMetadata ? (
-                                            <details className="mt-3 rounded-lg border border-slate-950/8 bg-slate-50/80 px-3 py-3 text-sm text-slate-600">
+                                            <details className="mt-3 rounded-sm border border-slate-950/8 bg-slate-50/80 px-3 py-3 text-sm text-slate-600">
                                                 <summary className="cursor-pointer list-none text-xs font-medium tracking-[0.18em] text-slate-400 uppercase">
                                                     Structured metadata
                                                 </summary>

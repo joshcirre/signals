@@ -22,32 +22,25 @@ export function AdminPage({
 export function AdminHeader({
     eyebrow,
     title,
-    description,
     actions,
     meta,
 }: {
     eyebrow?: string;
     title: string;
-    description: ReactNode;
     actions?: ReactNode;
     meta?: ReactNode;
 }) {
     return (
-        <div className="flex flex-col gap-3 border-b border-slate-950/6 pb-4 lg:flex-row lg:items-end lg:justify-between">
+        <div className="flex flex-col gap-2 border-b border-slate-950/6 pb-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-2">
                 {eyebrow ? (
                     <p className="text-[10px] font-medium tracking-[0.22em] text-slate-400 uppercase">
                         {eyebrow}
                     </p>
                 ) : null}
-                <div className="space-y-1">
-                    <h1 className="text-xl font-semibold tracking-tight text-slate-950 md:text-2xl">
-                        {title}
-                    </h1>
-                    <div className="max-w-3xl text-sm leading-6 text-slate-600">
-                        {description}
-                    </div>
-                </div>
+                <h1 className="text-xl font-semibold tracking-tight text-slate-950 md:text-2xl">
+                    {title}
+                </h1>
                 {meta ? (
                     <div className="flex flex-wrap gap-2">{meta}</div>
                 ) : null}
@@ -68,7 +61,7 @@ export function AdminSurface({
     return (
         <section
             className={cn(
-                'rounded-lg border border-slate-950/7 bg-white shadow-[0_10px_30px_-24px_rgba(15,23,42,0.18)]',
+                'rounded-sm border border-slate-950/7 bg-white',
                 className,
             )}
         >
@@ -131,7 +124,7 @@ export function AdminMetric({
     return (
         <div
             className={cn(
-                'rounded-lg border border-slate-950/7 bg-slate-50 px-3.5 py-3',
+                'rounded-sm border border-slate-950/7 bg-slate-50 px-3.5 py-3',
                 className,
             )}
         >
@@ -160,7 +153,7 @@ export function AdminPill({
     return (
         <span
             className={cn(
-                'inline-flex items-center gap-2 rounded-full border border-slate-950/8 bg-white px-2.5 py-1 text-[10px] font-medium tracking-[0.16em] text-slate-500 uppercase',
+                'inline-flex items-center gap-2 rounded-sm border border-slate-950/8 bg-white px-2.5 py-1 text-[10px] font-medium tracking-[0.16em] text-slate-500 uppercase',
                 className,
             )}
         >

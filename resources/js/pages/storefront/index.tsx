@@ -43,7 +43,7 @@ export default function StorefrontIndex({
                                 ? `/products/${featuredProduct.slug}`
                                 : '#'
                         }
-                        className="inline-flex items-center gap-2 rounded-md bg-slate-950 py-2.5 pr-3 pl-3.5 text-sm font-medium text-white hover:bg-slate-800"
+                        className="inline-flex items-center gap-2 rounded-sm bg-slate-950 py-2.5 pr-3 pl-3.5 text-sm font-medium text-white hover:bg-slate-800"
                     >
                         Shop the collection
                         <ArrowRight className="size-4" />
@@ -83,7 +83,7 @@ export default function StorefrontIndex({
                             </span>
                         </div>
                         {featuredProduct.fit_note ? (
-                            <div className="mt-5 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-pretty text-amber-900">
+                            <div className="mt-5 rounded-sm border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-pretty text-amber-900">
                                 <span className="font-medium">
                                     Sizing note:{' '}
                                 </span>
@@ -146,7 +146,7 @@ export default function StorefrontIndex({
                                             {product.short_description}
                                         </p>
                                         {product.fit_note ? (
-                                            <p className="mt-4 rounded-md bg-amber-50 px-3 py-2 text-xs text-pretty text-amber-800">
+                                            <p className="mt-4 rounded-sm bg-amber-50 px-3 py-2 text-xs text-pretty text-amber-800">
                                                 <span className="font-medium">
                                                     Sizing:{' '}
                                                 </span>

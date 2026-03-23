@@ -378,8 +378,8 @@ function findLastRunningToolIndex(
 
 function SessionUserBubble({ content }: { content: string }) {
     return (
-        <div className="flex justify-end">
-            <div className="max-w-[42rem] rounded-2xl rounded-tr-md bg-slate-950 px-4 py-3 text-sm leading-6 text-white shadow-sm">
+        <div className="flex justify-end pl-12">
+            <div className="rounded-sm bg-slate-950 px-4 py-2.5 text-sm leading-6 text-white">
                 {content}
             </div>
         </div>
@@ -395,21 +395,18 @@ function SessionAssistantBubble({
 }) {
     return (
         <div className="flex gap-3">
-            <div className="flex size-8 shrink-0 items-center justify-center rounded-full border border-slate-950/10 bg-white text-slate-600">
-                <Bot className="size-4" />
+            <div className="flex size-7 shrink-0 items-center justify-center rounded-full border border-slate-950/10 bg-white text-slate-500">
+                <Bot className="size-3.5" />
             </div>
-            <div className="max-w-[42rem] min-w-0 rounded-2xl rounded-tl-md border border-slate-950/8 bg-white px-4 py-3 shadow-sm">
-                <div className="flex items-center justify-between gap-3">
-                    <p className="text-xs font-medium tracking-[0.16em] text-slate-400 uppercase">
-                        Signals
+            <div className="min-w-0 max-w-[38rem]">
+                <div className="rounded-sm border border-slate-950/8 bg-white px-4 py-3">
+                    <p className="text-sm leading-6 whitespace-pre-wrap text-slate-700">
+                        {content}
                     </p>
-                    <time className="text-xs text-slate-400">
-                        {formatTimestamp(createdAt)}
-                    </time>
                 </div>
-                <p className="mt-2 text-sm leading-6 whitespace-pre-wrap text-slate-700">
-                    {content}
-                </p>
+                <time className="mt-1 block text-[11px] text-slate-400">
+                    {formatTimestamp(createdAt)}
+                </time>
             </div>
         </div>
     );
@@ -417,26 +414,24 @@ function SessionAssistantBubble({
 
 function SessionStatusRow({ event }: { event: RunEventPayload }) {
     return (
-        <div className="flex items-center gap-3 pl-11">
+        <div className="flex items-center gap-2 py-0.5 pl-10 text-xs">
             <span
                 className={cn(
-                    'size-2 rounded-full',
+                    'size-1.5 shrink-0 rounded-full',
                     event.is_error ? 'bg-red-400' : 'bg-slate-300',
                 )}
             />
-            <div className="flex min-w-0 flex-1 items-center justify-between gap-3 rounded-full border border-slate-950/6 bg-white/80 px-3 py-2">
-                <p
-                    className={cn(
-                        'truncate text-xs font-medium',
-                        event.is_error ? 'text-red-700' : 'text-slate-500',
-                    )}
-                >
-                    {humanizeAction(event.action)}
-                </p>
-                <time className="shrink-0 text-[11px] text-slate-400">
-                    {formatTimestamp(event.created_at)}
-                </time>
-            </div>
+            <span
+                className={cn(
+                    'truncate',
+                    event.is_error ? 'text-red-500' : 'text-slate-400',
+                )}
+            >
+                {humanizeAction(event.action)}
+            </span>
+            <time className="ml-auto shrink-0 text-slate-300">
+                {formatTimestamp(event.created_at)}
+            </time>
         </div>
     );
 }
@@ -455,7 +450,7 @@ function ToolPulseCard({
         <Link
             href={admin.reviewRuns.show(latestRunId).url}
             className={cn(
-                'rounded-lg border px-3 py-2 transition',
+                'rounded-sm border px-3 py-2 transition',
                 running
                     ? 'border-sky-200 bg-sky-50 text-sky-700'
                     : failed
@@ -466,7 +461,7 @@ function ToolPulseCard({
             <div className="flex items-center gap-2">
                 <span
                     className={cn(
-                        'flex size-6 items-center justify-center rounded-full',
+                        'flex size-6 items-center justify-center rounded-sm',
                         running
                             ? 'bg-sky-100'
                             : failed
@@ -501,7 +496,7 @@ function ProposalPreview({
     proposal: SignalsProps['pendingProposals'][number];
 }) {
     return (
-        <div className="rounded-lg border border-slate-950/7 bg-slate-50 px-3.5 py-3">
+        <div className="rounded-sm border border-slate-950/7 bg-slate-50 px-3.5 py-3">
             <div className="flex items-center justify-between gap-3">
                 <p className="truncate text-sm font-medium text-slate-950">
                     {proposal.target_label}
@@ -682,7 +677,6 @@ function SignalsPage({
                 <AdminHeader
                     eyebrow="Session"
                     title="Signals session"
-                    description="This is the product surface: focus the issue, start the session, watch the stream, then hand off into review. The full tool trace lives on its own page so the main flow stays readable."
                     meta={
                         <>
                             <AdminPill
@@ -709,7 +703,7 @@ function SignalsPage({
                         latestRun ? (
                             <Link
                                 href={admin.reviewRuns.show(latestRun.id).url}
-                                className="inline-flex items-center gap-2 rounded-lg border border-slate-950/10 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-950/20 hover:bg-slate-50"
+                                className="inline-flex items-center gap-2 rounded-sm border border-slate-950/10 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-950/20 hover:bg-slate-50"
                             >
                                 Open tool trace
                             </Link>
@@ -718,67 +712,40 @@ function SignalsPage({
                 />
 
                 <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
-                    <AdminSurface className="overflow-hidden">
-                        <div className="flex min-h-[calc(100vh-12.5rem)] flex-col">
-                            <div className="border-b border-slate-950/6 px-5 py-4">
-                                <div className="flex flex-wrap items-center justify-between gap-4">
-                                    <div className="space-y-1">
-                                        <p className="text-[10px] font-medium tracking-[0.18em] text-slate-400 uppercase">
-                                            Live workspace
-                                        </p>
-                                        <h2 className="text-lg font-semibold text-slate-950">
-                                            {runState
-                                                ? `Run #${runState.id}`
-                                                : 'No session started yet'}
-                                        </h2>
-                                        <p className="text-sm leading-6 text-slate-500">
-                                            {runState?.summary ??
-                                                'Use the composer below to preview evidence or start a focused review-analysis session.'}
-                                        </p>
-                                    </div>
-                                    <div className="flex flex-wrap gap-2">
-                                        <div className="rounded-full border border-slate-950/8 bg-slate-50 px-3 py-1.5 text-xs text-slate-500">
-                                            {reviews.length} matched reviews
-                                        </div>
-                                        <div className="rounded-full border border-slate-950/8 bg-slate-50 px-3 py-1.5 text-xs text-slate-500">
-                                            {clusters.length} clusters
-                                        </div>
-                                        <div className="rounded-full border border-slate-950/8 bg-slate-50 px-3 py-1.5 text-xs text-slate-500">
-                                            {pendingProposals.length} pending
-                                            proposals
-                                        </div>
-                                    </div>
-                                </div>
+                    <AdminSurface className="flex h-[calc(100dvh-12.5rem)] flex-col overflow-hidden">
+                        {runState?.summary ? (
+                            <div className="shrink-0 border-b border-slate-950/6 px-5 py-2.5">
+                                <p className="text-xs text-slate-500">
+                                    {runState.summary}
+                                </p>
                             </div>
+                        ) : null}
 
-                            <div className="flex-1 space-y-5 overflow-y-auto bg-[linear-gradient(180deg,#fcfcfd_0%,#f8fafc_100%)] px-5 py-5">
+                        <div className="flex-1 overflow-y-auto bg-slate-50 px-5 py-5">
+                            <div className="mx-auto max-w-3xl space-y-3">
                                 {sessionFocus ? (
                                     <SessionUserBubble content={sessionFocus} />
                                 ) : null}
 
-                                {activeOrRecentTools.length > 0 ? (
-                                    <div className="space-y-2 pl-11">
-                                        <p className="text-[10px] font-medium tracking-[0.18em] text-slate-400 uppercase">
-                                            Behind the scenes
-                                        </p>
-                                        <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
-                                            {activeOrRecentTools.map((tool) => (
-                                                <ToolPulseCard
-                                                    key={tool.id}
-                                                    tool={tool}
-                                                    latestRunId={
-                                                        runState?.id ??
-                                                        latestRun?.id ??
-                                                        0
-                                                    }
-                                                />
-                                            ))}
-                                        </div>
+                                {runState?.status === 'running' &&
+                                activeOrRecentTools.length > 0 ? (
+                                    <div className="space-y-1.5 pl-10">
+                                        {activeOrRecentTools.map((tool) => (
+                                            <ToolPulseCard
+                                                key={tool.id}
+                                                tool={tool}
+                                                latestRunId={
+                                                    runState?.id ??
+                                                    latestRun?.id ??
+                                                    0
+                                                }
+                                            />
+                                        ))}
                                     </div>
                                 ) : null}
 
                                 {timelineEvents.length > 0 ? (
-                                    <div className="space-y-3">
+                                    <div className="space-y-2">
                                         {timelineEvents.map((event) =>
                                             event.kind === 'assistant_text' ? (
                                                 <SessionAssistantBubble
@@ -794,88 +761,88 @@ function SignalsPage({
                                             ),
                                         )}
                                     </div>
-                                ) : (
-                                    <div className="flex min-h-56 items-center justify-center rounded-2xl border border-dashed border-slate-950/10 bg-white/80 px-6 text-center">
-                                        <div className="max-w-md space-y-3">
-                                            <div className="mx-auto flex size-12 items-center justify-center rounded-full border border-slate-950/10 bg-slate-50 text-slate-500">
-                                                <Radar className="size-5" />
-                                            </div>
-                                            <div>
-                                                <p className="text-sm font-medium text-slate-950">
-                                                    Start with one issue people
-                                                    can immediately understand
-                                                </p>
-                                                <p className="mt-1 text-sm leading-6 text-slate-500">
-                                                    Good demo prompts are
-                                                    concrete: hoodie sizing,
-                                                    shipping delays, softness,
-                                                    returns confusion.
-                                                </p>
-                                            </div>
+                                ) : null}
+
+                                {!sessionFocus &&
+                                timelineEvents.length === 0 &&
+                                runState?.status !== 'running' ? (
+                                    <div className="flex min-h-64 items-center justify-center text-center">
+                                        <div className="space-y-2">
+                                            <Radar className="mx-auto size-8 text-slate-300" />
+                                            <p className="text-sm text-slate-400">
+                                                Type a focus below to start a
+                                                session.
+                                            </p>
                                         </div>
                                     </div>
-                                )}
+                                ) : null}
 
                                 {runState?.status === 'running' &&
-                                timelineEvents.length === 0 ? (
-                                    <div className="flex items-center gap-3 pl-11 text-sm text-slate-500">
-                                        <Loader2 className="size-4 animate-spin text-sky-500" />
-                                        Waiting for the helper to stream the
-                                        first update.
+                                timelineEvents.length === 0 &&
+                                activeOrRecentTools.length === 0 ? (
+                                    <div className="flex items-center gap-2 pl-10 text-xs text-slate-400">
+                                        <Loader2 className="size-3.5 animate-spin text-sky-400" />
+                                        Waiting for the helper…
                                     </div>
                                 ) : null}
 
                                 <div ref={composerEndRef} />
                             </div>
+                        </div>
 
-                            <div className="border-t border-slate-950/6 p-4">
-                                <form
-                                    onSubmit={previewEvidence}
-                                    className="space-y-3"
-                                >
-                                    <div className="rounded-2xl border border-slate-950/8 bg-white p-3 shadow-sm">
-                                        <label
-                                            htmlFor="signals-session-query"
-                                            className="text-[10px] font-medium tracking-[0.18em] text-slate-400 uppercase"
+                        <div className="shrink-0 border-t border-slate-950/6 p-4">
+                            <form
+                                onSubmit={previewEvidence}
+                                className="mx-auto max-w-3xl space-y-2"
+                            >
+                                <div className="rounded-sm border border-slate-950/8 bg-white p-3">
+                                    <label
+                                        htmlFor="signals-session-query"
+                                        className="text-[10px] font-medium tracking-[0.18em] text-slate-400 uppercase"
+                                    >
+                                        Focus this session
+                                    </label>
+                                    <textarea
+                                        id="signals-session-query"
+                                        value={query}
+                                        onChange={(event) =>
+                                            setQuery(event.target.value)
+                                        }
+                                        rows={1}
+                                        placeholder="Premium hoodie sizing complaints that should become one clear fit-note proposal…"
+                                        className="mt-2 max-h-32 w-full resize-none bg-transparent text-sm leading-6 text-slate-900 outline-none placeholder:text-slate-400"
+                                        onInput={(e) => {
+                                            const target =
+                                                e.target as HTMLTextAreaElement;
+                                            target.style.height = 'auto';
+                                            target.style.height = `${Math.min(target.scrollHeight, 128)}px`;
+                                        }}
+                                    />
+                                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                                        <button
+                                            type="submit"
+                                            className="inline-flex items-center gap-2 rounded-sm border border-slate-950/10 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-950/20 hover:bg-slate-50"
                                         >
-                                            Focus this session
-                                        </label>
-                                        <textarea
-                                            id="signals-session-query"
-                                            value={query}
-                                            onChange={(event) =>
-                                                setQuery(event.target.value)
-                                            }
-                                            rows={2}
-                                            placeholder="Premium hoodie sizing complaints that should become one clear fit-note proposal..."
-                                            className="mt-2 max-h-40 min-h-24 w-full resize-none bg-transparent text-sm leading-6 text-slate-900 outline-none placeholder:text-slate-400"
-                                        />
-                                        <div className="mt-3 flex flex-wrap items-center gap-2">
-                                            <button
-                                                type="submit"
-                                                className="inline-flex items-center gap-2 rounded-lg border border-slate-950/10 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-950/20 hover:bg-slate-50"
-                                            >
-                                                <Search className="size-4" />
-                                                Preview evidence
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={startSession}
-                                                disabled={needsHelperSetup}
-                                                className="inline-flex items-center gap-2 rounded-lg bg-slate-950 px-3 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
-                                            >
-                                                <CirclePlay className="size-4" />
-                                                Start session
-                                            </button>
-                                        </div>
+                                            <Search className="size-4" />
+                                            Preview evidence
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={startSession}
+                                            disabled={needsHelperSetup}
+                                            className="inline-flex items-center gap-2 rounded-sm bg-slate-950 px-3 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+                                        >
+                                            <CirclePlay className="size-4" />
+                                            Start session
+                                        </button>
                                     </div>
-                                    <p className="text-xs text-slate-500">
-                                        {needsHelperSetup
-                                            ? 'Helper setup is still required before a live session can stream.'
-                                            : `Helper last checked in ${helperLastSeenAtHuman ?? 'recently'}.`}
-                                    </p>
-                                </form>
-                            </div>
+                                </div>
+                                <p className="text-xs text-slate-400">
+                                    {needsHelperSetup
+                                        ? 'Helper setup required before a session can stream.'
+                                        : `Helper last checked in ${helperLastSeenAtHuman ?? 'recently'}.`}
+                                </p>
+                            </form>
                         </div>
                     </AdminSurface>
 
@@ -887,20 +854,15 @@ function SignalsPage({
                                         ? 'Helper setup'
                                         : 'Session handoff'
                                 }
-                                description={
-                                    needsHelperSetup
-                                        ? 'Connect the local helper once, then keep the operator inside the session view.'
-                                        : 'Move from the live session into the next operator action.'
-                                }
                             />
                             <AdminSurfaceBody className="space-y-3">
                                 {needsHelperSetup ? (
                                     <>
-                                        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900">
+                                        <div className="rounded-sm border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900">
                                             The session launcher stays disabled
                                             until the helper checks in.
                                         </div>
-                                        <div className="rounded-lg border border-slate-950/8 bg-slate-950 p-4 text-slate-50">
+                                        <div className="rounded-sm border border-slate-950/8 bg-slate-950 p-4 text-slate-50">
                                             <div className="flex items-center justify-between gap-3">
                                                 <p className="text-xs font-medium tracking-[0.16em] text-slate-400 uppercase">
                                                     Bootstrap command
@@ -912,7 +874,7 @@ function SignalsPage({
                                                             helperBootstrapCommand,
                                                         )
                                                     }
-                                                    className="inline-flex items-center gap-2 rounded-md border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-xs font-medium text-slate-100 transition hover:bg-slate-800"
+                                                    className="inline-flex items-center gap-2 rounded-sm border border-slate-700 bg-slate-900 px-2.5 py-1.5 text-xs font-medium text-slate-100 transition hover:bg-slate-800"
                                                 >
                                                     {copiedText ===
                                                     helperBootstrapCommand ? (
@@ -930,7 +892,7 @@ function SignalsPage({
                                     </>
                                 ) : (
                                     <>
-                                        <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm leading-6 text-emerald-800">
+                                        <div className="rounded-sm border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm leading-6 text-emerald-800">
                                             The helper is connected and the
                                             session view is ready to stream the
                                             next run.
@@ -942,14 +904,14 @@ function SignalsPage({
                                                         latestRun.id,
                                                     ).url
                                                 }
-                                                className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-slate-950/10 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-950/20 hover:bg-slate-50"
+                                                className="inline-flex w-full items-center justify-center gap-2 rounded-sm border border-slate-950/10 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-950/20 hover:bg-slate-50"
                                             >
                                                 Open full tool trace
                                             </Link>
                                         ) : null}
                                         <Link
                                             href={admin.proposals.index().url}
-                                            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
+                                            className="inline-flex w-full items-center justify-center gap-2 rounded-sm bg-slate-950 px-3 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
                                         >
                                             Review pending resolutions
                                         </Link>
@@ -959,10 +921,7 @@ function SignalsPage({
                         </AdminSurface>
 
                         <AdminSurface>
-                            <AdminSurfaceHeader
-                                title="Evidence"
-                                description="Show only the proof that supports this session."
-                            />
+                            <AdminSurfaceHeader title="Evidence" />
                             <AdminSurfaceBody className="space-y-4">
                                 <div className="space-y-2">
                                     <p className="text-[10px] font-medium tracking-[0.18em] text-slate-400 uppercase">
@@ -972,7 +931,7 @@ function SignalsPage({
                                         clusters.slice(0, 3).map((cluster) => (
                                             <div
                                                 key={cluster.id}
-                                                className="rounded-lg border border-slate-950/7 bg-slate-50 px-3.5 py-3"
+                                                className="rounded-sm border border-slate-950/7 bg-slate-50 px-3.5 py-3"
                                             >
                                                 <div className="flex items-center justify-between gap-3">
                                                     <p className="text-sm font-medium text-slate-950">
@@ -1005,7 +964,7 @@ function SignalsPage({
                                         reviews.slice(0, 3).map((review) => (
                                             <div
                                                 key={review.id}
-                                                className="rounded-lg border border-slate-950/7 bg-white px-3.5 py-3"
+                                                className="rounded-sm border border-slate-950/7 bg-white px-3.5 py-3"
                                             >
                                                 <div className="flex items-center justify-between gap-3">
                                                     <p className="text-sm font-medium text-slate-950">
@@ -1034,10 +993,7 @@ function SignalsPage({
 
                         {pendingProposals.length > 0 ? (
                             <AdminSurface>
-                                <AdminSurfaceHeader
-                                    title="Ready for review"
-                                    description="The next operator decision stays one click away."
-                                />
+                                <AdminSurfaceHeader title="Ready for review" />
                                 <AdminSurfaceBody className="space-y-3">
                                     {pendingProposals
                                         .slice(0, 3)
@@ -1049,7 +1005,7 @@ function SignalsPage({
                                         ))}
                                     <Link
                                         href={admin.proposals.index().url}
-                                        className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-slate-950/10 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-950/20 hover:bg-slate-50"
+                                        className="inline-flex w-full items-center justify-center gap-2 rounded-sm border border-slate-950/10 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-950/20 hover:bg-slate-50"
                                     >
                                         Open review queue
                                     </Link>

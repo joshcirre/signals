@@ -10,7 +10,6 @@ import {
     AdminSurfaceHeader,
 } from '@/components/admin-page';
 import AppLayout from '@/layouts/app-layout';
-import { storeBrand } from '@/lib/brand';
 import { cn } from '@/lib/utils';
 import type { BreadcrumbItem } from '@/types';
 import { dashboard } from '@/routes';
@@ -129,15 +128,6 @@ export default function ProposalQueue({
                 <AdminHeader
                     eyebrow="Review"
                     title="Review resolutions"
-                    description={
-                        <>
-                            Keep this page operator-simple: choose the best
-                            proposal, make a decision, then move to the
-                            storefront or a follow-up adaptation session.{' '}
-                            {storeBrand.adminName} should never feel like a
-                            cluttered queue manager.
-                        </>
-                    }
                     meta={
                         <>
                             <AdminPill>
@@ -151,7 +141,7 @@ export default function ProposalQueue({
                         </>
                     }
                     actions={
-                        <div className="flex flex-wrap gap-1 rounded-lg border border-slate-950/8 bg-slate-50 p-1">
+                        <div className="flex flex-wrap gap-1 rounded-sm border border-slate-950/8 bg-slate-50 p-1">
                             {['pending', 'applied', 'rejected', 'all'].map(
                                 (status) => (
                                     <button
@@ -168,7 +158,7 @@ export default function ProposalQueue({
                                             )
                                         }
                                         className={cn(
-                                            'rounded-md px-3 py-1.5 text-xs font-medium capitalize transition',
+                                            'rounded-sm px-3 py-1.5 text-xs font-medium capitalize transition',
                                             statusFilter === status
                                                 ? 'bg-white text-slate-950 shadow-sm'
                                                 : 'text-slate-500 hover:text-slate-950',
@@ -186,7 +176,6 @@ export default function ProposalQueue({
                     <AdminSurface className="overflow-hidden xl:sticky xl:top-18 xl:h-fit">
                         <AdminSurfaceHeader
                             title="Queue"
-                            description="Pick the single proposal worth deciding now."
                             action={
                                 <span className="text-xs font-medium text-slate-400">
                                     {proposals.length} item
@@ -205,7 +194,7 @@ export default function ProposalQueue({
                                             setEditingProposalId(null);
                                         }}
                                         className={cn(
-                                            'w-full rounded-lg border px-3 py-3 text-left transition',
+                                            'w-full rounded-sm border px-3 py-3 text-left transition',
                                             proposal.id === selectedProposal?.id
                                                 ? 'border-slate-950 bg-slate-950 text-white'
                                                 : 'border-slate-950/8 bg-slate-50 text-slate-800 hover:border-slate-950/20 hover:bg-white',
@@ -244,7 +233,7 @@ export default function ProposalQueue({
                                             </div>
                                             <span
                                                 className={cn(
-                                                    'rounded-full px-2 py-1 text-[10px] font-semibold',
+                                                    'rounded-sm px-2 py-1 text-[10px] font-semibold',
                                                     proposal.id ===
                                                         selectedProposal?.id
                                                         ? 'bg-white/10 text-white'
@@ -283,7 +272,7 @@ export default function ProposalQueue({
                                     </button>
                                 ))
                             ) : (
-                                <div className="rounded-lg border border-dashed border-slate-950/8 px-3 py-6 text-sm leading-6 text-slate-500">
+                                <div className="rounded-sm border border-dashed border-slate-950/8 px-3 py-6 text-sm leading-6 text-slate-500">
                                     No proposals match the current filter.
                                 </div>
                             )}
@@ -354,7 +343,7 @@ export default function ProposalQueue({
                                                         event.target.value,
                                                     )
                                                 }
-                                                className="mt-2 min-h-40 w-full rounded-lg border border-slate-950/10 bg-white px-3 py-3 text-sm leading-6 text-slate-900 outline-none focus:border-slate-950/20 focus:ring-2 focus:ring-slate-950/5"
+                                                className="mt-2 min-h-40 w-full rounded-sm border border-slate-950/10 bg-white px-3 py-3 text-sm leading-6 text-slate-900 outline-none focus:border-slate-950/20 focus:ring-2 focus:ring-slate-950/5"
                                             />
                                         </label>
                                         <label className="block text-[10px] font-medium tracking-[0.18em] text-slate-400 uppercase">
@@ -367,7 +356,7 @@ export default function ProposalQueue({
                                                         event.target.value,
                                                     )
                                                 }
-                                                className="mt-2 min-h-28 w-full rounded-lg border border-slate-950/10 bg-white px-3 py-3 text-sm leading-6 text-slate-900 outline-none focus:border-slate-950/20 focus:ring-2 focus:ring-slate-950/5"
+                                                className="mt-2 min-h-28 w-full rounded-sm border border-slate-950/10 bg-white px-3 py-3 text-sm leading-6 text-slate-900 outline-none focus:border-slate-950/20 focus:ring-2 focus:ring-slate-950/5"
                                             />
                                         </label>
                                         <label className="block text-[10px] font-medium tracking-[0.18em] text-slate-400 uppercase">
@@ -386,14 +375,14 @@ export default function ProposalQueue({
                                                         ),
                                                     )
                                                 }
-                                                className="mt-2 w-full rounded-lg border border-slate-950/10 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-slate-950/20 focus:ring-2 focus:ring-slate-950/5"
+                                                className="mt-2 w-full rounded-sm border border-slate-950/10 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-slate-950/20 focus:ring-2 focus:ring-slate-950/5"
                                             />
                                         </label>
                                         <div className="flex flex-wrap items-center gap-2">
                                             <button
                                                 type="submit"
                                                 disabled={form.processing}
-                                                className="inline-flex items-center gap-2 rounded-lg bg-slate-950 px-3 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:opacity-60"
+                                                className="inline-flex items-center gap-2 rounded-sm bg-slate-950 px-3 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:opacity-60"
                                             >
                                                 <Save className="size-4" />
                                                 Save edits
@@ -403,7 +392,7 @@ export default function ProposalQueue({
                                                 onClick={() =>
                                                     setEditingProposalId(null)
                                                 }
-                                                className="rounded-lg border border-slate-950/10 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition hover:border-slate-950/20 hover:bg-slate-50"
+                                                className="rounded-sm border border-slate-950/10 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition hover:border-slate-950/20 hover:bg-slate-50"
                                             >
                                                 Cancel
                                             </button>
@@ -412,7 +401,7 @@ export default function ProposalQueue({
                                 ) : (
                                     <>
                                         <div className="grid gap-3 md:grid-cols-3">
-                                            <div className="rounded-lg border border-slate-950/7 bg-slate-50 px-3.5 py-3">
+                                            <div className="rounded-sm border border-slate-950/7 bg-slate-50 px-3.5 py-3">
                                                 <p className="text-[10px] font-medium tracking-[0.18em] text-slate-400 uppercase">
                                                     Created
                                                 </p>
@@ -422,7 +411,7 @@ export default function ProposalQueue({
                                                     }
                                                 </p>
                                             </div>
-                                            <div className="rounded-lg border border-slate-950/7 bg-slate-50 px-3.5 py-3">
+                                            <div className="rounded-sm border border-slate-950/7 bg-slate-50 px-3.5 py-3">
                                                 <p className="text-[10px] font-medium tracking-[0.18em] text-slate-400 uppercase">
                                                     Status
                                                 </p>
@@ -430,7 +419,7 @@ export default function ProposalQueue({
                                                     {selectedProposal.status}
                                                 </p>
                                             </div>
-                                            <div className="rounded-lg border border-slate-950/7 bg-slate-50 px-3.5 py-3">
+                                            <div className="rounded-sm border border-slate-950/7 bg-slate-50 px-3.5 py-3">
                                                 <p className="text-[10px] font-medium tracking-[0.18em] text-slate-400 uppercase">
                                                     Field
                                                 </p>
@@ -443,7 +432,7 @@ export default function ProposalQueue({
                                             </div>
                                         </div>
 
-                                        <div className="rounded-lg border border-slate-950/7 bg-slate-50 px-4 py-4">
+                                        <div className="rounded-sm border border-slate-950/7 bg-slate-50 px-4 py-4">
                                             <p className="text-[10px] font-medium tracking-[0.18em] text-slate-400 uppercase">
                                                 Rationale
                                             </p>
@@ -452,7 +441,7 @@ export default function ProposalQueue({
                                             </p>
                                         </div>
 
-                                        <div className="rounded-lg border border-slate-950/7 bg-white px-4 py-4">
+                                        <div className="rounded-sm border border-slate-950/7 bg-white px-4 py-4">
                                             <p className="text-[10px] font-medium tracking-[0.18em] text-slate-400 uppercase">
                                                 {selectedProposal.type ===
                                                 'review_response'
@@ -476,7 +465,7 @@ export default function ProposalQueue({
                                                                 selectedProposal.id,
                                                             )
                                                         }
-                                                        className="inline-flex items-center gap-2 rounded-lg border border-slate-950/10 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-950/20 hover:bg-slate-50"
+                                                        className="inline-flex items-center gap-2 rounded-sm border border-slate-950/10 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-950/20 hover:bg-slate-50"
                                                     >
                                                         <PencilLine className="size-4" />
                                                         Edit
@@ -493,7 +482,7 @@ export default function ProposalQueue({
                                                                 ).url,
                                                             )
                                                         }
-                                                        className="inline-flex items-center gap-2 rounded-lg bg-slate-950 px-3 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
+                                                        className="inline-flex items-center gap-2 rounded-sm bg-slate-950 px-3 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
                                                     >
                                                         <ShieldCheck className="size-4" />
                                                         Approve and publish
@@ -510,7 +499,7 @@ export default function ProposalQueue({
                                                                 ).url,
                                                             )
                                                         }
-                                                        className="inline-flex items-center gap-2 rounded-lg border border-slate-950/10 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition hover:border-slate-950/20 hover:bg-slate-50"
+                                                        className="inline-flex items-center gap-2 rounded-sm border border-slate-950/10 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition hover:border-slate-950/20 hover:bg-slate-50"
                                                     >
                                                         <ShieldX className="size-4" />
                                                         Reject
@@ -519,7 +508,7 @@ export default function ProposalQueue({
                                             ) : null}
                                         </div>
 
-                                        <div className="rounded-lg border border-slate-950/7 bg-slate-50 px-4 py-4">
+                                        <div className="rounded-sm border border-slate-950/7 bg-slate-50 px-4 py-4">
                                             <p className="text-[10px] font-medium tracking-[0.18em] text-slate-400 uppercase">
                                                 Next step
                                             </p>
@@ -532,7 +521,7 @@ export default function ProposalQueue({
                                                                     selectedProposal.target_slug,
                                                             }).url
                                                         }
-                                                        className="rounded-lg border border-slate-950/10 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition hover:border-slate-950/20 hover:bg-slate-50"
+                                                        className="rounded-sm border border-slate-950/10 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition hover:border-slate-950/20 hover:bg-slate-50"
                                                     >
                                                         Preview storefront
                                                     </Link>
@@ -553,7 +542,7 @@ export default function ProposalQueue({
                                                                 },
                                                             )
                                                         }
-                                                        className="inline-flex items-center gap-2 rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-sm font-medium text-sky-700 transition hover:bg-sky-100"
+                                                        className="inline-flex items-center gap-2 rounded-sm border border-sky-200 bg-sky-50 px-3 py-2 text-sm font-medium text-sky-700 transition hover:bg-sky-100"
                                                     >
                                                         <ShieldCheck className="size-4" />
                                                         Launch adaptation
@@ -565,7 +554,7 @@ export default function ProposalQueue({
                                     </>
                                 )
                             ) : (
-                                <div className="rounded-lg border border-dashed border-slate-950/8 px-4 py-10 text-sm leading-6 text-slate-500">
+                                <div className="rounded-sm border border-dashed border-slate-950/8 px-4 py-10 text-sm leading-6 text-slate-500">
                                     No proposal is selected because the queue is
                                     empty for this filter.
                                 </div>

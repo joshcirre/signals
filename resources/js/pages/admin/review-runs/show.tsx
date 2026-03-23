@@ -19,7 +19,6 @@ import { Button } from '@/components/ui/button';
 import {
     Card,
     CardContent,
-    CardDescription,
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
@@ -347,7 +346,7 @@ function toolStatusBadgeClassName(status: ToolActivity['status']): string {
 
 function SummaryChip({ label, value }: { label: string; value: string }) {
     return (
-        <div className="rounded-lg border border-slate-950/7 bg-slate-50 px-3.5 py-3">
+        <div className="rounded-sm border border-slate-950/7 bg-slate-50 px-3.5 py-3">
             <p className="text-[10px] font-medium tracking-[0.18em] text-slate-400 uppercase">
                 {label}
             </p>
@@ -374,21 +373,17 @@ function ToolWorkbench({
     onSelect: (index: number) => void;
 }) {
     return (
-        <Card className="gap-0 overflow-hidden rounded-lg border-slate-950/8 shadow-[0_10px_30px_-24px_rgba(15,23,42,0.18)]">
+        <Card className="gap-0 overflow-hidden rounded-sm border-slate-950/8">
             <CardHeader className="border-b border-slate-950/6 px-5 py-4">
                 <div className="flex items-start justify-between gap-4">
                     <div>
                         <CardTitle className="text-base text-slate-950">
                             Tool detail
                         </CardTitle>
-                        <CardDescription className="mt-1 text-sm text-slate-500">
-                            One tool at a time, with the raw call and result in
-                            view.
-                        </CardDescription>
                     </div>
                     <Badge
                         variant="outline"
-                        className="rounded-full border-slate-200 bg-white px-2.5 py-1 text-[10px] font-medium tracking-[0.16em] text-slate-500 uppercase"
+                        className="rounded-sm border-slate-200 bg-white px-2.5 py-1 text-[10px] font-medium tracking-[0.16em] text-slate-500 uppercase"
                     >
                         {isRunning && toolActivities.length > 1
                             ? 'Auto cycle'
@@ -399,7 +394,7 @@ function ToolWorkbench({
             <CardContent className="space-y-5 px-5 py-5">
                 {activeTool ? (
                     <>
-                        <div className="rounded-lg border border-slate-950/8 bg-slate-950 p-4 text-slate-50">
+                        <div className="rounded-sm border border-slate-950/8 bg-slate-950 p-4 text-slate-50">
                             <div className="flex items-start justify-between gap-3">
                                 <div>
                                     <p className="text-[10px] font-medium tracking-[0.18em] text-slate-400 uppercase">
@@ -412,7 +407,7 @@ function ToolWorkbench({
                                 <Badge
                                     variant="outline"
                                     className={cn(
-                                        'rounded-full px-2.5 py-1 text-[10px] font-medium tracking-[0.16em] uppercase',
+                                        'rounded-sm px-2.5 py-1 text-[10px] font-medium tracking-[0.16em] uppercase',
                                         toolStatusBadgeClassName(
                                             activeTool.status,
                                         ),
@@ -457,7 +452,7 @@ function ToolWorkbench({
                                     variant="outline"
                                     size="sm"
                                     onClick={onPrevious}
-                                    className="rounded-full border-slate-200 bg-white px-3"
+                                    className="rounded-sm border-slate-200 bg-white px-3"
                                 >
                                     <ChevronLeft className="size-4" />
                                     Previous
@@ -471,7 +466,7 @@ function ToolWorkbench({
                                     variant="outline"
                                     size="sm"
                                     onClick={onNext}
-                                    className="rounded-full border-slate-200 bg-white px-3"
+                                    className="rounded-sm border-slate-200 bg-white px-3"
                                 >
                                     Next
                                     <ChevronRight className="size-4" />
@@ -485,14 +480,14 @@ function ToolWorkbench({
                                         type="button"
                                         onClick={() => onSelect(index)}
                                         className={cn(
-                                            'min-w-0 shrink-0 rounded-full border px-3 py-2 text-left transition',
+                                            'min-w-0 shrink-0 rounded-sm border px-3 py-2 text-left transition',
                                             index === resolvedActiveToolIndex
                                                 ? 'border-slate-950 bg-slate-950 text-white'
                                                 : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50',
                                         )}
                                     >
                                         <div className="flex items-center gap-2">
-                                            <span className="rounded-full bg-white/10 px-1.5 py-0.5 text-[10px] font-semibold tracking-[0.16em] uppercase">
+                                            <span className="rounded-sm bg-white/10 px-1.5 py-0.5 text-[10px] font-semibold tracking-[0.16em] uppercase">
                                                 {(index + 1).toString()}
                                             </span>
                                             <span className="max-w-36 truncate text-xs font-medium capitalize">
@@ -505,7 +500,7 @@ function ToolWorkbench({
                         </div>
                     </>
                 ) : (
-                    <div className="rounded-lg border border-dashed border-slate-950/10 bg-slate-50 px-4 py-8 text-sm text-slate-500">
+                    <div className="rounded-sm border border-dashed border-slate-950/10 bg-slate-50 px-4 py-8 text-sm text-slate-500">
                         Tool calls will appear here as soon as Codex starts
                         using the Signals MCP tools.
                     </div>
@@ -525,7 +520,7 @@ function WorkbenchPanel({
     mono?: boolean;
 }) {
     return (
-        <div className="rounded-lg border border-white/10 bg-white/5 p-3">
+        <div className="rounded-sm border border-white/10 bg-white/5 p-3">
             <p className="text-[10px] font-medium tracking-[0.18em] text-slate-400 uppercase">
                 {label}
             </p>
@@ -554,7 +549,7 @@ function ToolTrace({
     onSelect: (index: number) => void;
 }) {
     return (
-        <Card className="gap-0 overflow-hidden rounded-lg border-slate-950/8 shadow-[0_10px_30px_-24px_rgba(15,23,42,0.18)]">
+        <Card className="gap-0 overflow-hidden rounded-sm border-slate-950/8">
             <Collapsible defaultOpen={running || toolActivities.length <= 3}>
                 <CardHeader className="border-b border-slate-950/6 px-5 py-4">
                     <div className="flex items-center justify-between gap-3">
@@ -562,16 +557,13 @@ function ToolTrace({
                             <CardTitle className="text-base text-slate-950">
                                 Full trace
                             </CardTitle>
-                            <CardDescription className="mt-1 text-sm text-slate-500">
-                                Expand a step only when you need the raw detail.
-                            </CardDescription>
                         </div>
                         <CollapsibleTrigger asChild>
                             <Button
                                 type="button"
                                 variant="outline"
                                 size="sm"
-                                className="rounded-full border-slate-200 bg-white px-3"
+                                className="rounded-sm border-slate-200 bg-white px-3"
                             >
                                 {toolActivities.length.toString()} steps
                                 <ChevronDown className="size-4" />
@@ -589,7 +581,7 @@ function ToolTrace({
                                 >
                                     <div
                                         className={cn(
-                                            'overflow-hidden rounded-lg border transition',
+                                            'overflow-hidden rounded-sm border transition',
                                             index === activeToolIndex
                                                 ? 'border-slate-950/15 bg-slate-50'
                                                 : 'border-slate-200 bg-white',
@@ -603,7 +595,7 @@ function ToolTrace({
                                             >
                                                 <div className="min-w-0">
                                                     <div className="flex items-center gap-2">
-                                                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold tracking-[0.16em] text-slate-500 uppercase">
+                                                        <span className="rounded-sm bg-slate-100 px-2 py-0.5 text-[10px] font-semibold tracking-[0.16em] text-slate-500 uppercase">
                                                             {(
                                                                 index + 1
                                                             ).toString()}
@@ -629,7 +621,7 @@ function ToolTrace({
                                                     <Badge
                                                         variant="outline"
                                                         className={cn(
-                                                            'rounded-full px-2.5 py-1 text-[10px] font-medium tracking-[0.16em] uppercase',
+                                                            'rounded-sm px-2.5 py-1 text-[10px] font-medium tracking-[0.16em] uppercase',
                                                             toolStatusBadgeClassName(
                                                                 tool.status,
                                                             ),
@@ -663,7 +655,7 @@ function ToolTrace({
                                 </Collapsible>
                             ))
                         ) : (
-                            <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-sm text-slate-500">
+                            <div className="rounded-sm border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-sm text-slate-500">
                                 The trace will appear once the first MCP call is
                                 emitted.
                             </div>
@@ -685,7 +677,7 @@ function TraceBlock({
     mono?: boolean;
 }) {
     return (
-        <div className="rounded-lg border border-slate-200 bg-white p-3">
+        <div className="rounded-sm border border-slate-200 bg-white p-3">
             <p className="text-[10px] font-medium tracking-[0.18em] text-slate-400 uppercase">
                 {label}
             </p>
@@ -707,10 +699,10 @@ function SessionNote({ event }: { event: RunEventPayload }) {
 
     if (isAssistant) {
         return (
-            <div className="rounded-lg border border-slate-950/7 bg-white px-4 py-3">
+            <div className="rounded-sm border border-slate-950/7 bg-white px-4 py-3">
                 <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2">
-                        <span className="flex size-6 items-center justify-center rounded-full border border-slate-950/8 bg-slate-50 text-slate-500">
+                        <span className="flex size-6 items-center justify-center rounded-sm border border-slate-950/8 bg-slate-50 text-slate-500">
                             <Bot className="size-3.5" />
                         </span>
                         <p className="text-xs font-medium tracking-[0.16em] text-slate-400 uppercase">
@@ -731,7 +723,7 @@ function SessionNote({ event }: { event: RunEventPayload }) {
     return (
         <div
             className={cn(
-                'rounded-lg border px-4 py-3',
+                'rounded-sm border px-4 py-3',
                 event.is_error
                     ? 'border-red-200 bg-red-50'
                     : 'border-slate-950/7 bg-slate-50',
@@ -764,7 +756,7 @@ function SessionNote({ event }: { event: RunEventPayload }) {
 
 function NoticesPanel({ noticeEvents }: { noticeEvents: RunEventPayload[] }) {
     return (
-        <Card className="gap-0 overflow-hidden rounded-lg border-slate-950/8 shadow-[0_10px_30px_-24px_rgba(15,23,42,0.18)]">
+        <Card className="gap-0 overflow-hidden rounded-sm border-slate-950/8">
             <Collapsible defaultOpen={noticeEvents.length > 0}>
                 <CardHeader className="border-b border-slate-950/6 px-5 py-4">
                     <div className="flex items-center justify-between gap-3">
@@ -772,17 +764,13 @@ function NoticesPanel({ noticeEvents }: { noticeEvents: RunEventPayload[] }) {
                             <CardTitle className="text-base text-slate-950">
                                 Notices
                             </CardTitle>
-                            <CardDescription className="mt-1 text-sm text-slate-500">
-                                stderr output and helper issues stay separate
-                                from the main trace.
-                            </CardDescription>
                         </div>
                         <CollapsibleTrigger asChild>
                             <Button
                                 type="button"
                                 variant="outline"
                                 size="sm"
-                                className="rounded-full border-slate-200 bg-white px-3"
+                                className="rounded-sm border-slate-200 bg-white px-3"
                             >
                                 {noticeEvents.length.toString()} notices
                                 <ChevronDown className="size-4" />
@@ -797,7 +785,7 @@ function NoticesPanel({ noticeEvents }: { noticeEvents: RunEventPayload[] }) {
                                 <SessionNote key={event.id} event={event} />
                             ))
                         ) : (
-                            <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+                            <div className="rounded-sm border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
                                 No warnings or stderr notices have been streamed
                                 for this run.
                             </div>
@@ -976,7 +964,7 @@ export default function ReviewAnalysisRunShow({ run }: ReviewRunShowProps) {
 
             <div className="mx-auto w-full max-w-[1440px] px-4 py-5 md:px-6">
                 <div className="space-y-4">
-                    <Card className="gap-0 overflow-hidden rounded-lg border-slate-950/8 shadow-[0_10px_30px_-24px_rgba(15,23,42,0.18)]">
+                    <Card className="gap-0 overflow-hidden rounded-sm border-slate-950/8">
                         <CardHeader className="gap-4 border-b border-slate-950/6 px-5 py-5">
                             <div className="flex flex-wrap items-start justify-between gap-4">
                                 <div className="space-y-3">
@@ -991,14 +979,14 @@ export default function ReviewAnalysisRunShow({ run }: ReviewRunShowProps) {
                                         <div className="flex flex-wrap items-center gap-2">
                                             <Badge
                                                 variant="outline"
-                                                className="rounded-full border-sky-200 bg-sky-50 px-2.5 py-1 text-[10px] font-medium tracking-[0.16em] text-sky-700 uppercase"
+                                                className="rounded-sm border-sky-200 bg-sky-50 px-2.5 py-1 text-[10px] font-medium tracking-[0.16em] text-sky-700 uppercase"
                                             >
                                                 {runKindLabel(displayRun.kind)}
                                             </Badge>
                                             <Badge
                                                 variant="outline"
                                                 className={cn(
-                                                    'rounded-full px-2.5 py-1 text-[10px] font-medium tracking-[0.16em] uppercase',
+                                                    'rounded-sm px-2.5 py-1 text-[10px] font-medium tracking-[0.16em] uppercase',
                                                     statusBadgeClassName(
                                                         displayRun.status,
                                                     ),
@@ -1079,7 +1067,7 @@ export default function ReviewAnalysisRunShow({ run }: ReviewRunShowProps) {
                         </div>
 
                         <div className="space-y-4">
-                            <Card className="gap-0 overflow-hidden rounded-lg border-slate-950/8 shadow-[0_10px_30px_-24px_rgba(15,23,42,0.18)]">
+                            <Card className="gap-0 overflow-hidden rounded-sm border-slate-950/8">
                                 <CardHeader className="border-b border-slate-950/6 px-5 py-4">
                                     <div className="flex items-center gap-2">
                                         <MessageSquareText className="size-4 text-slate-400" />
@@ -1087,14 +1075,10 @@ export default function ReviewAnalysisRunShow({ run }: ReviewRunShowProps) {
                                             Session brief
                                         </CardTitle>
                                     </div>
-                                    <CardDescription className="mt-1 text-sm text-slate-500">
-                                        The focus and prompt that shaped this
-                                        run.
-                                    </CardDescription>
                                 </CardHeader>
                                 <CardContent className="space-y-3 px-5 py-5">
                                     {focus ? (
-                                        <div className="rounded-lg border border-slate-950/7 bg-slate-50 px-4 py-3">
+                                        <div className="rounded-sm border border-slate-950/7 bg-slate-50 px-4 py-3">
                                             <p className="text-[10px] font-medium tracking-[0.18em] text-slate-400 uppercase">
                                                 Focus
                                             </p>
@@ -1103,7 +1087,7 @@ export default function ReviewAnalysisRunShow({ run }: ReviewRunShowProps) {
                                             </p>
                                         </div>
                                     ) : null}
-                                    <div className="rounded-lg border border-slate-950/7 bg-white px-4 py-3">
+                                    <div className="rounded-sm border border-slate-950/7 bg-white px-4 py-3">
                                         <p className="text-[10px] font-medium tracking-[0.18em] text-slate-400 uppercase">
                                             Prompt
                                         </p>
@@ -1115,7 +1099,7 @@ export default function ReviewAnalysisRunShow({ run }: ReviewRunShowProps) {
                                 </CardContent>
                             </Card>
 
-                            <Card className="gap-0 overflow-hidden rounded-lg border-slate-950/8 shadow-[0_10px_30px_-24px_rgba(15,23,42,0.18)]">
+                            <Card className="gap-0 overflow-hidden rounded-sm border-slate-950/8">
                                 <CardHeader className="border-b border-slate-950/6 px-5 py-4">
                                     <div className="flex items-center gap-2">
                                         <Terminal className="size-4 text-slate-400" />
@@ -1123,10 +1107,6 @@ export default function ReviewAnalysisRunShow({ run }: ReviewRunShowProps) {
                                             Live notes
                                         </CardTitle>
                                     </div>
-                                    <CardDescription className="mt-1 text-sm text-slate-500">
-                                        Assistant messages and milestones from
-                                        the session stream.
-                                    </CardDescription>
                                 </CardHeader>
                                 <CardContent className="space-y-3 px-5 py-5">
                                     {timelineEvents.length > 0 ? (
@@ -1137,7 +1117,7 @@ export default function ReviewAnalysisRunShow({ run }: ReviewRunShowProps) {
                                             />
                                         ))
                                     ) : (
-                                        <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-sm text-slate-500">
+                                        <div className="rounded-sm border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-sm text-slate-500">
                                             Waiting for the helper to claim this
                                             run and begin streaming activity.
                                         </div>
