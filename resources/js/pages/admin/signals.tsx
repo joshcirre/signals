@@ -436,7 +436,7 @@ function SessionStatusRow({ event }: { event: RunEventPayload }) {
     );
 }
 
-function ToolPulseCard({
+function SessionToolRow({
     tool,
     latestRunId,
 }: {
@@ -449,43 +449,38 @@ function ToolPulseCard({
     return (
         <Link
             href={admin.reviewRuns.show(latestRunId).url}
-            className={cn(
-                'rounded-sm border px-3 py-2 transition',
-                running
-                    ? 'border-sky-200 bg-sky-50 text-sky-700'
-                    : failed
-                      ? 'border-red-200 bg-red-50 text-red-700'
-                      : 'border-slate-950/8 bg-white text-slate-600 hover:border-slate-950/20 hover:bg-slate-50',
-            )}
+            className="flex items-center gap-2 py-0.5 pl-10 text-xs transition"
         >
-            <div className="flex items-center gap-2">
-                <span
-                    className={cn(
-                        'flex size-6 items-center justify-center rounded-sm',
-                        running
-                            ? 'bg-sky-100'
-                            : failed
-                              ? 'bg-red-100'
-                              : 'bg-slate-100',
-                    )}
-                >
-                    {running ? (
-                        <Loader2 className="size-3.5 animate-spin" />
-                    ) : failed ? (
-                        <ShieldX className="size-3.5" />
-                    ) : (
-                        <Terminal className="size-3.5" />
-                    )}
-                </span>
-                <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium capitalize">
-                        {formatToolName(tool.name)}
-                    </p>
-                    <p className="text-xs text-current/70">
-                        {running ? 'Running now' : 'Open full tool trace'}
-                    </p>
-                </div>
-            </div>
+            <span
+                className={cn(
+                    'shrink-0',
+                    running
+                        ? 'text-sky-400'
+                        : failed
+                          ? 'text-red-400'
+                          : 'text-emerald-400',
+                )}
+            >
+                {running ? (
+                    <Loader2 className="size-3 animate-spin" />
+                ) : failed ? (
+                    <ShieldX className="size-3" />
+                ) : (
+                    <Check className="size-3" />
+                )}
+            </span>
+            <span
+                className={cn(
+                    'truncate',
+                    running
+                        ? 'text-sky-600'
+                        : failed
+                          ? 'text-red-500'
+                          : 'text-slate-400',
+                )}
+            >
+                {formatToolName(tool.name)}
+            </span>
         </Link>
     );
 }
@@ -591,13 +586,18 @@ function SignalsPage({
             event.action === 'run.failed',
     );
     const toolActivities = buildToolActivities(mergedEvents);
-    const activeTools = toolActivities.filter(
-        (tool) => tool.status === 'running',
-    );
-    const activeOrRecentTools =
-        activeTools.length > 0
-            ? activeTools.slice(-3)
-            : [...toolActivities].slice(-3).reverse();
+    const streamItems = [
+        ...timelineEvents.map((e) => ({
+            type: 'timeline' as const,
+            event: e,
+            sortKey: e.created_at,
+        })),
+        ...toolActivities.map((t) => ({
+            type: 'tool' as const,
+            tool: t,
+            sortKey: t.startedAt,
+        })),
+    ].sort((a, b) => a.sortKey.localeCompare(b.sortKey));
     const sessionFocus =
         typeof runState?.context?.focus === 'string' && runState.context.focus
             ? runState.context.focus
@@ -610,7 +610,7 @@ function SignalsPage({
             block: 'end',
             behavior: runState?.status === 'running' ? 'smooth' : 'auto',
         });
-    }, [runState?.status, timelineEvents.length, activeOrRecentTools.length]);
+    }, [runState?.status, streamItems.length]);
 
     useEcho<RunUpdatedEvent>(
         `signals.user.${auth.user.id}`,
@@ -727,36 +727,34 @@ function SignalsPage({
                                     <SessionUserBubble content={sessionFocus} />
                                 ) : null}
 
-                                {runState?.status === 'running' &&
-                                activeOrRecentTools.length > 0 ? (
-                                    <div className="space-y-1.5 pl-10">
-                                        {activeOrRecentTools.map((tool) => (
-                                            <ToolPulseCard
-                                                key={tool.id}
-                                                tool={tool}
-                                                latestRunId={
-                                                    runState?.id ??
-                                                    latestRun?.id ??
-                                                    0
-                                                }
-                                            />
-                                        ))}
-                                    </div>
-                                ) : null}
-
-                                {timelineEvents.length > 0 ? (
+                                {streamItems.length > 0 ? (
                                     <div className="space-y-2">
-                                        {timelineEvents.map((event) =>
-                                            event.kind === 'assistant_text' ? (
+                                        {streamItems.map((item) =>
+                                            item.type === 'tool' ? (
+                                                <SessionToolRow
+                                                    key={`tool-${item.tool.id}`}
+                                                    tool={item.tool}
+                                                    latestRunId={
+                                                        runState?.id ??
+                                                        latestRun?.id ??
+                                                        0
+                                                    }
+                                                />
+                                            ) : item.event.kind ===
+                                              'assistant_text' ? (
                                                 <SessionAssistantBubble
-                                                    key={event.id}
-                                                    content={eventBody(event)}
-                                                    createdAt={event.created_at}
+                                                    key={item.event.id}
+                                                    content={eventBody(
+                                                        item.event,
+                                                    )}
+                                                    createdAt={
+                                                        item.event.created_at
+                                                    }
                                                 />
                                             ) : (
                                                 <SessionStatusRow
-                                                    key={event.id}
-                                                    event={event}
+                                                    key={item.event.id}
+                                                    event={item.event}
                                                 />
                                             ),
                                         )}
@@ -764,7 +762,7 @@ function SignalsPage({
                                 ) : null}
 
                                 {!sessionFocus &&
-                                timelineEvents.length === 0 &&
+                                streamItems.length === 0 &&
                                 runState?.status !== 'running' ? (
                                     <div className="flex min-h-64 items-center justify-center text-center">
                                         <div className="space-y-2">
@@ -778,8 +776,7 @@ function SignalsPage({
                                 ) : null}
 
                                 {runState?.status === 'running' &&
-                                timelineEvents.length === 0 &&
-                                activeOrRecentTools.length === 0 ? (
+                                streamItems.length === 0 ? (
                                     <div className="flex items-center gap-2 pl-10 text-xs text-slate-400">
                                         <Loader2 className="size-3.5 animate-spin text-sky-400" />
                                         Waiting for the helper…
