@@ -7,8 +7,16 @@ import '../css/app.css';
 import { initializeTheme } from '@/hooks/use-appearance';
 import { configureEcho } from '@laravel/echo-react';
 
+const runtimeEchoConfig = window.SignalsRuntime?.reverb;
+
 configureEcho({
     broadcaster: 'reverb',
+    key: runtimeEchoConfig?.key ?? undefined,
+    wsHost: runtimeEchoConfig?.wsHost ?? undefined,
+    wsPort: runtimeEchoConfig?.wsPort ?? undefined,
+    wssPort: runtimeEchoConfig?.wssPort ?? undefined,
+    forceTLS: runtimeEchoConfig?.forceTLS ?? undefined,
+    enabledTransports: runtimeEchoConfig?.enabledTransports ?? undefined,
 });
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';

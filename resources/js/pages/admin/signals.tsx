@@ -33,6 +33,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 interface PageProps {
+    appUrl: string;
     auth: {
         user: {
             id: number;
@@ -152,15 +153,12 @@ export default function Signals({
     clusters,
     recentAuditLog,
 }: SignalsProps) {
-    const { auth, flash } = usePage<PageProps>().props;
+    const { appUrl, auth, flash } = usePage<PageProps>().props;
     const [searchTerm, setSearchTerm] = useState(filters.q);
     const [helperName, setHelperName] = useState(helper.default_name);
     const [runState, setRunState] = useState(latestRun);
     const [events, setEvents] = useState(latestRun?.events ?? []);
-    const helperServerUrl =
-        typeof window === 'undefined'
-            ? 'https://signals.test'
-            : window.location.origin;
+    const helperServerUrl = appUrl;
 
     useEffect(() => {
         setRunState(latestRun);

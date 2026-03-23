@@ -39,6 +39,19 @@
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600" rel="stylesheet" />
 
+        <script>
+            window.SignalsRuntime = {{ Illuminate\Support\Js::from([
+                'reverb' => [
+                    'key' => config('broadcasting.connections.reverb.key'),
+                    'wsHost' => config('broadcasting.connections.reverb.options.host'),
+                    'wsPort' => (int) config('broadcasting.connections.reverb.options.port'),
+                    'wssPort' => (int) config('broadcasting.connections.reverb.options.port'),
+                    'forceTLS' => config('broadcasting.connections.reverb.options.scheme') === 'https',
+                    'enabledTransports' => ['ws', 'wss'],
+                ],
+            ]) }};
+        </script>
+
         @viteReactRefresh
         @vite(['resources/css/app.css', 'resources/js/app.tsx'])
         @inertiaHead
