@@ -185,7 +185,9 @@ export default function StorefrontShow({
                                             </p>
                                             {review.response_approved_at ? (
                                                 <p className="text-xs text-slate-400">
-                                                    {review.response_approved_at}
+                                                    {
+                                                        review.response_approved_at
+                                                    }
                                                 </p>
                                             ) : null}
                                         </div>
