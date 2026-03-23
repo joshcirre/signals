@@ -9,9 +9,9 @@ import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/app-layout';
 import SettingsLayout from '@/layouts/settings/layout';
 import type { BreadcrumbItem } from '@/types';
+import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
 import { edit } from '@/routes/profile';
 import { send } from '@/routes/verification';
-import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
