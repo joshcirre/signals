@@ -48,7 +48,7 @@ class SignalsController extends Controller
                     'severity' => $this->severityForReview($review),
                     'response_draft' => $review->response_draft,
                     'response_draft_status' => $review->response_draft_status,
-                    'tags' => $review->tagAssignments->map(fn ($assignment) => [
+                    'tags' => $review->tagAssignments->map(fn ($assignment): array => [
                         'name' => $assignment->reviewTag?->normalized_name,
                         'confidence' => (float) $assignment->confidence,
                     ])->values(),
@@ -112,7 +112,7 @@ class SignalsController extends Controller
                     ->get()
                     ->reverse()
                     ->values()
-                    ->map(fn (ActionLog $actionLog) => [
+                    ->map(fn (ActionLog $actionLog): array => [
                         'id' => $actionLog->id,
                         'action' => $actionLog->action,
                         'actor_type' => $actionLog->actor_type,
@@ -125,11 +125,11 @@ class SignalsController extends Controller
                 ->latest()
                 ->limit(8)
                 ->get()
-                ->map(fn (Proposal $proposal) => $this->proposalPayload($proposal)),
+                ->map(fn (Proposal $proposal): array => $this->proposalPayload($proposal)),
             'products' => Product::query()
                 ->orderBy('name')
                 ->get(['id', 'name', 'slug'])
-                ->map(fn (Product $product) => [
+                ->map(fn (Product $product): array => [
                     'id' => $product->id,
                     'name' => $product->name,
                     'slug' => $product->slug,
@@ -140,7 +140,7 @@ class SignalsController extends Controller
                 ->latest()
                 ->limit(8)
                 ->get()
-                ->map(fn (ActionLog $actionLog) => [
+                ->map(fn (ActionLog $actionLog): array => [
                     'id' => $actionLog->id,
                     'action' => $actionLog->action,
                     'actor_type' => $actionLog->actor_type,

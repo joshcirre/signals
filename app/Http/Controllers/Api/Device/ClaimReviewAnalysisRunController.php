@@ -22,7 +22,7 @@ class ClaimReviewAnalysisRunController extends Controller
         $run = ReviewAnalysisRun::query()
             ->where('user_id', $device->user_id)
             ->where('status', 'queued')
-            ->orderBy('requested_at')
+            ->oldest('requested_at')
             ->first();
 
         if ($run === null) {
@@ -49,10 +49,10 @@ class ClaimReviewAnalysisRunController extends Controller
         ]);
 
         try {
-            ReviewAnalysisRunUpdated::dispatch($run);
-            ReviewAnalysisEventBroadcast::dispatch($device->user, $event);
-        } catch (Throwable $exception) {
-            report($exception);
+            event(new ReviewAnalysisRunUpdated($run));
+            event(new ReviewAnalysisEventBroadcast($device->user, $event));
+        } catch (Throwable $throwable) {
+            report($throwable);
         }
 
         return response()->json([

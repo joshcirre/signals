@@ -5,7 +5,7 @@ use App\Models\SignalsDevice;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 
-test('device token may claim a queued review analysis run', function () {
+test('device token may claim a queued review analysis run', function (): void {
     $admin = User::factory()->create();
     $plainTextToken = 'signals-secret-token';
     $device = SignalsDevice::factory()->create([

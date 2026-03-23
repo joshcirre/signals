@@ -4,7 +4,7 @@ use App\Models\ActionLog;
 use App\Models\Proposal;
 use App\Models\User;
 
-test('admin can edit a pending product copy proposal', function () {
+test('admin can edit a pending product copy proposal', function (): void {
     $admin = User::factory()->create();
     $proposal = Proposal::factory()->create([
         'payload_json' => [

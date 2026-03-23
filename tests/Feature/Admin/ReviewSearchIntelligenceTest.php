@@ -7,7 +7,7 @@ use App\Models\ReviewTag;
 use App\Models\ReviewTagAssignment;
 use App\Models\User;
 
-test('natural language review search matches hidden tags and cluster context', function () {
+test('natural language review search matches hidden tags and cluster context', function (): void {
     $admin = User::factory()->create();
     $product = Product::factory()->create([
         'name' => 'Premium Hoodie',

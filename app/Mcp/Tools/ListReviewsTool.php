@@ -27,7 +27,7 @@ class ListReviewsTool extends Tool
             ->latest('reviewed_at')
             ->limit($limit)
             ->get()
-            ->map(fn (Review $review) => [
+            ->map(fn (Review $review): array => [
                 'id' => $review->id,
                 'product' => [
                     'id' => $review->product?->id,
@@ -40,7 +40,7 @@ class ListReviewsTool extends Tool
                 'body' => $review->body,
                 'reviewed_at' => $review->reviewed_at?->toIso8601String(),
                 'processed_at' => $review->processed_at?->toIso8601String(),
-                'tags' => $review->tagAssignments->map(fn ($assignment) => [
+                'tags' => $review->tagAssignments->map(fn ($assignment): array => [
                     'name' => $assignment->reviewTag?->normalized_name,
                     'confidence' => (float) $assignment->confidence,
                 ]),

@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('action_logs', function (Blueprint $table) {
+        Schema::create('action_logs', function (Blueprint $table): void {
             $table->id();
             $table->foreignId('review_analysis_run_id')->nullable()->constrained()->nullOnDelete();
             $table->string('actor_type');

@@ -16,7 +16,7 @@ class ProductIndexController extends Controller
             ->withAvg('reviews', 'rating')
             ->orderBy('name')
             ->get()
-            ->map(fn (Product $product) => [
+            ->map(fn (Product $product): array => [
                 'id' => $product->id,
                 'name' => $product->name,
                 'slug' => $product->slug,

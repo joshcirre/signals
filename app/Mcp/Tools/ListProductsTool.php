@@ -24,7 +24,7 @@ class ListProductsTool extends Tool
             ->orderBy('name')
             ->limit($limit)
             ->get()
-            ->map(fn (Product $product) => [
+            ->map(fn (Product $product): array => [
                 'id' => $product->id,
                 'name' => $product->name,
                 'slug' => $product->slug,

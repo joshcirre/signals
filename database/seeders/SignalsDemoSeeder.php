@@ -21,16 +21,9 @@ class SignalsDemoSeeder extends Seeder
 {
     use WithoutModelEvents;
 
-    private const DEMO_EMAIL = 'admin@example.com';
+    private const string DEMO_EMAIL = 'admin@example.com';
 
-    private const DEMO_PASSWORD = 'password';
-
-    private const DEMO_PRODUCT_SLUGS = [
-        'premium-hoodie',
-        'cloudweight-tee',
-        'studio-joggers',
-        'trail-blend-crewneck',
-    ];
+    private const string DEMO_PASSWORD = 'password';
 
     public function run(): void
     {
@@ -93,7 +86,7 @@ class SignalsDemoSeeder extends Seeder
                 'description' => 'The Trail Blend Crewneck uses a recycled cotton blend with a structured collar and a soft interior. It is the easy layer you leave by the door.',
                 'hero_image_url' => 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=1200&q=80',
             ],
-        ])->mapWithKeys(fn (array $product) => [
+        ])->mapWithKeys(fn (array $product): array => [
             $product['slug'] => Product::query()->updateOrCreate(
                 ['slug' => $product['slug']],
                 [
@@ -152,7 +145,7 @@ class SignalsDemoSeeder extends Seeder
             'Shipping Delay',
             'Packaging Problem',
             'Quality Praise',
-        ])->mapWithKeys(fn (string $name) => [
+        ])->mapWithKeys(fn (string $name): array => [
             $name => ReviewTag::query()->updateOrCreate(
                 ['normalized_name' => $name],
                 [

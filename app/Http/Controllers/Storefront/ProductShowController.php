@@ -31,7 +31,7 @@ class ProductShowController extends Controller
                 'average_rating' => round((float) $product->reviews->avg('rating'), 1),
                 'review_count' => $product->reviews->count(),
             ],
-            'reviews' => $product->reviews->map(fn (Review $review) => [
+            'reviews' => $product->reviews->map(fn (Review $review): array => [
                 'id' => $review->id,
                 'author_name' => $review->author_name,
                 'rating' => $review->rating,

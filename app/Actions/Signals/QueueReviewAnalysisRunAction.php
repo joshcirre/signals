@@ -33,10 +33,10 @@ class QueueReviewAnalysisRunAction
         ]);
 
         try {
-            ReviewAnalysisRunUpdated::dispatch($run);
-            ReviewAnalysisEventBroadcast::dispatch($user, $event);
-        } catch (Throwable $exception) {
-            report($exception);
+            event(new ReviewAnalysisRunUpdated($run));
+            event(new ReviewAnalysisEventBroadcast($user, $event));
+        } catch (Throwable $throwable) {
+            report($throwable);
         }
 
         return $run;

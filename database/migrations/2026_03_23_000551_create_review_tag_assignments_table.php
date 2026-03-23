@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('review_tag_assignments', function (Blueprint $table) {
+        Schema::create('review_tag_assignments', function (Blueprint $table): void {
             $table->id();
             $table->foreignId('review_id')->constrained()->cascadeOnDelete();
             $table->foreignId('review_tag_id')->constrained()->cascadeOnDelete();

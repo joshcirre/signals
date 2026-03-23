@@ -38,7 +38,7 @@ class SearchReviewsTool extends Tool
                     'title' => $review->title,
                     'body' => $review->body,
                     'reviewed_at' => $review->reviewed_at?->toIso8601String(),
-                    'tags' => $review->tagAssignments->map(fn ($assignment) => [
+                    'tags' => $review->tagAssignments->map(fn ($assignment): array => [
                         'name' => $assignment->reviewTag?->normalized_name,
                         'confidence' => (float) $assignment->confidence,
                     ])->values(),
@@ -118,7 +118,11 @@ class SearchReviewsTool extends Tool
         foreach ($review->tagAssignments as $assignment) {
             $tag = $assignment->reviewTag?->normalized_name;
 
-            if (! is_string($tag) || $tag === '') {
+            if (! is_string($tag)) {
+                continue;
+            }
+
+            if ($tag === '') {
                 continue;
             }
 

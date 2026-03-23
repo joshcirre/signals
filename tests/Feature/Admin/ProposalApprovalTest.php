@@ -6,7 +6,7 @@ use App\Models\Review;
 use App\Models\ReviewAnalysisRun;
 use App\Models\User;
 
-test('approving a product copy proposal updates the storefront record', function () {
+test('approving a product copy proposal updates the storefront record', function (): void {
     $admin = User::factory()->create();
     $product = Product::factory()->create([
         'fit_note' => null,
@@ -33,7 +33,7 @@ test('approving a product copy proposal updates the storefront record', function
         ->and($product->fresh()->fit_note)->toContain('runs small');
 });
 
-test('approving a review response proposal saves the approved draft on the review', function () {
+test('approving a review response proposal saves the approved draft on the review', function (): void {
     $admin = User::factory()->create();
     $review = Review::factory()->create();
     $run = ReviewAnalysisRun::factory()->create([

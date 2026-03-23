@@ -7,18 +7,18 @@ use App\Models\User;
 use Database\Seeders\SignalsDemoSeeder;
 use Inertia\Testing\AssertableInertia as Assert;
 
-test('signals page uses the server app url for helper instructions', function () {
+test('signals page uses the server app url for helper instructions', function (): void {
     $admin = User::factory()->create();
 
     $this->actingAs($admin)
         ->get('https://signals.example.com/admin/signals')
         ->assertSuccessful()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->component('admin/signals')
             ->where('appUrl', 'https://signals.example.com'));
 });
 
-test('hosted deployment check passes for a seeded hosted demo environment', function () {
+test('hosted deployment check passes for a seeded hosted demo environment', function (): void {
     config()->set('app.url', 'https://signals.example.com');
     config()->set('broadcasting.default', 'reverb');
     config()->set('broadcasting.connections.reverb.key', 'signals-key');
@@ -28,7 +28,7 @@ test('hosted deployment check passes for a seeded hosted demo environment', func
     config()->set('broadcasting.connections.reverb.options.port', 443);
     config()->set('broadcasting.connections.reverb.options.scheme', 'https');
 
-    app(SignalsDemoSeeder::class)->run();
+    resolve(SignalsDemoSeeder::class)->run();
 
     $this->artisan('signals:check-hosted-deployment')
         ->expectsOutputToContain('Signals hosted deployment check')
@@ -36,7 +36,7 @@ test('hosted deployment check passes for a seeded hosted demo environment', func
         ->assertSuccessful();
 });
 
-test('hosted deployment check fails when hosted config is still local', function () {
+test('hosted deployment check fails when hosted config is still local', function (): void {
     config()->set('app.url', 'https://signals.test');
     config()->set('broadcasting.default', 'log');
     config()->set('broadcasting.connections.reverb.key', '');

@@ -3,7 +3,7 @@
 use App\Models\ActionLog;
 use App\Models\User;
 
-test('admin can view the audit log page', function () {
+test('admin can view the audit log page', function (): void {
     $admin = User::factory()->create();
 
     ActionLog::factory()->create([

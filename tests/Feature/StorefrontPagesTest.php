@@ -3,7 +3,7 @@
 use App\Models\Product;
 use App\Models\Review;
 
-test('storefront homepage lists seeded products', function () {
+test('storefront homepage lists seeded products', function (): void {
     Product::factory()->create([
         'name' => 'Premium Hoodie',
         'slug' => 'premium-hoodie',
@@ -14,7 +14,7 @@ test('storefront homepage lists seeded products', function () {
         ->assertSee('Premium Hoodie');
 });
 
-test('product page shows fit notes and reviews', function () {
+test('product page shows fit notes and reviews', function (): void {
     $product = Product::factory()->create([
         'name' => 'Premium Hoodie',
         'slug' => 'premium-hoodie',

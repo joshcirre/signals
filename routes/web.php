@@ -17,10 +17,10 @@ use Laravel\Fortify\Features;
 Route::get('/', [ProductIndexController::class, 'index'])->name('home');
 Route::get('/products/{product:slug}', [ProductShowController::class, 'show'])->name('products.show');
 
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::redirect('dashboard', '/admin');
 
-    Route::prefix('admin')->middleware('admin')->group(function () {
+    Route::prefix('admin')->middleware('admin')->group(function (): void {
         Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
         Route::get('signals', [SignalsController::class, 'index'])->name('admin.signals');
         Route::get('audit-log', AuditLogController::class)->name('admin.audit-log');

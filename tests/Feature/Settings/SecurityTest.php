@@ -5,7 +5,7 @@ use Illuminate\Support\Facades\Hash;
 use Inertia\Testing\AssertableInertia as Assert;
 use Laravel\Fortify\Features;
 
-test('security page is displayed', function () {
+test('security page is displayed', function (): void {
     $this->skipUnlessFortifyFeature(Features::twoFactorAuthentication());
 
     Features::twoFactorAuthentication([
@@ -18,14 +18,14 @@ test('security page is displayed', function () {
     $this->actingAs($user)
         ->withSession(['auth.password_confirmed_at' => time()])
         ->get(route('security.edit'))
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->component('settings/security')
             ->where('canManageTwoFactor', true)
             ->where('twoFactorEnabled', false),
         );
 });
 
-test('security page requires password confirmation when enabled', function () {
+test('security page requires password confirmation when enabled', function (): void {
     $this->skipUnlessFortifyFeature(Features::twoFactorAuthentication());
 
     $user = User::factory()->create();
@@ -41,7 +41,7 @@ test('security page requires password confirmation when enabled', function () {
     $response->assertRedirect(route('password.confirm'));
 });
 
-test('security page does not require password confirmation when disabled', function () {
+test('security page does not require password confirmation when disabled', function (): void {
     $this->skipUnlessFortifyFeature(Features::twoFactorAuthentication());
 
     $user = User::factory()->create();
@@ -54,12 +54,12 @@ test('security page does not require password confirmation when disabled', funct
     $this->actingAs($user)
         ->get(route('security.edit'))
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->component('settings/security'),
         );
 });
 
-test('security page renders without two factor when feature is disabled', function () {
+test('security page renders without two factor when feature is disabled', function (): void {
     $this->skipUnlessFortifyFeature(Features::twoFactorAuthentication());
 
     config(['fortify.features' => []]);
@@ -69,7 +69,7 @@ test('security page renders without two factor when feature is disabled', functi
     $this->actingAs($user)
         ->get(route('security.edit'))
         ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
+        ->assertInertia(fn (Assert $page): Assert => $page
             ->component('settings/security')
             ->where('canManageTwoFactor', false)
             ->missing('twoFactorEnabled')
@@ -77,7 +77,7 @@ test('security page renders without two factor when feature is disabled', functi
         );
 });
 
-test('password can be updated', function () {
+test('password can be updated', function (): void {
     $user = User::factory()->create();
 
     $response = $this
@@ -96,7 +96,7 @@ test('password can be updated', function () {
     expect(Hash::check('new-password', $user->refresh()->password))->toBeTrue();
 });
 
-test('correct password must be provided to update password', function () {
+test('correct password must be provided to update password', function (): void {
     $user = User::factory()->create();
 
     $response = $this

@@ -16,7 +16,7 @@ class AuditLogController extends Controller
                 ->latest()
                 ->limit(50)
                 ->get()
-                ->map(fn (ActionLog $actionLog) => [
+                ->map(fn (ActionLog $actionLog): array => [
                     'id' => $actionLog->id,
                     'action' => $actionLog->action,
                     'actor_type' => $actionLog->actor_type,

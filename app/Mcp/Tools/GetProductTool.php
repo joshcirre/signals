@@ -34,7 +34,7 @@ class GetProductTool extends Tool
                 'faq_items' => $product->faq_items ?? [],
                 'review_count' => $product->reviews_count,
                 'average_rating' => round((float) ($product->reviews_avg_rating ?? 0), 1),
-                'clusters' => $product->reviewClusters->map(fn ($cluster) => [
+                'clusters' => $product->reviewClusters->map(fn ($cluster): array => [
                     'id' => $cluster->id,
                     'title' => $cluster->title,
                     'summary' => $cluster->summary,

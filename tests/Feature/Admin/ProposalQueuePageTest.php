@@ -4,7 +4,7 @@ use App\Models\Product;
 use App\Models\Proposal;
 use App\Models\User;
 
-test('admin can view the proposal queue page', function () {
+test('admin can view the proposal queue page', function (): void {
     $admin = User::factory()->create();
     $product = Product::factory()->create([
         'name' => 'Premium Hoodie',

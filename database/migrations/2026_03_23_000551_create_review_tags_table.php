@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('review_tags', function (Blueprint $table) {
+        Schema::create('review_tags', function (Blueprint $table): void {
             $table->id();
             $table->string('name');
             $table->string('normalized_name')->index();

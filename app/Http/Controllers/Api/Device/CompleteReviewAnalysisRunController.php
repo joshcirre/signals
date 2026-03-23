@@ -42,10 +42,10 @@ class CompleteReviewAnalysisRunController extends Controller
         ]);
 
         try {
-            ReviewAnalysisRunUpdated::dispatch($reviewAnalysisRun);
-            ReviewAnalysisEventBroadcast::dispatch($device->user, $event);
-        } catch (Throwable $exception) {
-            report($exception);
+            event(new ReviewAnalysisRunUpdated($reviewAnalysisRun));
+            event(new ReviewAnalysisEventBroadcast($device->user, $event));
+        } catch (Throwable $throwable) {
+            report($throwable);
         }
 
         return response()->json(['ok' => true]);

@@ -6,7 +6,7 @@ use App\Models\SignalsDevice;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 
-test('device event ingestion preserves structured metadata for streamed codex updates', function () {
+test('device event ingestion preserves structured metadata for streamed codex updates', function (): void {
     $admin = User::factory()->create();
     $plainTextToken = 'signals-secret-token';
     $device = SignalsDevice::factory()->create([

@@ -6,7 +6,7 @@ use App\Models\ReviewTag;
 use App\Models\ReviewTagAssignment;
 use App\Models\User;
 
-test('admin can search review intelligence by hidden tags and product data', function () {
+test('admin can search review intelligence by hidden tags and product data', function (): void {
     $admin = User::factory()->create();
     $product = Product::factory()->create([
         'name' => 'Premium Hoodie',

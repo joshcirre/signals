@@ -8,9 +8,9 @@ use App\Models\ReviewAnalysisRun;
 use App\Models\User;
 use Database\Seeders\SignalsDemoSeeder;
 
-test('signals demo seeder is idempotent', function () {
-    app(SignalsDemoSeeder::class)->run();
-    app(SignalsDemoSeeder::class)->run();
+test('signals demo seeder is idempotent', function (): void {
+    resolve(SignalsDemoSeeder::class)->run();
+    resolve(SignalsDemoSeeder::class)->run();
 
     expect(User::query()->where('email', 'admin@example.com')->count())->toBe(1)
         ->and(Product::query()->whereIn('slug', [
@@ -25,7 +25,7 @@ test('signals demo seeder is idempotent', function () {
         ->and(ActionLog::query()->count())->toBe(4);
 });
 
-test('signals seed demo command can seed the hosted dataset', function () {
+test('signals seed demo command can seed the hosted dataset', function (): void {
     $this->artisan('signals:seed-demo')
         ->expectsOutputToContain('Seeding the Signals demo dataset')
         ->expectsOutputToContain('admin@example.com / password')

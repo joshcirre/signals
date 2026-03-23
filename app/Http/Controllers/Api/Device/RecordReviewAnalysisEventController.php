@@ -39,9 +39,9 @@ class RecordReviewAnalysisEventController extends Controller
         ]);
 
         try {
-            ReviewAnalysisEventBroadcast::dispatch($device->user, $event);
-        } catch (Throwable $exception) {
-            report($exception);
+            event(new ReviewAnalysisEventBroadcast($device->user, $event));
+        } catch (Throwable $throwable) {
+            report($throwable);
         }
 
         return response()->json(['ok' => true]);

@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands\Signals;
 
+use Closure;
 use Database\Seeders\SignalsDemoSeeder;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
@@ -22,7 +23,7 @@ class SeedDemoCommand extends Command
 
         $this->components->info('Seeding the Signals demo dataset...');
 
-        app(SignalsDemoSeeder::class)->run();
+        resolve(SignalsDemoSeeder::class)->run();
 
         $this->newLine();
         $this->line('Admin login: admin@example.com / password');
@@ -32,7 +33,7 @@ class SeedDemoCommand extends Command
         return self::SUCCESS;
     }
 
-    protected function getDefaultConfirmCallback(): \Closure
+    protected function getDefaultConfirmCallback(): Closure
     {
         return fn (): bool => app()->environment('production');
     }

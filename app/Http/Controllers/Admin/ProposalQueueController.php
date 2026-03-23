@@ -25,7 +25,7 @@ class ProposalQueueController extends Controller
                 ->latest()
                 ->limit(30)
                 ->get()
-                ->map(fn (Proposal $proposal) => $this->payload($proposal)),
+                ->map(fn (Proposal $proposal): array => $this->payload($proposal)),
         ]);
     }
 
