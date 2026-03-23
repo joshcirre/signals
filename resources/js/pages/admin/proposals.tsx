@@ -13,10 +13,10 @@ import {
 import { ArrowSandboxWidget } from '@/components/arrow-sandbox-widget';
 import AppLayout from '@/layouts/app-layout';
 import { cn } from '@/lib/utils';
-import type { BreadcrumbItem } from '@/types';
 import { dashboard } from '@/routes';
 import admin from '@/routes/admin';
 import productRoutes from '@/routes/products';
+import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -135,7 +135,11 @@ export default function ProposalQueue({
             setProposals((current) =>
                 current.map((p) =>
                     p.id === payload.id
-                        ? { ...p, status: payload.status, payload: payload.payload }
+                        ? {
+                              ...p,
+                              status: payload.status,
+                              payload: payload.payload,
+                          }
                         : p,
                 ),
             );
@@ -167,15 +171,12 @@ export default function ProposalQueue({
             return;
         }
 
-        router.post(
-            admin.reviewRuns.store().url,
-            {
-                kind: 'ui_refinement',
-                proposal_id: selectedProposal.id,
-                focus: refineQuery,
-                redirect_to: 'proposals',
-            },
-        );
+        router.post(admin.reviewRuns.store().url, {
+            kind: 'ui_refinement',
+            proposal_id: selectedProposal.id,
+            focus: refineQuery,
+            redirect_to: 'proposals',
+        });
     };
 
     return (
@@ -346,11 +347,11 @@ export default function ProposalQueue({
                         <AdminSurfaceHeader
                             title={
                                 selectedProposal
-                                    ? (selectedProposal.type ===
+                                    ? selectedProposal.type ===
                                       'storefront_widget'
-                                          ? (selectedProposal.payload.title ??
-                                            selectedProposal.target_label)
-                                          : selectedProposal.target_label)
+                                        ? (selectedProposal.payload.title ??
+                                          selectedProposal.target_label)
+                                        : selectedProposal.target_label
                                     : 'Nothing selected'
                             }
                             description={
@@ -379,7 +380,8 @@ export default function ProposalQueue({
                         />
                         <AdminSurfaceBody className="space-y-4">
                             {selectedProposal ? (
-                                selectedProposal.type === 'storefront_widget' ? (
+                                selectedProposal.type ===
+                                'storefront_widget' ? (
                                     <StorefrontWidgetDetail
                                         proposal={selectedProposal}
                                         refineQuery={refineQuery}
@@ -661,15 +663,17 @@ function StorefrontWidgetDetail({
                     <p className="text-[10px] font-medium tracking-[0.18em] text-slate-400 uppercase">
                         Position
                     </p>
-                    <p className="mt-1 text-sm font-medium capitalize text-slate-950">
-                        {(proposal.payload.position ?? 'below_products').replaceAll('_', ' ')}
+                    <p className="mt-1 text-sm font-medium text-slate-950 capitalize">
+                        {(
+                            proposal.payload.position ?? 'below_products'
+                        ).replaceAll('_', ' ')}
                     </p>
                 </div>
                 <div className="rounded-sm border border-slate-950/7 bg-slate-50 px-3.5 py-3">
                     <p className="text-[10px] font-medium tracking-[0.18em] text-slate-400 uppercase">
                         Status
                     </p>
-                    <p className="mt-1 text-sm font-medium capitalize text-slate-950">
+                    <p className="mt-1 text-sm font-medium text-slate-950 capitalize">
                         {proposal.status}
                     </p>
                 </div>

@@ -8,9 +8,9 @@ import {
     AdminSurfaceBody,
 } from '@/components/admin-page';
 import AppLayout from '@/layouts/app-layout';
-import type { BreadcrumbItem } from '@/types';
 import { dashboard } from '@/routes';
 import admin from '@/routes/admin';
+import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -29,36 +29,9 @@ interface DashboardProps {
         negative_reviews: number;
         pending_proposals: number;
     };
-    latestRun: {
-        id: number;
-        status: string;
-        summary: string | null;
-        requested_at: string | null;
-    } | null;
-    latestAppliedChange: {
-        id: number;
-        type: string;
-        rationale: string;
-        target_type: string;
-        target_id: number;
-        applied_at: string | null;
-    } | null;
-    recentActions: Array<{
-        id: number;
-        action: string;
-        actor_type: string;
-        message: string | null;
-        created_at: string;
-    }>;
 }
 
-export default function AdminDashboard({
-    onboarding,
-    stats,
-    latestRun,
-    latestAppliedChange,
-    recentActions,
-}: DashboardProps) {
+export default function AdminDashboard({ onboarding, stats }: DashboardProps) {
     const nextStep = onboarding.needs_helper_setup
         ? {
               title: 'Create the helper first.',
@@ -107,34 +80,6 @@ export default function AdminDashboard({
                 'Show the shopper-facing change only after the operator decision is made.',
             href: '/',
             icon: ShoppingBag,
-        },
-    ];
-
-    const statusItems = [
-        {
-            label: 'Helper',
-            value: onboarding.needs_helper_setup ? 'Needs setup' : 'Connected',
-            detail: onboarding.needs_helper_setup
-                ? 'Start in Session and copy the bootstrap command.'
-                : 'Ready to claim the next run.',
-        },
-        {
-            label: 'Queued review',
-            value: `${stats.new_reviews} new`,
-            detail: `${stats.negative_reviews} low-rating reviews need attention.`,
-        },
-        {
-            label: 'Review queue',
-            value: `${stats.pending_proposals} pending`,
-            detail:
-                stats.pending_proposals > 0
-                    ? 'A resolution is waiting for operator approval.'
-                    : 'No proposals are waiting right now.',
-        },
-        {
-            label: 'Catalog',
-            value: `${stats.products} products`,
-            detail: 'Enough context for a tight end-to-end demo.',
         },
     ];
 

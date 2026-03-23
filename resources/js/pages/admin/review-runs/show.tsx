@@ -17,9 +17,9 @@ import {
 } from '@/components/admin-page';
 import AppLayout from '@/layouts/app-layout';
 import { cn } from '@/lib/utils';
-import type { BreadcrumbItem } from '@/types';
 import { dashboard } from '@/routes';
 import admin from '@/routes/admin';
+import type { BreadcrumbItem } from '@/types';
 
 interface PageProps {
     auth: {
@@ -348,7 +348,7 @@ function TraceToolRow({
                         <CheckCircle2 className="size-3.5" />
                     )}
                 </span>
-                <span className="flex-1 truncate text-sm font-medium capitalize text-slate-900">
+                <span className="flex-1 truncate text-sm font-medium text-slate-900 capitalize">
                     {formatToolName(tool.name)}
                 </span>
                 <time className="shrink-0 text-xs text-slate-400">
@@ -390,7 +390,7 @@ function TraceAssistantBubble({
             <div className="flex size-7 shrink-0 items-center justify-center rounded-full border border-slate-950/10 bg-white text-slate-500">
                 <Bot className="size-3.5" />
             </div>
-            <div className="min-w-0 max-w-[38rem]">
+            <div className="max-w-[38rem] min-w-0">
                 <div className="rounded-sm border border-slate-950/8 bg-white px-4 py-3">
                     <p className="text-sm leading-6 whitespace-pre-wrap text-slate-700">
                         {content}
@@ -559,7 +559,9 @@ export default function ReviewAnalysisRunShow({ run }: ReviewRunShowProps) {
                     eyebrow={`Run #${run.id.toString()}`}
                     title={focus ?? displayRun.summary ?? 'Tool trace'}
                     meta={
-                        <AdminPill className={statusClassName(displayRun.status)}>
+                        <AdminPill
+                            className={statusClassName(displayRun.status)}
+                        >
                             {isRunning ? (
                                 <Loader2 className="size-3 animate-spin" />
                             ) : null}
