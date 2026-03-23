@@ -64,10 +64,22 @@ php artisan signals:check-hosted-deployment
 
 The hosted demo assumes:
 
-- `APP_URL` points at the live site
+- `APP_URL` points at the live site, for example `https://signals.joshcirre.com`
 - `BROADCAST_CONNECTION=reverb`
 - `REVERB_APP_ID`, `REVERB_APP_KEY`, `REVERB_APP_SECRET`, `REVERB_HOST`, `REVERB_PORT`, and `REVERB_SCHEME` are set correctly
 - queue workers and Reverb are running
+
+For the current hosted demo environment:
+
+- Site URL: `https://signals.joshcirre.com`
+- Reverb host: `ws-a15d989a-db9e-4e70-88eb-efcb7e6d3b4f-reverb.laravel.cloud`
+- Reverb runs over `https` on port `443`
+
+Important:
+
+- The browser uses the hosted app's Reverb configuration automatically.
+- The local Node helper does not need any `REVERB_*` environment variables.
+- The helper only needs `SIGNALS_SERVER_URL` and the issued `SIGNALS_DEVICE_TOKEN`.
 
 ## Hourly Demo Reset
 
@@ -117,7 +129,7 @@ The helper lives in `desktop-helper/` and is intentionally simple.
 Run it with the token from `/admin/signals`:
 
 ```bash
-SIGNALS_SERVER_URL=https://your-hosted-signals-app \
+SIGNALS_SERVER_URL=https://signals.joshcirre.com \
 SIGNALS_DEVICE_TOKEN=your-issued-token \
 node desktop-helper/index.mjs
 ```
@@ -149,7 +161,7 @@ Recommended 5-minute flow:
 ```bash
 php artisan signals:seed-demo --force
 php artisan signals:check-hosted-deployment
-php artisan signals:smoke-codex-mcp admin@example.com --server-url=https://your-hosted-signals-app --timeout=180
+php artisan signals:smoke-codex-mcp admin@example.com --server-url=https://signals.joshcirre.com --timeout=180
 composer test
 composer run refactor:check
 ```
