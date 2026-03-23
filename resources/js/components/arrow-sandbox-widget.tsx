@@ -15,23 +15,26 @@ export interface LiveWidget {
 
 export function ArrowSandboxWidget({ source }: { source: ArrowSource }) {
     const containerRef = useRef<HTMLDivElement>(null);
-    const sourceKey = JSON.stringify(source);
+    const serializedSource = JSON.stringify(source);
 
     useEffect(() => {
         const el = containerRef.current;
+
         if (!el) {
             return;
         }
 
         el.innerHTML = '';
 
-        const template = sandbox({ source });
+        const template = sandbox({
+            source: JSON.parse(serializedSource) as ArrowSource,
+        });
         template(el);
 
         return () => {
             el.innerHTML = '';
         };
-    }, [sourceKey]);
+    }, [serializedSource]);
 
     return <div ref={containerRef} />;
 }

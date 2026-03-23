@@ -1,6 +1,7 @@
 import { Link } from '@inertiajs/react';
 import { ArrowRight, Star } from 'lucide-react';
-import { LiveWidgetSlot, type LiveWidget } from '@/components/arrow-sandbox-widget';
+import { LiveWidgetSlot } from '@/components/arrow-sandbox-widget';
+import type { LiveWidget } from '@/components/arrow-sandbox-widget';
 import { StorefrontShell } from '@/components/storefront-shell';
 import { storeBrand } from '@/lib/brand';
 
