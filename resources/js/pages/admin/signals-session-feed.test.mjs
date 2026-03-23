@@ -52,7 +52,8 @@ test('deriveSessionFeedState keeps only the latest assistant update live', () =>
                 actor_type: 'agent',
                 action: 'codex.message',
                 kind: 'assistant_text',
-                content: 'I found the live review endpoint and am pulling data now.',
+                content:
+                    'I found the live review endpoint and am pulling data now.',
                 tool_id: null,
                 tool_name: null,
                 item_id: 'assistant-2',

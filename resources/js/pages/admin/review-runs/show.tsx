@@ -17,8 +17,8 @@ import {
 } from '@/components/admin-page';
 import AppLayout from '@/layouts/app-layout';
 import { cn } from '@/lib/utils';
-import { dashboard } from '@/routes';
 import admin from '@/routes/admin';
+import { dashboard } from '@/routes/index';
 import type { BreadcrumbItem } from '@/types';
 
 interface PageProps {

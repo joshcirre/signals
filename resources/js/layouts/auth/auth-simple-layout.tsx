@@ -9,7 +9,7 @@ import {
 } from '@/components/admin-page';
 import { BrandMark } from '@/components/brand-mark';
 import { storeBrand } from '@/lib/brand';
-import { home } from '@/routes';
+import { home } from '@/routes/index';
 import type { AuthLayoutProps } from '@/types';
 
 const workflow = [

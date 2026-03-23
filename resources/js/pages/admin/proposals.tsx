@@ -13,8 +13,8 @@ import {
 import { ArrowSandboxWidget } from '@/components/arrow-sandbox-widget';
 import AppLayout from '@/layouts/app-layout';
 import { cn } from '@/lib/utils';
-import { dashboard } from '@/routes';
 import admin from '@/routes/admin';
+import { dashboard } from '@/routes/index';
 import productRoutes from '@/routes/products';
 import type { BreadcrumbItem } from '@/types';
 

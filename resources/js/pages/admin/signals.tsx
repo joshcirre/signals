@@ -32,8 +32,8 @@ import type {
     SessionActivityItem,
     ToolActivity,
 } from '@/pages/admin/signals-session-feed';
-import { dashboard } from '@/routes';
 import admin from '@/routes/admin';
+import { dashboard } from '@/routes/index';
 import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -225,7 +225,6 @@ function formatToolName(toolName: string | null): string {
         .replaceAll('-', ' ')
         .replaceAll('_', ' ');
 }
-
 
 function SessionUserBubble({ content }: { content: string }) {
     return (

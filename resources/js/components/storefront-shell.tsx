@@ -2,7 +2,7 @@ import { Head, Link, usePage } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 import { BrandMark } from '@/components/brand-mark';
 import { storeBrand } from '@/lib/brand';
-import { dashboard, login } from '@/routes';
+import { dashboard, login } from '@/routes/index';
 
 interface SharedPageProps {
     auth: {

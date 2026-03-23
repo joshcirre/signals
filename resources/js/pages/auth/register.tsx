@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import AuthLayout from '@/layouts/auth-layout';
 import { storeBrand } from '@/lib/brand';
-import { login } from '@/routes';
+import { login } from '@/routes/index';
 import { store } from '@/routes/register';
 
 const authInputClassName =
