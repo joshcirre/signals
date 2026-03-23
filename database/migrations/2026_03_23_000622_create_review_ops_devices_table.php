@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('review_ops_devices', function (Blueprint $table): void {
             $table->id();
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('user_id')->index();
             $table->string('name');
             $table->string('token_hash')->unique();
             $table->boolean('is_active')->default(true);

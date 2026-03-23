@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('review_analysis_runs', function (Blueprint $table): void {
             $table->id();
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('review_ops_device_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('user_id')->index();
+            $table->foreignId('review_ops_device_id')->nullable()->index();
             $table->string('status')->default('queued');
             $table->text('prompt')->nullable();
             $table->text('summary')->nullable();
