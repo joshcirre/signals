@@ -26,12 +26,11 @@ export function NavUser() {
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <SidebarMenuButton
-                            size="lg"
-                            className="group rounded-2xl border border-slate-200/90 bg-white text-slate-800 shadow-sm data-[state=open]:bg-slate-50"
+                            className="rounded-md border border-slate-950/10 text-slate-800 data-[state=open]:bg-slate-50"
                             data-test="sidebar-menu-button"
                         >
                             <UserInfo user={auth.user} />
-                            <ChevronsUpDown className="ml-auto size-4" />
+                            <ChevronsUpDown className="ml-auto size-4 shrink-0" />
                         </SidebarMenuButton>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent

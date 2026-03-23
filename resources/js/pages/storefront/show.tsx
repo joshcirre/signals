@@ -25,6 +25,8 @@ interface ReviewData {
     title: string | null;
     body: string;
     reviewed_at: string | null;
+    approved_response: string | null;
+    response_approved_at: string | null;
 }
 
 export default function StorefrontShow({
@@ -49,7 +51,7 @@ export default function StorefrontShow({
             {/* Product detail */}
             <section className="grid gap-12 pt-8 pb-16 lg:grid-cols-2">
                 <div>
-                    <div className="overflow-hidden rounded-[min(1vw,12px)] border border-slate-950/10 bg-gray-50">
+                    <div className="overflow-hidden rounded-md border border-slate-950/10 bg-gray-50">
                         <img
                             src={product.hero_image_url}
                             alt={product.name}
@@ -92,13 +94,13 @@ export default function StorefrontShow({
                         <div className="mt-6 flex flex-wrap gap-3">
                             <button
                                 type="button"
-                                className="rounded-lg bg-slate-950 py-2.5 pr-4 pl-4 text-sm font-medium text-white hover:bg-slate-800"
+                                className="rounded-md bg-slate-950 py-2.5 pr-4 pl-4 text-sm font-medium text-white hover:bg-slate-800"
                             >
                                 Add to cart
                             </button>
                             <button
                                 type="button"
-                                className="rounded-lg border border-slate-950/10 py-2.5 pr-4 pl-4 text-sm font-medium text-slate-700 hover:bg-gray-50"
+                                className="rounded-md border border-slate-950/10 py-2.5 pr-4 pl-4 text-sm font-medium text-slate-700 hover:bg-gray-50"
                             >
                                 Save for later
                             </button>
@@ -106,7 +108,7 @@ export default function StorefrontShow({
                     </div>
 
                     {product.fit_note ? (
-                        <div className="rounded-lg border border-amber-200 bg-amber-50 px-5 py-4">
+                        <div className="rounded-md border border-amber-200 bg-amber-50 px-5 py-4">
                             <p className="text-xs font-medium text-amber-700">
                                 Sizing note
                             </p>
@@ -125,7 +127,7 @@ export default function StorefrontShow({
                                 {product.faq_items.map((faq) => (
                                     <div
                                         key={faq.question}
-                                        className="rounded-lg border border-slate-950/10 px-5 py-4"
+                                        className="rounded-md border border-slate-950/10 px-5 py-4"
                                     >
                                         <h3 className="font-medium text-slate-950">
                                             {faq.question}
@@ -151,7 +153,7 @@ export default function StorefrontShow({
                         {reviews.map((review) => (
                             <article
                                 key={review.id}
-                                className="rounded-lg border border-slate-950/10 p-5"
+                                className="rounded-md border border-slate-950/10 p-5"
                             >
                                 <div className="flex items-center justify-between gap-4">
                                     <div>
@@ -162,7 +164,7 @@ export default function StorefrontShow({
                                             {review.reviewed_at}
                                         </p>
                                     </div>
-                                    <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-slate-700">
+                                    <span className="inline-flex items-center gap-1 rounded-md bg-gray-100 px-3 py-1 text-xs font-medium text-slate-700">
                                         <Star className="size-3 fill-amber-400 text-amber-400" />
                                         {review.rating}/5
                                     </span>
@@ -175,6 +177,23 @@ export default function StorefrontShow({
                                 <p className="mt-2 text-sm text-pretty text-slate-500">
                                     {review.body}
                                 </p>
+                                {review.approved_response ? (
+                                    <div className="mt-4 rounded-md border border-slate-950/10 bg-slate-50 px-4 py-3">
+                                        <div className="flex items-center justify-between gap-3">
+                                            <p className="text-[11px] font-semibold tracking-[0.18em] text-slate-500 uppercase">
+                                                {storeBrand.name} reply
+                                            </p>
+                                            {review.response_approved_at ? (
+                                                <p className="text-xs text-slate-400">
+                                                    {review.response_approved_at}
+                                                </p>
+                                            ) : null}
+                                        </div>
+                                        <p className="mt-2 text-sm text-pretty text-slate-700">
+                                            {review.approved_response}
+                                        </p>
+                                    </div>
+                                ) : null}
                             </article>
                         ))}
                     </div>

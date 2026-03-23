@@ -1,16 +1,6 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
-import {
-    ClipboardList,
-    PencilLine,
-    Save,
-    Search,
-    ShieldCheck,
-    ShieldX,
-} from 'lucide-react';
+import { PencilLine, Save, ShieldCheck, ShieldX } from 'lucide-react';
 import { useState } from 'react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import AppLayout from '@/layouts/app-layout';
 import { storeBrand } from '@/lib/brand';
 import { dashboard } from '@/routes';
@@ -68,25 +58,22 @@ export default function ProposalQueue({
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Proposal Queue" />
-            <div className="space-y-8 p-4 md:p-6">
-                <section className="rounded-[2rem] bg-[linear-gradient(135deg,_#0f172a_0%,_#111827_55%,_#334155_100%)] p-7 text-white shadow-[0_24px_70px_rgba(15,23,42,0.28)]">
-                    <Badge className="rounded-full border-white/12 bg-white/12 px-3 py-1 text-[0.68rem] tracking-[0.24em] text-white uppercase hover:bg-white/12">
-                        <ClipboardList className="size-3.5" />
-                        Proposal Queue
-                    </Badge>
-                    <h1 className="mt-4 text-3xl font-semibold tracking-tight">
-                        Review, edit, and publish the merchant-facing changes
-                        Codex prepared.
-                    </h1>
-                    <p className="mt-4 max-w-3xl text-base leading-7 text-white/78">
-                        {storeBrand.adminName} keeps the risky step explicit.
-                        Proposed shopper-facing changes can be tightened by
-                        hand, then approved into the storefront immediately.
-                    </p>
-                    <div className="mt-6 flex flex-wrap gap-3">
+            <div className="space-y-4 p-4 md:p-5">
+                {/* Page header */}
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div>
+                        <h1 className="text-sm font-semibold text-slate-950">
+                            Proposal queue
+                        </h1>
+                        <p className="mt-0.5 text-sm text-slate-500">
+                            Review, edit, and publish changes{' '}
+                            {storeBrand.adminName} prepared.
+                        </p>
+                    </div>
+                    <div className="flex items-center gap-1">
                         {['pending', 'applied', 'rejected', 'all'].map(
                             (status) => (
-                                <Button
+                                <button
                                     key={status}
                                     type="button"
                                     onClick={() =>
@@ -99,100 +86,104 @@ export default function ProposalQueue({
                                             },
                                         )
                                     }
-                                    className={`rounded-full ${
+                                    className={
                                         statusFilter === status
-                                            ? 'bg-white text-slate-900'
-                                            : 'border-white/20 bg-white/8 text-white hover:border-white/40 hover:bg-white/10 hover:text-white'
-                                    }`}
+                                            ? 'rounded-md bg-slate-950 px-3 py-1.5 text-xs font-medium text-white'
+                                            : 'rounded-md px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-100'
+                                    }
                                 >
                                     {status}
-                                </Button>
+                                </button>
                             ),
                         )}
                     </div>
-                </section>
+                </div>
 
-                <section className="grid gap-6 lg:grid-cols-[0.82fr_1.18fr]">
-                    <Card className="rounded-[2rem] border-white/80 bg-white/82 py-0 shadow-sm backdrop-blur">
-                        <CardContent className="px-6 py-6">
-                            <div className="flex items-center justify-between">
-                                <h2 className="text-xl font-semibold text-slate-900">
-                                    Queue summary
-                                </h2>
-                                <Search className="size-5 text-slate-400" />
-                            </div>
-                            <p className="mt-4 text-sm leading-6 text-slate-600">
-                                Pending proposals are the clearest demo surface
-                                for trust. Edit them when needed, approve the
-                                strongest one, and use the storefront as the
-                                before-and-after payoff.
+                {/* Main layout */}
+                <section className="grid gap-4 lg:grid-cols-[0.82fr_1.18fr]">
+                    {/* Left: proposal list */}
+                    <div className="overflow-hidden rounded-lg border border-slate-950/10 bg-white">
+                        <div className="border-b border-slate-950/5 px-4 py-3">
+                            <p className="text-xs font-medium text-slate-500">
+                                {proposals.length} proposal
+                                {proposals.length !== 1 ? 's' : ''}
                             </p>
-                            <div className="mt-6 space-y-3">
-                                {proposals.map((proposal) => (
+                        </div>
+                        <ul role="list" className="divide-y divide-slate-950/5">
+                            {proposals.map((proposal) => (
+                                <li key={`summary-${proposal.id}`}>
                                     <button
-                                        key={`summary-${proposal.id}`}
                                         type="button"
                                         onClick={() =>
                                             setEditingProposalId(proposal.id)
                                         }
-                                        className={`block w-full rounded-2xl border px-4 py-4 text-left transition ${
+                                        className={`w-full px-4 py-3 text-left ${
                                             editingProposalId === proposal.id
-                                                ? 'border-slate-900 bg-slate-900 text-white'
-                                                : 'border-slate-200 bg-slate-50 text-slate-900 hover:border-slate-300'
+                                                ? 'bg-slate-950 text-white'
+                                                : 'hover:bg-slate-50'
                                         }`}
                                     >
-                                        <p className="text-xs tracking-[0.2em] uppercase opacity-70">
-                                            {proposal.type.replaceAll('_', ' ')}
+                                        <p
+                                            className={`text-xs ${editingProposalId === proposal.id ? 'text-white/60' : 'text-slate-400'}`}
+                                        >
+                                            {proposal.type.replaceAll(
+                                                '_',
+                                                ' ',
+                                            )}
                                         </p>
-                                        <p className="mt-2 font-semibold">
+                                        <p className="mt-0.5 text-sm font-medium">
                                             {proposal.target_label}
                                         </p>
-                                        <p className="mt-2 text-sm opacity-80">
+                                        <p
+                                            className={`mt-0.5 text-xs ${editingProposalId === proposal.id ? 'text-white/50' : 'text-slate-400'}`}
+                                        >
                                             {proposal.created_at}
                                         </p>
                                     </button>
-                                ))}
-                            </div>
-                        </CardContent>
-                    </Card>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
 
-                    <div className="space-y-4">
+                    {/* Right: proposal details */}
+                    <div className="space-y-3">
                         {proposals.map((proposal) => {
                             const content =
                                 proposal.type === 'review_response'
                                     ? (proposal.payload.response_draft ?? '')
                                     : (proposal.payload.after ?? '');
-                            const isEditing = editingProposalId === proposal.id;
+                            const isEditing =
+                                editingProposalId === proposal.id;
 
                             return (
                                 <article
                                     key={proposal.id}
-                                    className={`rounded-[2rem] border p-6 shadow-sm transition ${
+                                    className={`rounded-lg border bg-white p-5 ${
                                         isEditing
-                                            ? 'border-slate-900 bg-white'
-                                            : 'border-slate-200 bg-white'
+                                            ? 'border-slate-950/30'
+                                            : 'border-slate-950/10'
                                     }`}
                                 >
-                                    <div className="flex flex-wrap items-start justify-between gap-4">
+                                    <div className="flex flex-wrap items-start justify-between gap-3">
                                         <div>
-                                            <p className="text-xs tracking-[0.2em] text-slate-500 uppercase">
+                                            <p className="text-xs text-slate-400">
                                                 {proposal.type.replaceAll(
                                                     '_',
                                                     ' ',
                                                 )}
                                             </p>
-                                            <h2 className="mt-2 text-2xl font-semibold text-slate-900">
+                                            <h2 className="mt-0.5 text-sm font-semibold text-slate-950">
                                                 {proposal.target_label}
                                             </h2>
                                         </div>
-                                        <div className="flex flex-wrap gap-2">
-                                            <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800">
+                                        <div className="flex items-center gap-2">
+                                            <span className="rounded-md bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700">
                                                 {(
                                                     proposal.confidence * 100
                                                 ).toFixed(0)}
                                                 %
                                             </span>
-                                            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+                                            <span className="rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600">
                                                 {proposal.status}
                                             </span>
                                         </div>
@@ -200,7 +191,7 @@ export default function ProposalQueue({
 
                                     {isEditing ? (
                                         <form
-                                            className="mt-5 space-y-4"
+                                            className="mt-4 space-y-3"
                                             onSubmit={(event) => {
                                                 event.preventDefault();
                                                 form.patch(
@@ -218,7 +209,7 @@ export default function ProposalQueue({
                                                 );
                                             }}
                                         >
-                                            <label className="block text-sm font-medium text-slate-700">
+                                            <label className="block text-xs font-medium text-slate-700">
                                                 Proposed content
                                                 <textarea
                                                     value={form.data.content}
@@ -228,10 +219,10 @@ export default function ProposalQueue({
                                                             event.target.value,
                                                         )
                                                     }
-                                                    className="mt-2 min-h-32 w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm transition outline-none focus:border-slate-900"
+                                                    className="mt-1.5 min-h-28 w-full rounded-md border border-slate-950/10 px-3 py-2 text-sm outline-none focus:border-slate-950/30"
                                                 />
                                             </label>
-                                            <label className="block text-sm font-medium text-slate-700">
+                                            <label className="block text-xs font-medium text-slate-700">
                                                 Rationale
                                                 <textarea
                                                     value={form.data.rationale}
@@ -241,10 +232,10 @@ export default function ProposalQueue({
                                                             event.target.value,
                                                         )
                                                     }
-                                                    className="mt-2 min-h-24 w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm transition outline-none focus:border-slate-900"
+                                                    className="mt-1.5 min-h-20 w-full rounded-md border border-slate-950/10 px-3 py-2 text-sm outline-none focus:border-slate-950/30"
                                                 />
                                             </label>
-                                            <label className="block text-sm font-medium text-slate-700">
+                                            <label className="block text-xs font-medium text-slate-700">
                                                 Confidence
                                                 <input
                                                     type="number"
@@ -261,16 +252,16 @@ export default function ProposalQueue({
                                                             ),
                                                         )
                                                     }
-                                                    className="mt-2 w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm transition outline-none focus:border-slate-900"
+                                                    className="mt-1.5 w-full rounded-md border border-slate-950/10 px-3 py-2 text-sm outline-none focus:border-slate-950/30"
                                                 />
                                             </label>
-                                            <div className="flex flex-wrap gap-3">
+                                            <div className="flex items-center gap-2">
                                                 <button
                                                     type="submit"
                                                     disabled={form.processing}
-                                                    className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:opacity-60"
+                                                    className="inline-flex items-center gap-2 rounded-lg bg-slate-950 py-2 pl-2 pr-3 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60"
                                                 >
-                                                    <Save className="size-4" />
+                                                    <Save className="size-4 shrink-0" />
                                                     Save edits
                                                 </button>
                                                 <button
@@ -280,7 +271,7 @@ export default function ProposalQueue({
                                                             null,
                                                         )
                                                     }
-                                                    className="rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-900 hover:text-slate-900"
+                                                    className="rounded-lg border border-slate-950/10 px-3 py-2 text-sm font-medium text-slate-600 hover:border-slate-950/30"
                                                 >
                                                     Cancel
                                                 </button>
@@ -288,21 +279,21 @@ export default function ProposalQueue({
                                         </form>
                                     ) : (
                                         <>
-                                            <p className="mt-4 text-sm leading-7 text-slate-600">
+                                            <p className="mt-3 text-sm text-pretty text-slate-500">
                                                 {proposal.rationale}
                                             </p>
-                                            <div className="mt-4 rounded-2xl bg-slate-50 p-4">
-                                                <p className="font-medium text-slate-900">
+                                            <div className="mt-3 rounded bg-slate-50 p-3">
+                                                <p className="text-xs font-medium text-slate-700">
                                                     {proposal.type ===
                                                     'review_response'
                                                         ? 'Suggested response'
                                                         : 'Suggested change'}
                                                 </p>
-                                                <p className="mt-2 text-sm leading-7 text-slate-600">
+                                                <p className="mt-1.5 text-sm text-pretty text-slate-600">
                                                     {content}
                                                 </p>
                                             </div>
-                                            <div className="mt-5 flex flex-wrap gap-3">
+                                            <div className="mt-4 flex flex-wrap items-center gap-2">
                                                 {proposal.status ===
                                                 'pending' ? (
                                                     <>
@@ -320,9 +311,9 @@ export default function ProposalQueue({
                                                                     proposal.id,
                                                                 );
                                                             }}
-                                                            className="inline-flex items-center gap-2 rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-900 hover:text-slate-900"
+                                                            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-950/10 py-1.5 pl-1.5 pr-3 text-xs font-medium text-slate-600 hover:border-slate-950/30"
                                                         >
-                                                            <PencilLine className="size-4" />
+                                                            <PencilLine className="size-4 shrink-0" />
                                                             Edit
                                                         </button>
                                                         <button
@@ -337,9 +328,9 @@ export default function ProposalQueue({
                                                                     ).url,
                                                                 )
                                                             }
-                                                            className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700"
+                                                            className="inline-flex items-center gap-1.5 rounded-lg bg-slate-950 py-1.5 pl-1.5 pr-3 text-xs font-medium text-white hover:bg-slate-800"
                                                         >
-                                                            <ShieldCheck className="size-4" />
+                                                            <ShieldCheck className="size-4 shrink-0" />
                                                             Approve
                                                         </button>
                                                         <button
@@ -354,9 +345,9 @@ export default function ProposalQueue({
                                                                     ).url,
                                                                 )
                                                             }
-                                                            className="inline-flex items-center gap-2 rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-900 hover:text-slate-900"
+                                                            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-950/10 py-1.5 pl-1.5 pr-3 text-xs font-medium text-slate-600 hover:border-slate-950/30"
                                                         >
-                                                            <ShieldX className="size-4" />
+                                                            <ShieldX className="size-4 shrink-0" />
                                                             Reject
                                                         </button>
                                                     </>
@@ -369,7 +360,7 @@ export default function ProposalQueue({
                                                                     proposal.target_slug,
                                                             }).url
                                                         }
-                                                        className="rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-900 hover:text-slate-900"
+                                                        className="rounded-lg border border-slate-950/10 px-3 py-1.5 text-xs font-medium text-slate-600 hover:border-slate-950/30"
                                                     >
                                                         Preview storefront
                                                     </Link>

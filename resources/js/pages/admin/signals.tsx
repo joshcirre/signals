@@ -428,6 +428,14 @@ function SignalsPage({
                             <CirclePlay className="size-4 shrink-0" />
                             Analyze new reviews
                         </button>
+                        {latestRun ? (
+                            <Link
+                                href={admin.reviewRuns.show(latestRun.id).url}
+                                className="rounded-lg border border-slate-950/10 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                            >
+                                Open latest run
+                            </Link>
+                        ) : null}
                         <Link
                             href={admin.proposals.index().url}
                             className="rounded-lg border border-slate-950/10 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
@@ -584,6 +592,7 @@ function SignalsPage({
                                             runState?.status === 'running' &&
                                             index ===
                                                 streamEvents.length - 1;
+
                                         return (
                                             <div
                                                 key={event.id}

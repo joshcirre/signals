@@ -11,8 +11,8 @@ class ReviewAnalysisRunController extends Controller
 {
     public function __invoke(Request $request, QueueReviewAnalysisRunAction $queueReviewAnalysisRun): RedirectResponse
     {
-        $queueReviewAnalysisRun->handle($request->user());
+        $run = $queueReviewAnalysisRun->handle($request->user());
 
-        return back();
+        return to_route('admin.review-runs.show', $run);
     }
 }

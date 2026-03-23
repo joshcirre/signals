@@ -38,6 +38,12 @@ class ProductShowController extends Controller
                 'title' => $review->title,
                 'body' => $review->body,
                 'reviewed_at' => $review->reviewed_at?->toDateString(),
+                'approved_response' => $review->response_draft_status === 'approved'
+                    ? $review->response_draft
+                    : null,
+                'response_approved_at' => $review->response_draft_status === 'approved'
+                    ? $review->response_draft_approved_at?->toDateString()
+                    : null,
             ]),
         ]);
     }

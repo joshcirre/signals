@@ -1,9 +1,6 @@
 import { Head } from '@inertiajs/react';
 import { Bot, ShieldCheck, TerminalSquare } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
 import AppLayout from '@/layouts/app-layout';
-import { storeBrand } from '@/lib/brand';
 import { dashboard } from '@/routes';
 import admin from '@/routes/admin';
 import type { BreadcrumbItem } from '@/types';
@@ -41,29 +38,24 @@ export default function AuditLog({ entries }: AuditLogPageProps) {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Audit Log" />
-            <div className="space-y-8 p-4 md:p-6">
-                <Card className="rounded-[2rem] border-white/80 bg-white/82 py-0 shadow-sm backdrop-blur">
-                    <CardContent className="px-6 py-6">
-                        <div className="flex flex-wrap items-end justify-between gap-4">
-                            <div>
-                                <Badge className="rounded-full border-slate-200 bg-slate-50 px-3 py-1 text-[0.68rem] tracking-[0.24em] text-slate-700 uppercase hover:bg-slate-50">
-                                    {storeBrand.adminName}
-                                </Badge>
-                                <p className="text-sm tracking-[0.25em] text-slate-500 uppercase">
-                                    Governance
-                                </p>
-                                <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950">
-                                    Every Codex and human action stays visible.
-                                </h1>
-                            </div>
-                            <div className="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white">
-                                {entries.length} recent events
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
+            <div className="space-y-4 p-4 md:p-5">
+                {/* Page header */}
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div>
+                        <h1 className="text-sm font-semibold text-slate-950">
+                            Audit log
+                        </h1>
+                        <p className="mt-0.5 text-sm text-slate-500">
+                            Every Codex and human action, recorded.
+                        </p>
+                    </div>
+                    <span className="rounded-md bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-600">
+                        {entries.length} events
+                    </span>
+                </div>
 
-                <section className="space-y-4">
+                {/* Entries */}
+                <section className="space-y-2">
                     {entries.map((entry) => {
                         const Icon =
                             actorIcons[
@@ -73,21 +65,19 @@ export default function AuditLog({ entries }: AuditLogPageProps) {
                         return (
                             <article
                                 key={entry.id}
-                                className="rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm"
+                                className="rounded-lg border border-slate-950/10 bg-white p-4"
                             >
                                 <div className="flex flex-wrap items-start justify-between gap-4">
                                     <div className="flex items-start gap-3">
-                                        <div className="rounded-2xl bg-slate-100 p-3 text-slate-700">
-                                            <Icon className="size-5" />
-                                        </div>
+                                        <Icon className="mt-0.5 size-4 shrink-0 text-slate-400" />
                                         <div>
-                                            <p className="text-xs tracking-[0.25em] text-slate-500 uppercase">
+                                            <p className="text-xs text-slate-400">
                                                 {entry.actor_type}
                                             </p>
-                                            <h2 className="mt-2 text-lg font-semibold text-slate-950">
+                                            <h2 className="mt-0.5 text-sm font-medium text-slate-950">
                                                 {entry.action}
                                             </h2>
-                                            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+                                            <p className="mt-1 max-w-3xl text-sm text-pretty text-slate-500">
                                                 {String(
                                                     entry.metadata.message ??
                                                         'No message recorded.',
@@ -95,7 +85,7 @@ export default function AuditLog({ entries }: AuditLogPageProps) {
                                             </p>
                                         </div>
                                     </div>
-                                    <div className="text-right text-sm text-slate-500">
+                                    <div className="text-right text-xs text-slate-400">
                                         <p>
                                             {new Date(
                                                 entry.created_at,
@@ -114,7 +104,7 @@ export default function AuditLog({ entries }: AuditLogPageProps) {
                                 {Object.entries(entry.metadata).filter(
                                     ([key]) => key !== 'message',
                                 ).length > 0 ? (
-                                    <div className="mt-4 rounded-2xl bg-slate-50 p-4 text-sm text-slate-700">
+                                    <div className="mt-3 rounded bg-slate-50 p-3 text-xs text-slate-600">
                                         <pre className="overflow-x-auto break-words whitespace-pre-wrap">
                                             {JSON.stringify(
                                                 Object.fromEntries(

@@ -19,6 +19,8 @@ test('signals demo seeder is idempotent', function (): void {
             'studio-joggers',
             'trail-blend-crewneck',
         ])->count())->toBe(4)
+        ->and(Product::query()->where('slug', 'studio-joggers')->value('hero_image_url'))
+        ->toBe('https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=1200&q=80')
         ->and(Review::query()->count())->toBe(20)
         ->and(Proposal::query()->count())->toBe(2)
         ->and(ReviewAnalysisRun::query()->count())->toBe(1)

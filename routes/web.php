@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\ProposalQueueController;
 use App\Http\Controllers\Admin\ProposalRejectionController;
 use App\Http\Controllers\Admin\ProposalUpdateController;
 use App\Http\Controllers\Admin\ReviewAnalysisRunController;
+use App\Http\Controllers\Admin\ReviewAnalysisRunShowController;
 use App\Http\Controllers\Admin\SignalsController;
 use App\Http\Controllers\Admin\SignalsDeviceTokenController;
 use App\Http\Controllers\Storefront\ProductIndexController;
@@ -24,6 +25,7 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
         Route::get('signals', [SignalsController::class, 'index'])->name('admin.signals');
         Route::get('audit-log', AuditLogController::class)->name('admin.audit-log');
         Route::get('proposals', ProposalQueueController::class)->name('admin.proposals.index');
+        Route::get('review-runs/{reviewAnalysisRun}', ReviewAnalysisRunShowController::class)->name('admin.review-runs.show');
         Route::post('review-runs', ReviewAnalysisRunController::class)->name('admin.review-runs.store');
         Route::post('helper-token', SignalsDeviceTokenController::class)->name('admin.helper-token.store');
         Route::post('proposals/{proposal}/approve', ProposalApprovalController::class)->name('admin.proposals.approve');

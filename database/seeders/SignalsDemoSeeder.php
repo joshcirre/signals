@@ -76,7 +76,7 @@ class SignalsDemoSeeder extends Seeder
                 'price_cents' => 6200,
                 'short_description' => 'Tapered joggers with stretch and structure for travel days and errands.',
                 'description' => 'Studio Joggers balance comfort and polish with a tapered leg, secure waistband, and enough stretch to move naturally all day.',
-                'hero_image_url' => 'https://images.unsplash.com/photo-1506629905607-d9d06ec8a174?auto=format&fit=crop&w=1200&q=80',
+                'hero_image_url' => 'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=1200&q=80',
             ],
             [
                 'name' => 'Trail Blend Crewneck',
