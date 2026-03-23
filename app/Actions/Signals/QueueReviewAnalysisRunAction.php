@@ -22,7 +22,7 @@ class QueueReviewAnalysisRunAction
         ?string $focus = null,
     ): ReviewAnalysisRun {
         $normalizedKindOrPrompt = $kindOrPrompt ?? 'review_analysis';
-        $kind = in_array($normalizedKindOrPrompt, ['review_analysis', 'storefront_adaptation'], true)
+        $kind = in_array($normalizedKindOrPrompt, ['review_analysis', 'storefront_adaptation', 'ui_refinement'], true)
             ? $normalizedKindOrPrompt
             : 'review_analysis';
         $promptOverride = $kind === $normalizedKindOrPrompt
@@ -100,6 +100,37 @@ class QueueReviewAnalysisRunAction
                 'context_json' => $normalizedFocus === ''
                     ? null
                     : ['focus' => $normalizedFocus],
+            ];
+        }
+
+        if ($kind === 'ui_refinement') {
+            if ($proposal === null || $proposal->type !== 'storefront_widget') {
+                throw new InvalidArgumentException('UI refinement runs require a storefront_widget proposal.');
+            }
+
+            $payload = $proposal->payload_json ?? [];
+            $existingSource = isset($payload['arrow_source']) ? json_encode($payload['arrow_source'], JSON_PRETTY_PRINT) : '{}';
+            $position = is_string($payload['position'] ?? null) ? $payload['position'] : 'below_products';
+            $title = is_string($payload['title'] ?? null) ? $payload['title'] : 'Storefront widget';
+            $normalizedFocus = is_string($focus) ? mb_trim($focus) : '';
+
+            $prompt = "You are refining an existing live storefront UI widget built with Arrow.js.\n\n"
+                ."Widget proposal ID: {$proposal->id}\n"
+                ."Position: {$position}\n"
+                ."Title: {$title}\n\n"
+                ."Current Arrow source:\n{$existingSource}\n\n"
+                .($normalizedFocus !== '' ? "Requested changes: {$normalizedFocus}\n\n" : '')
+                ."Call create_storefront_widget_proposal_tool with the updated arrow_source and proposal_id={$proposal->id} to push changes live. Keep the position and title unless explicitly changed.";
+
+            return [
+                'prompt' => $prompt,
+                'message' => 'Queued a UI refinement run — Codex will update the widget live.',
+                'context_json' => [
+                    'arrow_proposal_id' => $proposal->id,
+                    'position' => $position,
+                    'title' => $title,
+                    'focus' => $normalizedFocus ?: null,
+                ],
             ];
         }
 

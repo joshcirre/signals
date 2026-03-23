@@ -1,5 +1,6 @@
-import { Head, Link, router, useForm } from '@inertiajs/react';
-import { PencilLine, Save, ShieldCheck, ShieldX } from 'lucide-react';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
+import { useEcho } from '@laravel/echo-react';
+import { PencilLine, Save, ShieldCheck, ShieldX, Wand2 } from 'lucide-react';
 import { useState } from 'react';
 import {
     AdminHeader,
@@ -9,6 +10,7 @@ import {
     AdminSurfaceBody,
     AdminSurfaceHeader,
 } from '@/components/admin-page';
+import { ArrowSandboxWidget } from '@/components/arrow-sandbox-widget';
 import AppLayout from '@/layouts/app-layout';
 import { cn } from '@/lib/utils';
 import type { BreadcrumbItem } from '@/types';
@@ -27,27 +29,49 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
+interface ArrowSource {
+    'main.ts': string;
+    'main.css'?: string;
+}
+
+interface Proposal {
+    id: number;
+    type: string;
+    status: string;
+    target_type: string;
+    target_id: number;
+    target_label: string;
+    target_slug: string | null;
+    rationale: string;
+    confidence: number;
+    created_at: string;
+    payload: {
+        field?: string | null;
+        after?: string | null;
+        response_draft?: string | null;
+        position?: string;
+        title?: string;
+        arrow_source?: ArrowSource;
+    };
+}
+
+interface PageProps {
+    auth: { user: { id: number } };
+    [key: string]: unknown;
+}
+
 interface ProposalQueueProps {
     filters: {
         status: string;
     };
-    proposals: Array<{
-        id: number;
-        type: string;
-        status: string;
-        target_type: string;
-        target_id: number;
-        target_label: string;
-        target_slug: string | null;
-        rationale: string;
-        confidence: number;
-        created_at: string;
-        payload: {
-            field?: string | null;
-            after?: string | null;
-            response_draft?: string | null;
-        };
-    }>;
+    proposals: Proposal[];
+}
+
+interface ProposalUpdatedEvent {
+    id: number;
+    type: string;
+    status: string;
+    payload: Proposal['payload'];
 }
 
 function proposalFieldLabel(field: string | null | undefined): string {
@@ -60,15 +84,18 @@ function proposalFieldLabel(field: string | null | undefined): string {
 
 export default function ProposalQueue({
     filters,
-    proposals,
+    proposals: initialProposals,
 }: ProposalQueueProps) {
+    const { auth } = usePage<PageProps>().props;
     const statusFilter = filters.status;
+    const [proposals, setProposals] = useState<Proposal[]>(initialProposals);
     const [selectedProposalId, setSelectedProposalId] = useState<number | null>(
-        proposals[0]?.id ?? null,
+        initialProposals[0]?.id ?? null,
     );
     const [editingProposalId, setEditingProposalId] = useState<number | null>(
         null,
     );
+    const [refineQuery, setRefineQuery] = useState('');
     const form = useForm({
         content: '',
         rationale: '',
@@ -101,6 +128,21 @@ export default function ProposalQueue({
     const isEditingSelected =
         selectedProposal !== null && editingProposalId === selectedProposal.id;
 
+    useEcho<ProposalUpdatedEvent>(
+        `signals.user.${auth.user.id}`,
+        '.proposal.updated',
+        (payload) => {
+            setProposals((current) =>
+                current.map((p) =>
+                    p.id === payload.id
+                        ? { ...p, status: payload.status, payload: payload.payload }
+                        : p,
+                ),
+            );
+        },
+        [auth.user.id],
+    );
+
     const beginEditingProposal = (proposalId: number) => {
         const proposal = proposals.find((item) => item.id === proposalId);
 
@@ -118,6 +160,22 @@ export default function ProposalQueue({
         });
         setSelectedProposalId(proposal.id);
         setEditingProposalId(proposal.id);
+    };
+
+    const refineWithCodex = () => {
+        if (!selectedProposal) {
+            return;
+        }
+
+        router.post(
+            admin.reviewRuns.store().url,
+            {
+                kind: 'ui_refinement',
+                proposal_id: selectedProposal.id,
+                focus: refineQuery,
+                redirect_to: 'proposals',
+            },
+        );
     };
 
     return (
@@ -217,7 +275,12 @@ export default function ProposalQueue({
                                                     )}
                                                 </p>
                                                 <p className="mt-1 truncate text-sm font-medium">
-                                                    {proposal.target_label}
+                                                    {proposal.type ===
+                                                    'storefront_widget'
+                                                        ? (proposal.payload
+                                                              .title ??
+                                                          proposal.target_label)
+                                                        : proposal.target_label}
                                                 </p>
                                                 <p
                                                     className={cn(
@@ -283,7 +346,11 @@ export default function ProposalQueue({
                         <AdminSurfaceHeader
                             title={
                                 selectedProposal
-                                    ? selectedProposal.target_label
+                                    ? (selectedProposal.type ===
+                                      'storefront_widget'
+                                          ? (selectedProposal.payload.title ??
+                                            selectedProposal.target_label)
+                                          : selectedProposal.target_label)
                                     : 'Nothing selected'
                             }
                             description={
@@ -312,7 +379,14 @@ export default function ProposalQueue({
                         />
                         <AdminSurfaceBody className="space-y-4">
                             {selectedProposal ? (
-                                isEditingSelected ? (
+                                selectedProposal.type === 'storefront_widget' ? (
+                                    <StorefrontWidgetDetail
+                                        proposal={selectedProposal}
+                                        refineQuery={refineQuery}
+                                        onRefineQueryChange={setRefineQuery}
+                                        onRefine={refineWithCodex}
+                                    />
+                                ) : isEditingSelected ? (
                                     <form
                                         className="space-y-4"
                                         onSubmit={(event) => {
@@ -564,5 +638,146 @@ export default function ProposalQueue({
                 </div>
             </AdminPage>
         </AppLayout>
+    );
+}
+
+function StorefrontWidgetDetail({
+    proposal,
+    refineQuery,
+    onRefineQueryChange,
+    onRefine,
+}: {
+    proposal: Proposal;
+    refineQuery: string;
+    onRefineQueryChange: (v: string) => void;
+    onRefine: () => void;
+}) {
+    const arrowSource = proposal.payload.arrow_source;
+
+    return (
+        <div className="space-y-4">
+            <div className="grid gap-3 md:grid-cols-2">
+                <div className="rounded-sm border border-slate-950/7 bg-slate-50 px-3.5 py-3">
+                    <p className="text-[10px] font-medium tracking-[0.18em] text-slate-400 uppercase">
+                        Position
+                    </p>
+                    <p className="mt-1 text-sm font-medium capitalize text-slate-950">
+                        {(proposal.payload.position ?? 'below_products').replaceAll('_', ' ')}
+                    </p>
+                </div>
+                <div className="rounded-sm border border-slate-950/7 bg-slate-50 px-3.5 py-3">
+                    <p className="text-[10px] font-medium tracking-[0.18em] text-slate-400 uppercase">
+                        Status
+                    </p>
+                    <p className="mt-1 text-sm font-medium capitalize text-slate-950">
+                        {proposal.status}
+                    </p>
+                </div>
+            </div>
+
+            <div className="rounded-sm border border-slate-950/7 bg-slate-50 px-4 py-4">
+                <p className="text-[10px] font-medium tracking-[0.18em] text-slate-400 uppercase">
+                    Rationale
+                </p>
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                    {proposal.rationale}
+                </p>
+            </div>
+
+            {arrowSource?.['main.ts'] ? (
+                <div className="overflow-hidden rounded-sm border border-slate-950/7">
+                    <div className="border-b border-slate-950/6 bg-slate-50 px-4 py-2.5">
+                        <p className="text-[10px] font-medium tracking-[0.18em] text-slate-400 uppercase">
+                            Live preview
+                        </p>
+                    </div>
+                    <div className="bg-white p-4">
+                        <ArrowSandboxWidget source={arrowSource} />
+                    </div>
+                </div>
+            ) : (
+                <div className="rounded-sm border border-dashed border-slate-950/10 px-4 py-8 text-center text-sm text-slate-400">
+                    No Arrow source attached yet.
+                </div>
+            )}
+
+            {proposal.status === 'pending' ? (
+                <div className="flex flex-wrap items-center gap-2">
+                    <button
+                        type="button"
+                        onClick={() =>
+                            router.post(
+                                admin.proposals.approve({
+                                    proposal: proposal.id,
+                                }).url,
+                            )
+                        }
+                        className="inline-flex items-center gap-2 rounded-sm bg-slate-950 px-3 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
+                    >
+                        <ShieldCheck className="size-4" />
+                        Approve and publish
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() =>
+                            router.post(
+                                admin.proposals.reject({
+                                    proposal: proposal.id,
+                                }).url,
+                            )
+                        }
+                        className="inline-flex items-center gap-2 rounded-sm border border-slate-950/10 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition hover:border-slate-950/20 hover:bg-slate-50"
+                    >
+                        <ShieldX className="size-4" />
+                        Reject
+                    </button>
+                </div>
+            ) : null}
+
+            <div className="rounded-sm border border-slate-950/7 bg-slate-50 px-4 py-4">
+                <p className="text-[10px] font-medium tracking-[0.18em] text-slate-400 uppercase">
+                    Refine with Codex
+                </p>
+                <p className="mt-2 text-sm text-slate-500">
+                    Describe a change and Codex will update the widget live.
+                </p>
+                <div className="mt-3 flex gap-2">
+                    <input
+                        type="text"
+                        value={refineQuery}
+                        onChange={(e) => onRefineQueryChange(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                                onRefine();
+                            }
+                        }}
+                        placeholder="Make the chart taller, add a legend…"
+                        className="flex-1 rounded-sm border border-slate-950/10 bg-white px-3 py-2 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-slate-950/20"
+                    />
+                    <button
+                        type="button"
+                        onClick={onRefine}
+                        className="inline-flex items-center gap-2 rounded-sm bg-slate-950 px-3 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
+                    >
+                        <Wand2 className="size-4" />
+                        Refine
+                    </button>
+                </div>
+            </div>
+
+            <div className="rounded-sm border border-slate-950/7 bg-slate-50 px-4 py-4">
+                <p className="text-[10px] font-medium tracking-[0.18em] text-slate-400 uppercase">
+                    Next step
+                </p>
+                <div className="mt-3">
+                    <Link
+                        href="/"
+                        className="rounded-sm border border-slate-950/10 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition hover:border-slate-950/20 hover:bg-slate-50"
+                    >
+                        Preview storefront
+                    </Link>
+                </div>
+            </div>
+        </div>
     );
 }

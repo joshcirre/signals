@@ -1,5 +1,6 @@
 import { Link } from '@inertiajs/react';
 import { ArrowLeft, Star } from 'lucide-react';
+import { LiveWidgetSlot, type LiveWidget } from '@/components/arrow-sandbox-widget';
 import { StorefrontShell } from '@/components/storefront-shell';
 import { storeBrand } from '@/lib/brand';
 
@@ -32,9 +33,11 @@ interface ReviewData {
 export default function StorefrontShow({
     product,
     reviews,
+    liveWidgets = [],
 }: {
     product: ProductPageData;
     reviews: ReviewData[];
+    liveWidgets?: LiveWidget[];
 }) {
     return (
         <StorefrontShell title={`${product.name} · ${storeBrand.name}`}>
@@ -206,6 +209,7 @@ export default function StorefrontShow({
                     </div>
                 </section>
             ) : null}
+            <LiveWidgetSlot widgets={liveWidgets} position="below_products" />
         </StorefrontShell>
     );
 }

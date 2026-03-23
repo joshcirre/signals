@@ -1,5 +1,6 @@
 import { Link } from '@inertiajs/react';
 import { ArrowRight, Star } from 'lucide-react';
+import { LiveWidgetSlot, type LiveWidget } from '@/components/arrow-sandbox-widget';
 import { StorefrontShell } from '@/components/storefront-shell';
 import { storeBrand } from '@/lib/brand';
 
@@ -18,8 +19,10 @@ interface ProductCard {
 
 export default function StorefrontIndex({
     products,
+    liveWidgets = [],
 }: {
     products: ProductCard[];
+    liveWidgets?: LiveWidget[];
 }) {
     const featuredProduct = products[0] ?? null;
 
@@ -50,6 +53,8 @@ export default function StorefrontIndex({
                     </Link>
                 </div>
             </section>
+
+            <LiveWidgetSlot widgets={liveWidgets} position="hero" />
 
             {/* Featured product */}
             {featuredProduct ? (
@@ -173,6 +178,7 @@ export default function StorefrontIndex({
                     ))}
                 </div>
             </section>
+            <LiveWidgetSlot widgets={liveWidgets} position="below_products" />
         </StorefrontShell>
     );
 }

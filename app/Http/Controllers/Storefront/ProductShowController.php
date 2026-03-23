@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Storefront;
 
 use App\Http\Controllers\Controller;
 use App\Models\Product;
+use App\Models\Proposal;
 use App\Models\Review;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -31,6 +32,17 @@ class ProductShowController extends Controller
                 'average_rating' => round((float) $product->reviews->avg('rating'), 1),
                 'review_count' => $product->reviews->count(),
             ],
+            'liveWidgets' => Proposal::query()
+                ->where('type', 'storefront_widget')
+                ->where('status', 'applied')
+                ->latest('applied_at')
+                ->get()
+                ->map(fn (Proposal $proposal): array => [
+                    'id' => $proposal->id,
+                    'position' => $proposal->payload_json['position'] ?? 'below_products',
+                    'title' => $proposal->payload_json['title'] ?? '',
+                    'arrow_source' => $proposal->payload_json['arrow_source'] ?? [],
+                ]),
             'reviews' => $product->reviews->map(fn (Review $review): array => [
                 'id' => $review->id,
                 'author_name' => $review->author_name,

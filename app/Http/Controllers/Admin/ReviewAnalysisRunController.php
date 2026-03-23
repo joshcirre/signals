@@ -23,6 +23,13 @@ class ReviewAnalysisRunController extends Controller
                 ->firstOrFail();
         }
 
+        if ($kind === 'ui_refinement') {
+            $proposal = Proposal::query()
+                ->whereKey((int) $request->integer('proposal_id'))
+                ->where('type', 'storefront_widget')
+                ->firstOrFail();
+        }
+
         $run = $queueReviewAnalysisRun->handle(
             $request->user(),
             $kind,
@@ -35,6 +42,10 @@ class ReviewAnalysisRunController extends Controller
             $parameters = $focus !== '' ? ['q' => $focus] : [];
 
             return to_route('admin.signals', $parameters);
+        }
+
+        if ($request->string('redirect_to')->toString() === 'proposals') {
+            return to_route('admin.proposals.index');
         }
 
         return to_route('admin.review-runs.show', $run);

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Storefront;
 
 use App\Http\Controllers\Controller;
 use App\Models\Product;
+use App\Models\Proposal;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -29,8 +30,21 @@ class ProductIndexController extends Controller
                 'average_rating' => round((float) ($product->reviews_avg_rating ?? 0), 1),
             ]);
 
+        $liveWidgets = Proposal::query()
+            ->where('type', 'storefront_widget')
+            ->where('status', 'applied')
+            ->latest('applied_at')
+            ->get()
+            ->map(fn (Proposal $proposal): array => [
+                'id' => $proposal->id,
+                'position' => $proposal->payload_json['position'] ?? 'below_products',
+                'title' => $proposal->payload_json['title'] ?? '',
+                'arrow_source' => $proposal->payload_json['arrow_source'] ?? [],
+            ]);
+
         return Inertia::render('storefront/index', [
             'products' => $products,
+            'liveWidgets' => $liveWidgets,
         ]);
     }
 }

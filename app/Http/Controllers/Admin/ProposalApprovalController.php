@@ -25,6 +25,11 @@ class ProposalApprovalController extends Controller
             }
         }
 
+        if ($proposal->type === 'storefront_widget') {
+            // Arrow source is stored in payload_json; no extra DB write needed.
+            // The storefront reads directly from applied proposals.
+        }
+
         if ($proposal->type === 'review_response' && $proposal->target_type === 'review') {
             $review = Review::query()->findOrFail($proposal->target_id);
 

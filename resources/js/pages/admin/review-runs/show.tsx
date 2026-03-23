@@ -5,28 +5,16 @@ import {
     Bot,
     CheckCircle2,
     ChevronDown,
-    ChevronLeft,
-    ChevronRight,
     CircleAlert,
     Loader2,
-    MessageSquareText,
-    Sparkles,
-    Terminal,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import {
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
-import {
-    Collapsible,
-    CollapsibleContent,
-    CollapsibleTrigger,
-} from '@/components/ui/collapsible';
+    AdminHeader,
+    AdminPage,
+    AdminPill,
+    AdminSurface,
+} from '@/components/admin-page';
 import AppLayout from '@/layouts/app-layout';
 import { cn } from '@/lib/utils';
 import type { BreadcrumbItem } from '@/types';
@@ -265,14 +253,6 @@ function eventBody(event: RunEventPayload): string {
     );
 }
 
-function runKindLabel(kind: string): string {
-    if (kind === 'storefront_adaptation') {
-        return 'Storefront adaptation';
-    }
-
-    return 'Review analysis';
-}
-
 function formatToolName(toolName: string): string {
     return toolName
         .replace(/^mcp__signals__/, '')
@@ -316,7 +296,7 @@ function unwrapStructuredContent(content: string): string {
     }
 }
 
-function statusBadgeClassName(status: string): string {
+function statusClassName(status: string): string {
     if (status === 'completed') {
         return 'border-emerald-200 bg-emerald-50 text-emerald-700';
     }
@@ -332,338 +312,119 @@ function statusBadgeClassName(status: string): string {
     return 'border-slate-200 bg-slate-50 text-slate-600';
 }
 
-function toolStatusBadgeClassName(status: ToolActivity['status']): string {
-    if (status === 'complete') {
-        return 'border-emerald-200 bg-emerald-50 text-emerald-700';
-    }
-
-    if (status === 'error') {
-        return 'border-red-200 bg-red-50 text-red-700';
-    }
-
-    return 'border-sky-200 bg-sky-50 text-sky-700';
-}
-
-function SummaryChip({ label, value }: { label: string; value: string }) {
-    return (
-        <div className="rounded-sm border border-slate-950/7 bg-slate-50 px-3.5 py-3">
-            <p className="text-[10px] font-medium tracking-[0.18em] text-slate-400 uppercase">
-                {label}
-            </p>
-            <p className="mt-1 text-sm font-medium text-slate-950">{value}</p>
-        </div>
-    );
-}
-
-function ToolWorkbench({
-    toolActivities,
-    resolvedActiveToolIndex,
-    activeTool,
-    isRunning,
-    onPrevious,
-    onNext,
-    onSelect,
+function TraceToolRow({
+    tool,
+    defaultOpen,
 }: {
-    toolActivities: ToolActivity[];
-    resolvedActiveToolIndex: number;
-    activeTool: ToolActivity | null;
-    isRunning: boolean;
-    onPrevious: () => void;
-    onNext: () => void;
-    onSelect: (index: number) => void;
+    tool: ToolActivity;
+    defaultOpen: boolean;
 }) {
+    const [open, setOpen] = useState(defaultOpen);
+    const running = tool.status === 'running';
+    const failed = tool.status === 'error';
+
     return (
-        <Card className="gap-0 overflow-hidden rounded-sm border-slate-950/8">
-            <CardHeader className="border-b border-slate-950/6 px-5 py-4">
-                <div className="flex items-start justify-between gap-4">
-                    <div>
-                        <CardTitle className="text-base text-slate-950">
-                            Tool detail
-                        </CardTitle>
-                    </div>
-                    <Badge
-                        variant="outline"
-                        className="rounded-sm border-slate-200 bg-white px-2.5 py-1 text-[10px] font-medium tracking-[0.16em] text-slate-500 uppercase"
-                    >
-                        {isRunning && toolActivities.length > 1
-                            ? 'Auto cycle'
-                            : 'Manual'}
-                    </Badge>
+        <div className="overflow-hidden rounded-sm border border-slate-950/7 bg-white">
+            <button
+                type="button"
+                onClick={() => setOpen(!open)}
+                className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left transition hover:bg-slate-50"
+            >
+                <span
+                    className={cn(
+                        'shrink-0',
+                        running
+                            ? 'text-sky-400'
+                            : failed
+                              ? 'text-red-400'
+                              : 'text-emerald-400',
+                    )}
+                >
+                    {running ? (
+                        <Loader2 className="size-3.5 animate-spin" />
+                    ) : failed ? (
+                        <CircleAlert className="size-3.5" />
+                    ) : (
+                        <CheckCircle2 className="size-3.5" />
+                    )}
+                </span>
+                <span className="flex-1 truncate text-sm font-medium capitalize text-slate-900">
+                    {formatToolName(tool.name)}
+                </span>
+                <time className="shrink-0 text-xs text-slate-400">
+                    {formatTimestamp(tool.startedAt)}
+                </time>
+                <ChevronDown
+                    className={cn(
+                        'size-3.5 shrink-0 text-slate-400 transition',
+                        open && 'rotate-180',
+                    )}
+                />
+            </button>
+            {open ? (
+                <div className="space-y-2 border-t border-slate-950/6 bg-slate-50 px-4 py-4">
+                    <TraceBlock
+                        label="Call"
+                        content={tool.callContent ?? `Calling ${tool.name}`}
+                    />
+                    <TraceBlock
+                        label="Result"
+                        content={prettifyToolContent(tool.resultContent)}
+                        mono
+                    />
                 </div>
-            </CardHeader>
-            <CardContent className="space-y-5 px-5 py-5">
-                {activeTool ? (
-                    <>
-                        <div className="rounded-sm border border-slate-950/8 bg-slate-950 p-4 text-slate-50">
-                            <div className="flex items-start justify-between gap-3">
-                                <div>
-                                    <p className="text-[10px] font-medium tracking-[0.18em] text-slate-400 uppercase">
-                                        Active tool
-                                    </p>
-                                    <h3 className="mt-2 text-lg font-semibold capitalize">
-                                        {formatToolName(activeTool.name)}
-                                    </h3>
-                                </div>
-                                <Badge
-                                    variant="outline"
-                                    className={cn(
-                                        'rounded-sm px-2.5 py-1 text-[10px] font-medium tracking-[0.16em] uppercase',
-                                        toolStatusBadgeClassName(
-                                            activeTool.status,
-                                        ),
-                                    )}
-                                >
-                                    {activeTool.status}
-                                </Badge>
-                            </div>
-                            <div className="mt-4 grid gap-3">
-                                <WorkbenchPanel
-                                    label="Call"
-                                    content={
-                                        activeTool.callContent ??
-                                        `Calling ${activeTool.name}`
-                                    }
-                                />
-                                <WorkbenchPanel
-                                    label="Result"
-                                    content={prettifyToolContent(
-                                        activeTool.resultContent,
-                                    )}
-                                    mono
-                                />
-                            </div>
-                            <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-slate-400">
-                                <span>
-                                    Started{' '}
-                                    {formatTimestamp(activeTool.startedAt)}
-                                </span>
-                                <span className="text-slate-600">•</span>
-                                <span>
-                                    Finished{' '}
-                                    {formatTimestamp(activeTool.completedAt)}
-                                </span>
-                            </div>
-                        </div>
-
-                        <div className="space-y-3">
-                            <div className="flex items-center justify-between gap-3">
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={onPrevious}
-                                    className="rounded-sm border-slate-200 bg-white px-3"
-                                >
-                                    <ChevronLeft className="size-4" />
-                                    Previous
-                                </Button>
-                                <p className="text-xs font-medium text-slate-500">
-                                    {(resolvedActiveToolIndex + 1).toString()} /{' '}
-                                    {toolActivities.length.toString()}
-                                </p>
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={onNext}
-                                    className="rounded-sm border-slate-200 bg-white px-3"
-                                >
-                                    Next
-                                    <ChevronRight className="size-4" />
-                                </Button>
-                            </div>
-
-                            <div className="flex gap-2 overflow-x-auto pb-1">
-                                {toolActivities.map((tool, index) => (
-                                    <button
-                                        key={tool.id}
-                                        type="button"
-                                        onClick={() => onSelect(index)}
-                                        className={cn(
-                                            'min-w-0 shrink-0 rounded-sm border px-3 py-2 text-left transition',
-                                            index === resolvedActiveToolIndex
-                                                ? 'border-slate-950 bg-slate-950 text-white'
-                                                : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50',
-                                        )}
-                                    >
-                                        <div className="flex items-center gap-2">
-                                            <span className="rounded-sm bg-white/10 px-1.5 py-0.5 text-[10px] font-semibold tracking-[0.16em] uppercase">
-                                                {(index + 1).toString()}
-                                            </span>
-                                            <span className="max-w-36 truncate text-xs font-medium capitalize">
-                                                {formatToolName(tool.name)}
-                                            </span>
-                                        </div>
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                    </>
-                ) : (
-                    <div className="rounded-sm border border-dashed border-slate-950/10 bg-slate-50 px-4 py-8 text-sm text-slate-500">
-                        Tool calls will appear here as soon as Codex starts
-                        using the Signals MCP tools.
-                    </div>
-                )}
-            </CardContent>
-        </Card>
-    );
-}
-
-function WorkbenchPanel({
-    label,
-    content,
-    mono = false,
-}: {
-    label: string;
-    content: string;
-    mono?: boolean;
-}) {
-    return (
-        <div className="rounded-sm border border-white/10 bg-white/5 p-3">
-            <p className="text-[10px] font-medium tracking-[0.18em] text-slate-400 uppercase">
-                {label}
-            </p>
-            {mono ? (
-                <pre className="mt-2 max-h-56 overflow-y-auto text-sm leading-6 break-words whitespace-pre-wrap text-slate-200">
-                    {content}
-                </pre>
-            ) : (
-                <p className="mt-2 text-sm leading-6 text-slate-100">
-                    {content}
-                </p>
-            )}
+            ) : null}
         </div>
     );
 }
 
-function ToolTrace({
-    toolActivities,
-    activeToolIndex,
-    running,
-    onSelect,
+function TraceAssistantBubble({
+    content,
+    createdAt,
 }: {
-    toolActivities: ToolActivity[];
-    activeToolIndex: number;
-    running: boolean;
-    onSelect: (index: number) => void;
+    content: string;
+    createdAt: string;
 }) {
     return (
-        <Card className="gap-0 overflow-hidden rounded-sm border-slate-950/8">
-            <Collapsible defaultOpen={running || toolActivities.length <= 3}>
-                <CardHeader className="border-b border-slate-950/6 px-5 py-4">
-                    <div className="flex items-center justify-between gap-3">
-                        <div>
-                            <CardTitle className="text-base text-slate-950">
-                                Full trace
-                            </CardTitle>
-                        </div>
-                        <CollapsibleTrigger asChild>
-                            <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                className="rounded-sm border-slate-200 bg-white px-3"
-                            >
-                                {toolActivities.length.toString()} steps
-                                <ChevronDown className="size-4" />
-                            </Button>
-                        </CollapsibleTrigger>
-                    </div>
-                </CardHeader>
-                <CollapsibleContent>
-                    <CardContent className="space-y-3 px-5 py-5">
-                        {toolActivities.length > 0 ? (
-                            toolActivities.map((tool, index) => (
-                                <Collapsible
-                                    key={tool.id}
-                                    defaultOpen={index === activeToolIndex}
-                                >
-                                    <div
-                                        className={cn(
-                                            'overflow-hidden rounded-sm border transition',
-                                            index === activeToolIndex
-                                                ? 'border-slate-950/15 bg-slate-50'
-                                                : 'border-slate-200 bg-white',
-                                        )}
-                                    >
-                                        <CollapsibleTrigger asChild>
-                                            <button
-                                                type="button"
-                                                onClick={() => onSelect(index)}
-                                                className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
-                                            >
-                                                <div className="min-w-0">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="rounded-sm bg-slate-100 px-2 py-0.5 text-[10px] font-semibold tracking-[0.16em] text-slate-500 uppercase">
-                                                            {(
-                                                                index + 1
-                                                            ).toString()}
-                                                        </span>
-                                                        <p className="truncate text-sm font-medium text-slate-900 capitalize">
-                                                            {formatToolName(
-                                                                tool.name,
-                                                            )}
-                                                        </p>
-                                                    </div>
-                                                    <p className="mt-1 text-xs text-slate-500">
-                                                        {formatTimestamp(
-                                                            tool.startedAt,
-                                                        )}{' '}
-                                                        ·{' '}
-                                                        {tool.status ===
-                                                        'running'
-                                                            ? 'In progress'
-                                                            : 'Finished'}
-                                                    </p>
-                                                </div>
-                                                <div className="flex items-center gap-2">
-                                                    <Badge
-                                                        variant="outline"
-                                                        className={cn(
-                                                            'rounded-sm px-2.5 py-1 text-[10px] font-medium tracking-[0.16em] uppercase',
-                                                            toolStatusBadgeClassName(
-                                                                tool.status,
-                                                            ),
-                                                        )}
-                                                    >
-                                                        {tool.status}
-                                                    </Badge>
-                                                    <ChevronDown className="size-4 text-slate-400" />
-                                                </div>
-                                            </button>
-                                        </CollapsibleTrigger>
-                                        <CollapsibleContent>
-                                            <div className="grid gap-3 border-t border-slate-950/8 px-4 py-4">
-                                                <TraceBlock
-                                                    label="Call"
-                                                    content={
-                                                        tool.callContent ??
-                                                        `Calling ${tool.name}`
-                                                    }
-                                                />
-                                                <TraceBlock
-                                                    label="Result"
-                                                    content={prettifyToolContent(
-                                                        tool.resultContent,
-                                                    )}
-                                                    mono
-                                                />
-                                            </div>
-                                        </CollapsibleContent>
-                                    </div>
-                                </Collapsible>
-                            ))
-                        ) : (
-                            <div className="rounded-sm border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-sm text-slate-500">
-                                The trace will appear once the first MCP call is
-                                emitted.
-                            </div>
-                        )}
-                    </CardContent>
-                </CollapsibleContent>
-            </Collapsible>
-        </Card>
+        <div className="flex gap-3">
+            <div className="flex size-7 shrink-0 items-center justify-center rounded-full border border-slate-950/10 bg-white text-slate-500">
+                <Bot className="size-3.5" />
+            </div>
+            <div className="min-w-0 max-w-[38rem]">
+                <div className="rounded-sm border border-slate-950/8 bg-white px-4 py-3">
+                    <p className="text-sm leading-6 whitespace-pre-wrap text-slate-700">
+                        {content}
+                    </p>
+                </div>
+                <time className="mt-1 block text-[11px] text-slate-400">
+                    {formatTimestamp(createdAt)}
+                </time>
+            </div>
+        </div>
+    );
+}
+
+function TraceStatusRow({ event }: { event: RunEventPayload }) {
+    return (
+        <div className="flex items-center gap-2 py-0.5 pl-10 text-xs">
+            <span
+                className={cn(
+                    'size-1.5 shrink-0 rounded-full',
+                    event.is_error ? 'bg-red-400' : 'bg-slate-300',
+                )}
+            />
+            <span
+                className={cn(
+                    'truncate',
+                    event.is_error ? 'text-red-500' : 'text-slate-400',
+                )}
+            >
+                {humanizeAction(event.action)}
+            </span>
+            <time className="ml-auto shrink-0 text-slate-300">
+                {formatTimestamp(event.created_at)}
+            </time>
+        </div>
     );
 }
 
@@ -677,7 +438,7 @@ function TraceBlock({
     mono?: boolean;
 }) {
     return (
-        <div className="rounded-sm border border-slate-200 bg-white p-3">
+        <div className="rounded-sm border border-slate-950/8 bg-white p-3">
             <p className="text-[10px] font-medium tracking-[0.18em] text-slate-400 uppercase">
                 {label}
             </p>
@@ -694,119 +455,13 @@ function TraceBlock({
     );
 }
 
-function SessionNote({ event }: { event: RunEventPayload }) {
-    const isAssistant = event.kind === 'assistant_text';
-
-    if (isAssistant) {
-        return (
-            <div className="rounded-sm border border-slate-950/7 bg-white px-4 py-3">
-                <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2">
-                        <span className="flex size-6 items-center justify-center rounded-sm border border-slate-950/8 bg-slate-50 text-slate-500">
-                            <Bot className="size-3.5" />
-                        </span>
-                        <p className="text-xs font-medium tracking-[0.16em] text-slate-400 uppercase">
-                            Assistant
-                        </p>
-                    </div>
-                    <time className="text-xs text-slate-400">
-                        {formatTimestamp(event.created_at)}
-                    </time>
-                </div>
-                <p className="mt-2 text-sm leading-6 text-slate-700">
-                    {eventBody(event)}
-                </p>
-            </div>
-        );
-    }
-
-    return (
-        <div
-            className={cn(
-                'rounded-sm border px-4 py-3',
-                event.is_error
-                    ? 'border-red-200 bg-red-50'
-                    : 'border-slate-950/7 bg-slate-50',
-            )}
-        >
-            <div className="flex items-center justify-between gap-3">
-                <p
-                    className={cn(
-                        'text-sm font-medium',
-                        event.is_error ? 'text-red-700' : 'text-slate-900',
-                    )}
-                >
-                    {humanizeAction(event.action)}
-                </p>
-                <time className="text-xs text-slate-400">
-                    {formatTimestamp(event.created_at)}
-                </time>
-            </div>
-            <p
-                className={cn(
-                    'mt-1 text-sm leading-6',
-                    event.is_error ? 'text-red-700' : 'text-slate-500',
-                )}
-            >
-                {eventBody(event)}
-            </p>
-        </div>
-    );
-}
-
-function NoticesPanel({ noticeEvents }: { noticeEvents: RunEventPayload[] }) {
-    return (
-        <Card className="gap-0 overflow-hidden rounded-sm border-slate-950/8">
-            <Collapsible defaultOpen={noticeEvents.length > 0}>
-                <CardHeader className="border-b border-slate-950/6 px-5 py-4">
-                    <div className="flex items-center justify-between gap-3">
-                        <div>
-                            <CardTitle className="text-base text-slate-950">
-                                Notices
-                            </CardTitle>
-                        </div>
-                        <CollapsibleTrigger asChild>
-                            <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                className="rounded-sm border-slate-200 bg-white px-3"
-                            >
-                                {noticeEvents.length.toString()} notices
-                                <ChevronDown className="size-4" />
-                            </Button>
-                        </CollapsibleTrigger>
-                    </div>
-                </CardHeader>
-                <CollapsibleContent>
-                    <CardContent className="space-y-3 px-5 py-5">
-                        {noticeEvents.length > 0 ? (
-                            noticeEvents.map((event) => (
-                                <SessionNote key={event.id} event={event} />
-                            ))
-                        ) : (
-                            <div className="rounded-sm border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-                                No warnings or stderr notices have been streamed
-                                for this run.
-                            </div>
-                        )}
-                    </CardContent>
-                </CollapsibleContent>
-            </Collapsible>
-        </Card>
-    );
-}
-
 export default function ReviewAnalysisRunShow({ run }: ReviewRunShowProps) {
     const { auth } = usePage<PageProps>().props;
     const [runOverride, setRunOverride] = useState<RunUpdatedEvent | null>(
         null,
     );
     const [liveEvents, setLiveEvents] = useState<RunEventPayload[]>([]);
-    const [activeToolIndex, setActiveToolIndex] = useState(
-        Number.MAX_SAFE_INTEGER,
-    );
-    const sidebarEndRef = useRef<HTMLDivElement | null>(null);
+    const scrollEndRef = useRef<HTMLDivElement | null>(null);
     const runUpdatedEventName = '.review-analysis-run.updated';
     const runEventCreatedEventName = '.review-analysis-event.created';
     const displayRun =
@@ -831,31 +486,25 @@ export default function ReviewAnalysisRunShow({ run }: ReviewRunShowProps) {
             event.action === 'run.failed',
     );
     const toolActivities = buildToolActivities(mergedEvents);
-    const resolvedActiveToolIndex =
-        toolActivities.length === 0
-            ? 0
-            : Math.min(activeToolIndex, toolActivities.length - 1);
-    const activeTool =
-        toolActivities.length > 0
-            ? toolActivities[resolvedActiveToolIndex]
-            : null;
-    const noticeEvents = mergedEvents.filter(
-        (event) =>
-            event.is_error ||
-            event.action === 'codex.stderr' ||
-            event.action === 'codex.stderr.delta',
-    );
+    const streamItems = [
+        ...timelineEvents.map((e) => ({
+            type: 'timeline' as const,
+            event: e,
+            sortKey: e.created_at,
+        })),
+        ...toolActivities.map((t) => ({
+            type: 'tool' as const,
+            tool: t,
+            sortKey: t.startedAt,
+        })),
+    ].sort((a, b) => a.sortKey.localeCompare(b.sortKey));
     const focus =
         typeof run.context?.focus === 'string' ? run.context.focus : null;
+    const isRunning = displayRun.status === 'running';
+
     const breadcrumbs: BreadcrumbItem[] = [
-        {
-            title: 'Start',
-            href: dashboard(),
-        },
-        {
-            title: 'Session',
-            href: admin.signals(),
-        },
+        { title: 'Start', href: dashboard() },
+        { title: 'Session', href: admin.signals() },
         {
             title: `Run #${run.id.toString()}`,
             href: admin.reviewRuns.show(run.id),
@@ -895,242 +544,104 @@ export default function ReviewAnalysisRunShow({ run }: ReviewRunShowProps) {
     );
 
     useEffect(() => {
-        sidebarEndRef.current?.scrollIntoView({
+        scrollEndRef.current?.scrollIntoView({
             block: 'end',
-            behavior: displayRun.status === 'running' ? 'smooth' : 'auto',
+            behavior: isRunning ? 'smooth' : 'auto',
         });
-    }, [displayRun.status, timelineEvents.length]);
-
-    useEffect(() => {
-        if (displayRun.status !== 'running' || toolActivities.length < 2) {
-            return;
-        }
-
-        const interval = window.setInterval(() => {
-            setActiveToolIndex((current) => {
-                const currentIndex =
-                    current >= toolActivities.length
-                        ? toolActivities.length - 1
-                        : current;
-
-                return (currentIndex + 1) % toolActivities.length;
-            });
-        }, 2800);
-
-        return () => {
-            window.clearInterval(interval);
-        };
-    }, [displayRun.status, toolActivities.length]);
-
-    const selectToolAt = (index: number) => {
-        setActiveToolIndex(index);
-    };
-
-    const showPreviousTool = () => {
-        setActiveToolIndex((current) => {
-            if (toolActivities.length === 0) {
-                return current;
-            }
-
-            const currentIndex =
-                current >= toolActivities.length
-                    ? toolActivities.length - 1
-                    : current;
-
-            return currentIndex === 0
-                ? toolActivities.length - 1
-                : currentIndex - 1;
-        });
-    };
-
-    const showNextTool = () => {
-        setActiveToolIndex((current) => {
-            if (toolActivities.length === 0) {
-                return current;
-            }
-
-            const currentIndex =
-                current >= toolActivities.length
-                    ? toolActivities.length - 1
-                    : current;
-
-            return (currentIndex + 1) % toolActivities.length;
-        });
-    };
+    }, [isRunning, streamItems.length]);
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`Run #${run.id.toString()}`} />
 
-            <div className="mx-auto w-full max-w-[1440px] px-4 py-5 md:px-6">
-                <div className="space-y-4">
-                    <Card className="gap-0 overflow-hidden rounded-sm border-slate-950/8">
-                        <CardHeader className="gap-4 border-b border-slate-950/6 px-5 py-5">
-                            <div className="flex flex-wrap items-start justify-between gap-4">
-                                <div className="space-y-3">
-                                    <Link
-                                        href={admin.signals().url}
-                                        className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 transition hover:text-slate-900"
-                                    >
-                                        <ArrowLeft className="size-4" />
-                                        Back to Session
-                                    </Link>
-                                    <div className="space-y-2">
-                                        <div className="flex flex-wrap items-center gap-2">
-                                            <Badge
-                                                variant="outline"
-                                                className="rounded-sm border-sky-200 bg-sky-50 px-2.5 py-1 text-[10px] font-medium tracking-[0.16em] text-sky-700 uppercase"
-                                            >
-                                                {runKindLabel(displayRun.kind)}
-                                            </Badge>
-                                            <Badge
-                                                variant="outline"
-                                                className={cn(
-                                                    'rounded-sm px-2.5 py-1 text-[10px] font-medium tracking-[0.16em] uppercase',
-                                                    statusBadgeClassName(
-                                                        displayRun.status,
-                                                    ),
-                                                )}
-                                            >
-                                                {displayRun.status ===
-                                                'running' ? (
-                                                    <Loader2 className="size-3 animate-spin" />
-                                                ) : displayRun.status ===
-                                                  'completed' ? (
-                                                    <CheckCircle2 className="size-3" />
-                                                ) : displayRun.status ===
-                                                  'failed' ? (
-                                                    <CircleAlert className="size-3" />
-                                                ) : (
-                                                    <Sparkles className="size-3" />
-                                                )}
-                                                {displayRun.status}
-                                            </Badge>
-                                        </div>
-                                        <div>
-                                            <h1 className="text-2xl font-semibold tracking-tight text-slate-950">
-                                                Run #{run.id.toString()}
-                                            </h1>
-                                            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-                                                {displayRun.summary ??
-                                                    'Focused detail view for the tool trace and live session notes.'}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="grid min-w-[18rem] gap-3 sm:grid-cols-2">
-                                    <SummaryChip
-                                        label="Requested"
-                                        value={formatTimestamp(
-                                            run.requested_at,
-                                        )}
-                                    />
-                                    <SummaryChip
-                                        label="Started"
-                                        value={formatTimestamp(run.started_at)}
-                                    />
-                                    <SummaryChip
-                                        label="Finished"
-                                        value={formatTimestamp(
-                                            run.completed_at,
-                                        )}
-                                    />
-                                    <SummaryChip
-                                        label="Tool steps"
-                                        value={toolActivities.length.toString()}
-                                    />
-                                </div>
-                            </div>
-                        </CardHeader>
-                    </Card>
+            <AdminPage>
+                <AdminHeader
+                    eyebrow={`Run #${run.id.toString()}`}
+                    title={focus ?? displayRun.summary ?? 'Tool trace'}
+                    meta={
+                        <AdminPill className={statusClassName(displayRun.status)}>
+                            {isRunning ? (
+                                <Loader2 className="size-3 animate-spin" />
+                            ) : null}
+                            {displayRun.status}
+                        </AdminPill>
+                    }
+                    actions={
+                        <Link
+                            href={admin.signals().url}
+                            className="inline-flex items-center gap-2 rounded-sm border border-slate-950/10 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-950/20 hover:bg-slate-50"
+                        >
+                            <ArrowLeft className="size-4" />
+                            Back to session
+                        </Link>
+                    }
+                />
 
-                    <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
-                        <div className="space-y-4">
-                            <ToolWorkbench
-                                toolActivities={toolActivities}
-                                resolvedActiveToolIndex={
-                                    resolvedActiveToolIndex
-                                }
-                                activeTool={activeTool}
-                                isRunning={displayRun.status === 'running'}
-                                onPrevious={showPreviousTool}
-                                onNext={showNextTool}
-                                onSelect={selectToolAt}
-                            />
-
-                            <ToolTrace
-                                toolActivities={toolActivities}
-                                activeToolIndex={resolvedActiveToolIndex}
-                                running={displayRun.status === 'running'}
-                                onSelect={selectToolAt}
-                            />
+                <AdminSurface className="flex h-[calc(100dvh-12.5rem)] flex-col overflow-hidden">
+                    {displayRun.summary && focus ? (
+                        <div className="shrink-0 border-b border-slate-950/6 px-5 py-2.5">
+                            <p className="text-xs text-slate-500">
+                                {displayRun.summary}
+                            </p>
                         </div>
+                    ) : null}
 
-                        <div className="space-y-4">
-                            <Card className="gap-0 overflow-hidden rounded-sm border-slate-950/8">
-                                <CardHeader className="border-b border-slate-950/6 px-5 py-4">
-                                    <div className="flex items-center gap-2">
-                                        <MessageSquareText className="size-4 text-slate-400" />
-                                        <CardTitle className="text-base text-slate-950">
-                                            Session brief
-                                        </CardTitle>
+                    <div className="flex-1 overflow-y-auto bg-slate-50 px-5 py-5">
+                        <div className="mx-auto max-w-3xl space-y-2">
+                            {focus ? (
+                                <div className="flex justify-end pl-12">
+                                    <div className="rounded-sm bg-slate-950 px-4 py-2.5 text-sm leading-6 text-white">
+                                        {focus}
                                     </div>
-                                </CardHeader>
-                                <CardContent className="space-y-3 px-5 py-5">
-                                    {focus ? (
-                                        <div className="rounded-sm border border-slate-950/7 bg-slate-50 px-4 py-3">
-                                            <p className="text-[10px] font-medium tracking-[0.18em] text-slate-400 uppercase">
-                                                Focus
-                                            </p>
-                                            <p className="mt-2 text-sm leading-6 text-slate-700">
-                                                {focus}
-                                            </p>
-                                        </div>
-                                    ) : null}
-                                    <div className="rounded-sm border border-slate-950/7 bg-white px-4 py-3">
-                                        <p className="text-[10px] font-medium tracking-[0.18em] text-slate-400 uppercase">
-                                            Prompt
-                                        </p>
-                                        <p className="mt-2 text-sm leading-6 text-slate-700">
-                                            {run.prompt ??
-                                                'Waiting for the run prompt to be attached.'}
-                                        </p>
-                                    </div>
-                                </CardContent>
-                            </Card>
+                                </div>
+                            ) : null}
 
-                            <Card className="gap-0 overflow-hidden rounded-sm border-slate-950/8">
-                                <CardHeader className="border-b border-slate-950/6 px-5 py-4">
-                                    <div className="flex items-center gap-2">
-                                        <Terminal className="size-4 text-slate-400" />
-                                        <CardTitle className="text-base text-slate-950">
-                                            Live notes
-                                        </CardTitle>
-                                    </div>
-                                </CardHeader>
-                                <CardContent className="space-y-3 px-5 py-5">
-                                    {timelineEvents.length > 0 ? (
-                                        timelineEvents.map((event) => (
-                                            <SessionNote
-                                                key={event.id}
-                                                event={event}
+                            {streamItems.length > 0 ? (
+                                <div className="space-y-2">
+                                    {streamItems.map((item) =>
+                                        item.type === 'tool' ? (
+                                            <TraceToolRow
+                                                key={`tool-${item.tool.id}`}
+                                                tool={item.tool}
+                                                defaultOpen={
+                                                    item.tool.status ===
+                                                        'running' ||
+                                                    toolActivities.length <= 5
+                                                }
                                             />
-                                        ))
-                                    ) : (
-                                        <div className="rounded-sm border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-sm text-slate-500">
-                                            Waiting for the helper to claim this
-                                            run and begin streaming activity.
-                                        </div>
+                                        ) : item.event.kind ===
+                                          'assistant_text' ? (
+                                            <TraceAssistantBubble
+                                                key={item.event.id}
+                                                content={eventBody(item.event)}
+                                                createdAt={
+                                                    item.event.created_at
+                                                }
+                                            />
+                                        ) : (
+                                            <TraceStatusRow
+                                                key={item.event.id}
+                                                event={item.event}
+                                            />
+                                        ),
                                     )}
-                                    <div ref={sidebarEndRef} />
-                                </CardContent>
-                            </Card>
+                                </div>
+                            ) : (
+                                <div className="flex min-h-64 items-center justify-center">
+                                    <div className="space-y-2 text-center">
+                                        <Loader2 className="mx-auto size-6 animate-spin text-slate-300" />
+                                        <p className="text-sm text-slate-400">
+                                            Waiting for the helper to start…
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
 
-                            <NoticesPanel noticeEvents={noticeEvents} />
+                            <div ref={scrollEndRef} />
                         </div>
                     </div>
-                </div>
-            </div>
+                </AdminSurface>
+            </AdminPage>
         </AppLayout>
     );
 }
