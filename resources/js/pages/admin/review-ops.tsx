@@ -233,6 +233,12 @@ export default function ReviewOps({
                                 Analyze New Reviews
                             </button>
                             <Link
+                                href={admin.proposals.index().url}
+                                className="rounded-full border border-white/20 px-5 py-3 text-sm font-semibold text-white transition hover:border-white/40 hover:bg-white/10"
+                            >
+                                Open Proposal Queue
+                            </Link>
+                            <Link
                                 href="/"
                                 className="rounded-full border border-white/20 px-5 py-3 text-sm font-semibold text-white transition hover:border-white/40 hover:bg-white/10"
                             >
@@ -528,6 +534,12 @@ export default function ReviewOps({
                                     </article>
                                 );
                             })}
+                            <Link
+                                href={admin.proposals.index().url}
+                                className="inline-flex items-center gap-2 text-sm font-semibold text-slate-700 transition hover:text-slate-950"
+                            >
+                                Open full proposal queue
+                            </Link>
                         </section>
 
                         <section className="space-y-4 rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">

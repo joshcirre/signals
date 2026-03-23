@@ -1,8 +1,9 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { Activity, ClipboardList, MessageSquareWarning, Search, ShoppingBag, type LucideIcon } from 'lucide-react';
 import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
 import admin from '@/routes/admin';
+import { FormEvent, useState } from 'react';
 import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -54,12 +55,19 @@ export default function AdminDashboard({
     latestAppliedChange,
     recentActions,
 }: DashboardProps) {
+    const [searchTerm, setSearchTerm] = useState('hoodie reviews about sizing');
     const cards: StatCard[] = [
         { label: 'Products', value: stats.products, icon: ShoppingBag },
         { label: 'Awaiting analysis', value: stats.new_reviews, icon: Search },
         { label: 'Low-rating reviews', value: stats.negative_reviews, icon: MessageSquareWarning },
         { label: 'Pending proposals', value: stats.pending_proposals, icon: ClipboardList },
     ];
+
+    const submitSearch = (event: FormEvent) => {
+        event.preventDefault();
+
+        router.get(admin.reviewOps().url, { q: searchTerm });
+    };
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -108,6 +116,12 @@ export default function AdminDashboard({
                                 Open Audit Log
                             </Link>
                             <Link
+                                href={admin.proposals.index().url}
+                                className="rounded-full border border-white/20 px-5 py-3 text-sm font-semibold text-white transition hover:border-white/40 hover:bg-white/10"
+                            >
+                                Open Proposal Queue
+                            </Link>
+                            <Link
                                 href="/"
                                 className="rounded-full border border-white/20 px-5 py-3 text-sm font-semibold text-white transition hover:border-white/40 hover:bg-white/10"
                             >
@@ -138,6 +152,31 @@ export default function AdminDashboard({
                             </p>
                         )}
                     </div>
+                </section>
+
+                <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+                    <div className="flex items-center justify-between gap-4">
+                        <div>
+                            <p className="text-sm uppercase tracking-[0.25em] text-slate-500">Quick search</p>
+                            <h2 className="mt-3 text-2xl font-semibold text-slate-900">
+                                Jump straight into the trust-building retrieval demo.
+                            </h2>
+                        </div>
+                        <Search className="size-5 text-slate-400" />
+                    </div>
+                    <form onSubmit={submitSearch} className="mt-5 flex flex-col gap-3 md:flex-row">
+                        <input
+                            value={searchTerm}
+                            onChange={(event) => setSearchTerm(event.target.value)}
+                            className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-slate-900"
+                        />
+                        <button
+                            type="submit"
+                            className="rounded-full bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-700"
+                        >
+                            Open in ReviewOps
+                        </button>
+                    </form>
                 </section>
 
                 <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
