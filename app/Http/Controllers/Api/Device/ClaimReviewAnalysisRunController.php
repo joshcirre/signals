@@ -7,7 +7,7 @@ use App\Events\ReviewAnalysisRunUpdated;
 use App\Http\Controllers\Controller;
 use App\Models\ActionLog;
 use App\Models\ReviewAnalysisRun;
-use App\Models\ReviewOpsDevice;
+use App\Models\SignalsDevice;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Throwable;
@@ -16,8 +16,8 @@ class ClaimReviewAnalysisRunController extends Controller
 {
     public function __invoke(Request $request): JsonResponse
     {
-        /** @var ReviewOpsDevice $device */
-        $device = $request->attributes->get('reviewOpsDevice');
+        /** @var SignalsDevice $device */
+        $device = $request->attributes->get('signalsDevice');
 
         $run = ReviewAnalysisRun::query()
             ->where('user_id', $device->user_id)
@@ -43,7 +43,7 @@ class ClaimReviewAnalysisRunController extends Controller
             'actor_type' => 'system',
             'action' => 'run.claimed',
             'metadata_json' => [
-                'message' => 'Local helper claimed the queued ReviewOps run.',
+                'message' => 'Local helper claimed the queued Signals run.',
                 'device_name' => $device->name,
             ],
         ]);
@@ -60,7 +60,7 @@ class ClaimReviewAnalysisRunController extends Controller
             'run' => [
                 'id' => $run->id,
                 'prompt' => $run->prompt,
-                'mcp_url' => route('review-ops.mcp'),
+                'mcp_url' => route('signals.mcp'),
             ],
         ]);
     }

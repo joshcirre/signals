@@ -22,7 +22,7 @@ class ReviewAnalysisRunUpdated implements ShouldBroadcastNow
     public function broadcastOn(): array
     {
         return [
-            new PrivateChannel('review-ops.user.'.$this->run->user_id),
+            new PrivateChannel('signals.user.'.$this->run->user_id),
         ];
     }
 

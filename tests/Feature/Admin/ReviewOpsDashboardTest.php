@@ -28,7 +28,7 @@ test('admin can search review intelligence by hidden tags and product data', fun
     ]);
 
     $this->actingAs($admin)
-        ->get('/admin/review-ops?q=Sizing')
+        ->get('/admin/signals?q=Sizing')
         ->assertSuccessful()
         ->assertSee('Premium Hoodie')
         ->assertSee('Sizing Issue')

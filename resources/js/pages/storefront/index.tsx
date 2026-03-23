@@ -66,10 +66,10 @@ export default function StorefrontIndex({
                                 </h1>
                                 <p className="max-w-2xl text-lg leading-8 text-slate-600">
                                     {storeBrand.name} pairs a premium storefront
-                                    with an internal ReviewOps console.
-                                    Merchants search real review language, Codex
-                                    prepares proposals through MCP tools, and
-                                    only approved updates land on the shopper
+                                    with an internal Signals console. Merchants
+                                    search real review language, Codex prepares
+                                    proposals through MCP tools, and only
+                                    approved updates land on the shopper
                                     experience.
                                 </p>
                             </div>

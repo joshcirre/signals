@@ -2,13 +2,13 @@
 
 namespace App\Http\Middleware;
 
-use App\Models\ReviewOpsDevice;
+use App\Models\SignalsDevice;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Symfony\Component\HttpFoundation\Response;
 
-class AuthenticateReviewOpsDevice
+class AuthenticateSignalsDevice
 {
     /**
      * Handle an incoming request.
@@ -21,19 +21,19 @@ class AuthenticateReviewOpsDevice
 
         abort_unless(is_string($token) && $token !== '', 401);
 
-        $device = ReviewOpsDevice::query()
+        $device = SignalsDevice::query()
             ->where('is_active', true)
             ->with('user')
             ->get()
-            ->first(fn (ReviewOpsDevice $reviewOpsDevice) => Hash::check($token, $reviewOpsDevice->token_hash));
+            ->first(fn (SignalsDevice $signalsDevice) => Hash::check($token, $signalsDevice->token_hash));
 
-        abort_unless($device instanceof ReviewOpsDevice, 401);
+        abort_unless($device instanceof SignalsDevice, 401);
 
         $device->forceFill([
             'last_seen_at' => now(),
         ])->save();
 
-        $request->attributes->set('reviewOpsDevice', $device);
+        $request->attributes->set('signalsDevice', $device);
         $request->setUserResolver(fn () => $device->user);
 
         return $next($request);

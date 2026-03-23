@@ -38,9 +38,9 @@ class User extends Authenticatable
         return $this->hasMany(ReviewAnalysisRun::class);
     }
 
-    public function reviewOpsDevices(): HasMany
+    public function signalsDevices(): HasMany
     {
-        return $this->hasMany(ReviewOpsDevice::class);
+        return $this->hasMany(SignalsDevice::class);
     }
 
     public function isAdmin(): bool

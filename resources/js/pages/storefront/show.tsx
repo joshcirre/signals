@@ -181,7 +181,7 @@ export default function StorefrontShow({
                                     Why this page changes
                                 </h2>
                                 <p className="mt-3 leading-7 text-slate-600">
-                                    Merchant-facing updates in ReviewOps are
+                                    Merchant-facing updates in Signals are
                                     prepared by Codex but only go live after
                                     human approval. This product page is the
                                     visible before-and-after surface for that

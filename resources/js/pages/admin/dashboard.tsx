@@ -85,7 +85,7 @@ export default function AdminDashboard({
     const submitSearch = (event: FormEvent) => {
         event.preventDefault();
 
-        router.get(admin.reviewOps().url, { q: searchTerm });
+        router.get(admin.signals().url, { q: searchTerm });
     };
 
     return (
@@ -113,8 +113,8 @@ export default function AdminDashboard({
                                 size="lg"
                                 className="rounded-full bg-white px-6 text-slate-950 hover:bg-slate-100"
                             >
-                                <Link href={admin.reviewOps().url}>
-                                    Open ReviewOps
+                                <Link href={admin.signals().url}>
+                                    Open Signals
                                 </Link>
                             </Button>
                             <Button
@@ -146,7 +146,7 @@ export default function AdminDashboard({
                                         Demo focus
                                     </p>
                                     <h2 className="mt-2 text-2xl font-semibold text-slate-950">
-                                        ReviewOps control room
+                                        Signals control room
                                     </h2>
                                 </div>
                                 <Badge
@@ -201,14 +201,14 @@ export default function AdminDashboard({
                     <div className="rounded-[2rem] border border-white/40 bg-[linear-gradient(135deg,_rgba(255,255,255,0.55)_0%,_rgba(255,255,255,0.84)_100%)] p-7 text-slate-950 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur">
                         <div className="flex items-center gap-2 text-sm tracking-[0.25em] text-slate-500 uppercase">
                             <Activity className="size-4" />
-                            ReviewOps
+                            Signals
                         </div>
                         <h2 className="mt-4 text-3xl font-semibold tracking-tight">
                             Stream live Codex analysis, inspect proposals, and
                             push storefront updates with approval.
                         </h2>
                         <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600">
-                            The primary demo loop lives in ReviewOps. Search
+                            The primary demo loop lives in Signals. Search
                             reviews semantically, watch the local helper claim a
                             run, and approve the best proposal for immediate
                             storefront impact.
@@ -218,8 +218,8 @@ export default function AdminDashboard({
                                 asChild
                                 className="rounded-full bg-slate-950 hover:bg-slate-800"
                             >
-                                <Link href={admin.reviewOps().url}>
-                                    Open ReviewOps
+                                <Link href={admin.signals().url}>
+                                    Open Signals
                                 </Link>
                             </Button>
                             <Button
@@ -299,7 +299,7 @@ export default function AdminDashboard({
                                 type="submit"
                                 className="rounded-full bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-700"
                             >
-                                Open in ReviewOps
+                                Open in Signals
                             </button>
                         </form>
                     </CardContent>

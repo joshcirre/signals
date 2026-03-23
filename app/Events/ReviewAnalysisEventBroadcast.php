@@ -24,7 +24,7 @@ class ReviewAnalysisEventBroadcast implements ShouldBroadcastNow
     public function broadcastOn(): array
     {
         return [
-            new PrivateChannel('review-ops.user.'.$this->user->id),
+            new PrivateChannel('signals.user.'.$this->user->id),
         ];
     }
 

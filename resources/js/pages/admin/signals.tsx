@@ -27,8 +27,8 @@ const breadcrumbs: BreadcrumbItem[] = [
         href: dashboard(),
     },
     {
-        title: 'ReviewOps',
-        href: admin.reviewOps(),
+        title: 'Signals',
+        href: admin.signals(),
     },
 ];
 
@@ -45,7 +45,7 @@ interface PageProps {
     [key: string]: unknown;
 }
 
-interface ReviewOpsProps {
+interface SignalsProps {
     filters: {
         q: string;
     };
@@ -143,7 +143,7 @@ interface RunEventPayload {
     created_at: string;
 }
 
-export default function ReviewOps({
+export default function Signals({
     filters,
     helper,
     latestRun,
@@ -151,7 +151,7 @@ export default function ReviewOps({
     reviews,
     clusters,
     recentAuditLog,
-}: ReviewOpsProps) {
+}: SignalsProps) {
     const { auth, flash } = usePage<PageProps>().props;
     const [searchTerm, setSearchTerm] = useState(filters.q);
     const [helperName, setHelperName] = useState(helper.default_name);
@@ -168,7 +168,7 @@ export default function ReviewOps({
     }, [latestRun]);
 
     useEcho<RunUpdatedEvent>(
-        `review-ops.user.${auth.user.id}`,
+        `signals.user.${auth.user.id}`,
         'review-analysis-run.updated',
         (payload) => {
             setRunState((current) =>
@@ -185,7 +185,7 @@ export default function ReviewOps({
     );
 
     useEcho<RunEventPayload>(
-        `review-ops.user.${auth.user.id}`,
+        `signals.user.${auth.user.id}`,
         'review-analysis-event.created',
         (payload) => {
             setEvents((current) => {
@@ -215,7 +215,7 @@ export default function ReviewOps({
         event.preventDefault();
 
         router.get(
-            admin.reviewOps().url,
+            admin.signals().url,
             { q: searchTerm },
             { preserveState: true, preserveScroll: true },
         );
@@ -223,7 +223,7 @@ export default function ReviewOps({
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="ReviewOps" />
+            <Head title="Signals" />
             <div className="space-y-8 p-4 md:p-6">
                 <section className="grid gap-6 lg:grid-cols-[1.25fr_0.75fr]">
                     <div className="rounded-[2rem] bg-[linear-gradient(135deg,_#0f172a_0%,_#1d4ed8_50%,_#38bdf8_100%)] p-7 text-white shadow-[0_24px_70px_rgba(15,23,42,0.28)]">
@@ -335,7 +335,7 @@ export default function ReviewOps({
                                         Start the local helper
                                     </p>
                                     <code className="mt-2 block overflow-x-auto rounded-xl bg-slate-950 px-3 py-3 text-xs text-emerald-200">
-                                        {`REVIEWOPS_SERVER_URL=${helperServerUrl} \\\nREVIEWOPS_DEVICE_TOKEN=${flash.helper_token} \\\nnode desktop-helper/index.mjs`}
+                                        {`SIGNALS_SERVER_URL=${helperServerUrl} \\\nSIGNALS_DEVICE_TOKEN=${flash.helper_token} \\\nnode desktop-helper/index.mjs`}
                                     </code>
                                 </div>
                             ) : null}

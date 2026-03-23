@@ -11,14 +11,14 @@ use Laravel\Mcp\Server\Attributes\Description;
 use Laravel\Mcp\Server\Attributes\Uri;
 use Laravel\Mcp\Server\Resource;
 
-#[Uri('reviewops://overview')]
-#[Description('A high-level operational summary of the ReviewOps workspace.')]
-class ReviewOpsOverviewResource extends Resource
+#[Uri('signals://overview')]
+#[Description('A high-level operational summary of the Signals workspace.')]
+class SignalsOverviewResource extends Resource
 {
     public function handle(Request $request): Response
     {
         return Response::text(implode("\n", [
-            'ReviewOps workspace overview',
+            'Signals workspace overview',
             'Products: '.Product::query()->count(),
             'Reviews: '.Review::query()->count(),
             'Pending proposals: '.Proposal::query()->where('status', 'pending')->count(),

@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Actions\ReviewOps;
+namespace App\Actions\Signals;
 
-use App\Models\ReviewOpsDevice;
+use App\Models\SignalsDevice;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -10,13 +10,13 @@ use Illuminate\Support\Str;
 class IssueHelperTokenAction
 {
     /**
-     * @return array{device: ReviewOpsDevice, token: string}
+     * @return array{device: SignalsDevice, token: string}
      */
-    public function handle(User $user, string $deviceName = 'ReviewOps Helper'): array
+    public function handle(User $user, string $deviceName = 'Signals Helper'): array
     {
         $plainTextToken = Str::random(48);
 
-        $device = ReviewOpsDevice::query()->updateOrCreate(
+        $device = SignalsDevice::query()->updateOrCreate(
             [
                 'user_id' => $user->id,
                 'name' => $deviceName,

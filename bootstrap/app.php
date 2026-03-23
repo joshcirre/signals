@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Middleware\AuthenticateReviewOpsDevice;
+use App\Http\Middleware\AuthenticateSignalsDevice;
 use App\Http\Middleware\EnsureUserIsAdmin;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
@@ -21,7 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
         $middleware->alias([
             'admin' => EnsureUserIsAdmin::class,
-            'review-ops-device' => AuthenticateReviewOpsDevice::class,
+            'signals-device' => AuthenticateSignalsDevice::class,
         ]);
 
         $middleware->web(append: [

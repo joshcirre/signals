@@ -4,7 +4,7 @@ namespace App\Mcp\Servers;
 
 use App\Mcp\Prompts\AnalyzeNewReviewsPrompt;
 use App\Mcp\Resources\PendingProposalsResource;
-use App\Mcp\Resources\ReviewOpsOverviewResource;
+use App\Mcp\Resources\SignalsOverviewResource;
 use App\Mcp\Tools\AssignReviewTagTool;
 use App\Mcp\Tools\CreateProductCopyChangeProposalTool;
 use App\Mcp\Tools\CreateReviewResponseProposalTool;
@@ -21,10 +21,10 @@ use Laravel\Mcp\Server\Attributes\Instructions;
 use Laravel\Mcp\Server\Attributes\Name;
 use Laravel\Mcp\Server\Attributes\Version;
 
-#[Name('ReviewOps Server')]
+#[Name('Signals Server')]
 #[Version('0.1.0')]
-#[Instructions('Use this server to inspect apparel review intelligence data and write merchant-facing proposals that require approval before storefront changes go live.')]
-class ReviewOpsServer extends Server
+#[Instructions('Use this server to inspect apparel review intelligence data and write merchant-facing proposals that require approval before storefront changes go live inside Signals.')]
+class SignalsServer extends Server
 {
     protected array $tools = [
         ListProductsTool::class,
@@ -41,7 +41,7 @@ class ReviewOpsServer extends Server
     ];
 
     protected array $resources = [
-        ReviewOpsOverviewResource::class,
+        SignalsOverviewResource::class,
         PendingProposalsResource::class,
     ];
 

@@ -33,8 +33,8 @@ const mainNavItems: NavItem[] = [
         icon: LayoutGrid,
     },
     {
-        title: 'ReviewOps',
-        href: '/admin/review-ops',
+        title: 'Signals',
+        href: '/admin/signals',
         icon: Radar,
     },
     {

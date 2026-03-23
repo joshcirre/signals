@@ -36,7 +36,7 @@ test('natural language review search matches hidden tags and cluster context', f
     ]);
 
     $this->actingAs($admin)
-        ->get('/admin/review-ops?q=hoodie reviews about sizing')
+        ->get('/admin/signals?q=hoodie reviews about sizing')
         ->assertSuccessful()
         ->assertSee('Premium Hoodie')
         ->assertSee('Sizing Issue')

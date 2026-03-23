@@ -9,14 +9,14 @@ use App\Models\Proposal;
 use App\Models\Review;
 use App\Models\ReviewAnalysisRun;
 use App\Models\ReviewCluster;
-use App\Models\ReviewOpsDevice;
+use App\Models\SignalsDevice;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
-class ReviewOpsController extends Controller
+class SignalsController extends Controller
 {
     public function index(Request $request): Response
     {
@@ -89,13 +89,13 @@ class ReviewOpsController extends Controller
                 ->take(6))
             ->values();
 
-        return Inertia::render('admin/review-ops', [
+        return Inertia::render('admin/signals', [
             'filters' => [
                 'q' => $search,
             ],
             'helper' => [
-                'default_name' => 'ReviewOps Helper',
-                'latest_device_seen_at' => ReviewOpsDevice::query()
+                'default_name' => 'Signals Helper',
+                'latest_device_seen_at' => SignalsDevice::query()
                     ->where('user_id', $user?->id)
                     ->latest('last_seen_at')
                     ->value('last_seen_at'),

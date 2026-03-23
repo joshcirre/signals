@@ -41,7 +41,7 @@ class ReviewAnalysisRun extends Model
 
     public function device(): BelongsTo
     {
-        return $this->belongsTo(ReviewOpsDevice::class, 'review_ops_device_id');
+        return $this->belongsTo(SignalsDevice::class, 'review_ops_device_id');
     }
 
     public function proposals(): HasMany

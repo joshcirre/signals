@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Actions\ReviewOps;
+namespace App\Actions\Signals;
 
 use App\Events\ReviewAnalysisEventBroadcast;
 use App\Events\ReviewAnalysisRunUpdated;
@@ -28,7 +28,7 @@ class QueueReviewAnalysisRunAction
             'actor_type' => 'system',
             'action' => 'run.queued',
             'metadata_json' => [
-                'message' => $message ?: 'Queued ReviewOps run and waiting for a connected local helper to claim it.',
+                'message' => $message ?: 'Queued Signals run and waiting for a connected local helper to claim it.',
             ],
         ]);
 

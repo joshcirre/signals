@@ -1,8 +1,8 @@
 <?php
 
-use App\Mcp\Servers\ReviewOpsServer;
+use App\Mcp\Servers\SignalsServer;
 use Laravel\Mcp\Facades\Mcp;
 
-Mcp::web('mcp/review-ops', ReviewOpsServer::class)
-    ->middleware('review-ops-device')
-    ->name('review-ops.mcp');
+Mcp::web('mcp/signals', SignalsServer::class)
+    ->middleware('signals-device')
+    ->name('signals.mcp');

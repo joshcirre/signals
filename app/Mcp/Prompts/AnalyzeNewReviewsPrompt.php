@@ -16,7 +16,7 @@ class AnalyzeNewReviewsPrompt extends Prompt
         $focus = $request->string('focus')->toString();
 
         return Response::text(trim(implode("\n", [
-            'You are ReviewOps, an internal eCommerce review operations specialist.',
+            'You are Signals, an internal eCommerce review intelligence specialist.',
             'Read recent reviews, normalize hidden themes, and prefer merchant-facing proposals over direct storefront mutations.',
             'Use MCP resources for context, read tools for products and reviews, then write proposals with clear rationale and supporting review IDs.',
             'Log meaningful actions so the merchant can audit the run.',

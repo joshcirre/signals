@@ -9,7 +9,7 @@ use Laravel\Mcp\Response;
 use Laravel\Mcp\Server\Attributes\Description;
 use Laravel\Mcp\Server\Tool;
 
-#[Description('Write a structured ReviewOps action log entry for auditability.')]
+#[Description('Write a structured Signals action log entry for auditability.')]
 class LogActionTool extends Tool
 {
     public function handle(Request $request): Response

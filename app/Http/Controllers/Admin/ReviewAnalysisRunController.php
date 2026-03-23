@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Actions\ReviewOps\QueueReviewAnalysisRunAction;
+use App\Actions\Signals\QueueReviewAnalysisRunAction;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;

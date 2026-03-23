@@ -10,7 +10,7 @@ use Laravel\Mcp\Response;
 use Laravel\Mcp\Server\Attributes\Description;
 use Laravel\Mcp\Server\Tool;
 
-#[Description('Create a merchant-facing product copy proposal, such as a fit note update, for later approval in ReviewOps.')]
+#[Description('Create a merchant-facing product copy proposal, such as a fit note update, for later approval in Signals.')]
 class CreateProductCopyChangeProposalTool extends Tool
 {
     public function handle(Request $request): Response

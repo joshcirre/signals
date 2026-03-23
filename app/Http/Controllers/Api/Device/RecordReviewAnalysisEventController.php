@@ -6,7 +6,7 @@ use App\Events\ReviewAnalysisEventBroadcast;
 use App\Http\Controllers\Controller;
 use App\Models\ActionLog;
 use App\Models\ReviewAnalysisRun;
-use App\Models\ReviewOpsDevice;
+use App\Models\SignalsDevice;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Throwable;
@@ -15,8 +15,8 @@ class RecordReviewAnalysisEventController extends Controller
 {
     public function __invoke(Request $request, ReviewAnalysisRun $reviewAnalysisRun): JsonResponse
     {
-        /** @var ReviewOpsDevice $device */
-        $device = $request->attributes->get('reviewOpsDevice');
+        /** @var SignalsDevice $device */
+        $device = $request->attributes->get('signalsDevice');
 
         abort_unless($reviewAnalysisRun->user_id === $device->user_id, 403);
 

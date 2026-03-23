@@ -26,8 +26,8 @@ export default function Login({
 }: Props) {
     return (
         <AuthLayout
-            title="Enter Northstar ReviewOps"
-            description={`Use your ${storeBrand.name} admin account to review proposals, approve storefront changes, and monitor live Codex runs.`}
+            title="Enter Signals"
+            description={`Use your ${storeBrand.name} admin account to review proposals, approve storefront changes, and monitor live Codex runs in Signals.`}
         >
             <Head title="Log in" />
 

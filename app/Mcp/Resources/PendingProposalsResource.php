@@ -9,7 +9,7 @@ use Laravel\Mcp\Server\Attributes\Description;
 use Laravel\Mcp\Server\Attributes\Uri;
 use Laravel\Mcp\Server\Resource;
 
-#[Uri('reviewops://pending-proposals')]
+#[Uri('signals://pending-proposals')]
 #[Description('A JSON snapshot of the currently pending merchant-facing proposals.')]
 class PendingProposalsResource extends Resource
 {

@@ -1,18 +1,18 @@
 <?php
 
-namespace App\Console\Commands\ReviewOps;
+namespace App\Console\Commands\Signals;
 
-use App\Actions\ReviewOps\QueueReviewAnalysisRunAction;
+use App\Actions\Signals\QueueReviewAnalysisRunAction;
 use App\Models\User;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 
-#[Signature('reviewops:queue-demo-run
+#[Signature('signals:queue-demo-run
     {email=admin@example.com : Merchant admin email address}
-    {--prompt= : Custom ReviewOps prompt}
+    {--prompt= : Custom Signals prompt}
     {--message= : Custom queue event message}')]
-#[Description('Queue a ReviewOps analysis run for the given merchant admin.')]
+#[Description('Queue a Signals analysis run for the given merchant admin.')]
 class QueueDemoRunCommand extends Command
 {
     public function handle(QueueReviewAnalysisRunAction $queueReviewAnalysisRun): int
@@ -31,7 +31,7 @@ class QueueDemoRunCommand extends Command
             $this->option('message') ?: null,
         );
 
-        $this->info('Queued ReviewOps run.');
+        $this->info('Queued Signals run.');
         $this->line('Run ID: '.$run->id);
         $this->line('Status: '.$run->status);
         $this->line('Prompt: '.$run->prompt);

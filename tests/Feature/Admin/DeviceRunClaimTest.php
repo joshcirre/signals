@@ -1,16 +1,16 @@
 <?php
 
 use App\Models\ReviewAnalysisRun;
-use App\Models\ReviewOpsDevice;
+use App\Models\SignalsDevice;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 
 test('device token may claim a queued review analysis run', function () {
     $admin = User::factory()->create();
-    $plainTextToken = 'reviewops-secret-token';
-    $device = ReviewOpsDevice::factory()->create([
+    $plainTextToken = 'signals-secret-token';
+    $device = SignalsDevice::factory()->create([
         'user_id' => $admin->id,
-        'name' => 'ReviewOps Helper',
+        'name' => 'Signals Helper',
         'token_hash' => Hash::make($plainTextToken),
     ]);
     $run = ReviewAnalysisRun::factory()->create([

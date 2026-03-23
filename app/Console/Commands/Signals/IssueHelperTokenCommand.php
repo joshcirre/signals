@@ -1,17 +1,17 @@
 <?php
 
-namespace App\Console\Commands\ReviewOps;
+namespace App\Console\Commands\Signals;
 
-use App\Actions\ReviewOps\IssueHelperTokenAction;
+use App\Actions\Signals\IssueHelperTokenAction;
 use App\Models\User;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 
-#[Signature('reviewops:issue-helper-token
+#[Signature('signals:issue-helper-token
     {email=admin@example.com : Merchant admin email address}
-    {--device=ReviewOps Helper : Human-readable helper device name}')]
-#[Description('Issue a ReviewOps helper device token for a merchant admin.')]
+    {--device=Signals Helper : Human-readable helper device name}')]
+#[Description('Issue a Signals helper device token for a merchant admin.')]
 class IssueHelperTokenCommand extends Command
 {
     public function handle(IssueHelperTokenAction $issueHelperToken): int
@@ -31,13 +31,13 @@ class IssueHelperTokenCommand extends Command
 
         $baseUrl = rtrim((string) config('app.url'), '/');
 
-        $this->info('Issued ReviewOps helper token.');
+        $this->info('Issued Signals helper token.');
         $this->line('User: '.$user->email);
         $this->line('Device: '.$result['device']->name);
         $this->newLine();
         $this->line('Environment block:');
-        $this->line('REVIEWOPS_SERVER_URL='.$baseUrl);
-        $this->line('REVIEWOPS_DEVICE_TOKEN='.$result['token']);
+        $this->line('SIGNALS_SERVER_URL='.$baseUrl);
+        $this->line('SIGNALS_DEVICE_TOKEN='.$result['token']);
 
         return self::SUCCESS;
     }

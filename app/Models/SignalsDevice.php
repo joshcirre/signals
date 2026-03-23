@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use Database\Factories\ReviewOpsDeviceFactory;
+use Database\Factories\SignalsDeviceFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -10,10 +10,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable(['user_id', 'name', 'token_hash', 'is_active', 'last_seen_at'])]
-class ReviewOpsDevice extends Model
+class SignalsDevice extends Model
 {
-    /** @use HasFactory<ReviewOpsDeviceFactory> */
+    /** @use HasFactory<SignalsDeviceFactory> */
     use HasFactory;
+
+    protected $table = 'review_ops_devices';
 
     protected function casts(): array
     {

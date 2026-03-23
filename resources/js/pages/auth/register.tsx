@@ -14,8 +14,8 @@ import { store } from '@/routes/register';
 export default function Register() {
     return (
         <AuthLayout
-            title="Create a Northstar admin account"
-            description={`Set up an internal ${storeBrand.name} operator account for ReviewOps.`}
+            title="Create a Signals admin account"
+            description={`Set up an internal ${storeBrand.name} operator account for Signals.`}
         >
             <Head title="Register" />
             <Form

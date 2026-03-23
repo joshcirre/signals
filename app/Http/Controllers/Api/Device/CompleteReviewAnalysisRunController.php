@@ -7,7 +7,7 @@ use App\Events\ReviewAnalysisRunUpdated;
 use App\Http\Controllers\Controller;
 use App\Models\ActionLog;
 use App\Models\ReviewAnalysisRun;
-use App\Models\ReviewOpsDevice;
+use App\Models\SignalsDevice;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Throwable;
@@ -16,8 +16,8 @@ class CompleteReviewAnalysisRunController extends Controller
 {
     public function __invoke(Request $request, ReviewAnalysisRun $reviewAnalysisRun): JsonResponse
     {
-        /** @var ReviewOpsDevice $device */
-        $device = $request->attributes->get('reviewOpsDevice');
+        /** @var SignalsDevice $device */
+        $device = $request->attributes->get('signalsDevice');
 
         abort_unless($reviewAnalysisRun->user_id === $device->user_id, 403);
 
@@ -37,7 +37,7 @@ class CompleteReviewAnalysisRunController extends Controller
             'metadata_json' => [
                 'message' => $failed
                     ? ($reviewAnalysisRun->error_message ?: 'The helper reported a failure.')
-                    : ($reviewAnalysisRun->summary ?: 'The helper completed the ReviewOps run.'),
+                    : ($reviewAnalysisRun->summary ?: 'The helper completed the Signals run.'),
             ],
         ]);
 

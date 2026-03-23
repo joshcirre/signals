@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Console\Commands\ReviewOps;
+namespace App\Console\Commands\Signals;
 
-use App\Actions\ReviewOps\IssueHelperTokenAction;
-use App\Actions\ReviewOps\QueueReviewAnalysisRunAction;
+use App\Actions\Signals\IssueHelperTokenAction;
+use App\Actions\Signals\QueueReviewAnalysisRunAction;
 use App\Models\ActionLog;
 use App\Models\ReviewAnalysisRun;
 use App\Models\User;
@@ -14,15 +14,15 @@ use Symfony\Component\Process\Exception\ProcessTimedOutException;
 use Symfony\Component\Process\Process;
 use Throwable;
 
-#[Signature('reviewops:smoke-codex-mcp
+#[Signature('signals:smoke-codex-mcp
     {email=admin@example.com : Merchant admin email address}
-    {--device=ReviewOps Smoke Helper : Helper device name}
-    {--server-url= : Override REVIEWOPS_SERVER_URL}
-    {--cwd= : Override REVIEWOPS_CODEX_CWD}
-    {--prompt= : Custom ReviewOps prompt}
-    {--run-command= : Override REVIEWOPS_RUN_COMMAND for a custom local smoke path}
+    {--device=Signals Smoke Helper : Helper device name}
+    {--server-url= : Override SIGNALS_SERVER_URL}
+    {--cwd= : Override SIGNALS_CODEX_CWD}
+    {--prompt= : Custom Signals prompt}
+    {--run-command= : Override SIGNALS_RUN_COMMAND for a custom local smoke path}
     {--timeout=180 : Helper process timeout in seconds}')]
-#[Description('Queue a ReviewOps run, launch the local helper once, and report the resulting Codex/MCP run status.')]
+#[Description('Queue a Signals run, launch the local helper once, and report the resulting Codex/MCP run status.')]
 class SmokeCodexMcpCommand extends Command
 {
     public function handle(
@@ -54,7 +54,7 @@ class SmokeCodexMcpCommand extends Command
         $run = $queueReviewAnalysisRun->handle(
             $user,
             $this->option('prompt') ?: null,
-            'Queued a ReviewOps run from the smoke command.',
+            'Queued a Signals run from the smoke command.',
         );
 
         $process = new Process(
@@ -63,18 +63,18 @@ class SmokeCodexMcpCommand extends Command
             array_filter([
                 ...$_ENV,
                 ...$_SERVER,
-                'REVIEWOPS_SERVER_URL' => rtrim((string) ($this->option('server-url') ?: config('app.url')), '/'),
-                'REVIEWOPS_DEVICE_TOKEN' => $token['token'],
-                'REVIEWOPS_RUN_ONCE' => '1',
-                'REVIEWOPS_REQUIRE_RUN' => '1',
-                'REVIEWOPS_CODEX_CWD' => $this->option('cwd') ?: null,
-                'REVIEWOPS_RUN_COMMAND' => $this->option('run-command') ?: null,
+                'SIGNALS_SERVER_URL' => rtrim((string) ($this->option('server-url') ?: config('app.url')), '/'),
+                'SIGNALS_DEVICE_TOKEN' => $token['token'],
+                'SIGNALS_RUN_ONCE' => '1',
+                'SIGNALS_REQUIRE_RUN' => '1',
+                'SIGNALS_CODEX_CWD' => $this->option('cwd') ?: null,
+                'SIGNALS_RUN_COMMAND' => $this->option('run-command') ?: null,
             ], static fn (mixed $value): bool => $value !== null && $value !== ''),
         );
 
         $process->setTimeout((float) $this->option('timeout'));
 
-        $this->info('Launching the ReviewOps helper in one-shot mode...');
+        $this->info('Launching the Signals helper in one-shot mode...');
 
         try {
             $process->run(function (string $type, string $buffer): void {
