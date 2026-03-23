@@ -10,9 +10,11 @@ export function BrandMark({ className }: { className?: string }) {
         >
             <div className="absolute inset-[2px] rounded-[1rem] border border-white/15" />
             <div className="absolute top-0 -right-2 size-6 rounded-full bg-white/15 blur-md" />
-            <span className="relative text-sm font-semibold tracking-[0.3em]">
-                NS
-            </span>
+            <div className="relative flex items-end gap-1">
+                <span className="h-3 w-1 rounded-full bg-white/70" />
+                <span className="h-5 w-1 rounded-full bg-white/90" />
+                <span className="h-7 w-1 rounded-full bg-white" />
+            </div>
         </div>
     );
 }

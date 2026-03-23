@@ -12,7 +12,6 @@ use App\Http\Controllers\Admin\SignalsDeviceTokenController;
 use App\Http\Controllers\Storefront\ProductIndexController;
 use App\Http\Controllers\Storefront\ProductShowController;
 use Illuminate\Support\Facades\Route;
-use Laravel\Fortify\Features;
 
 Route::get('/', [ProductIndexController::class, 'index'])->name('home');
 Route::get('/products/{product:slug}', [ProductShowController::class, 'show'])->name('products.show');
@@ -32,9 +31,5 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
         Route::patch('proposals/{proposal}', ProposalUpdateController::class)->name('admin.proposals.update');
     });
 });
-
-Route::inertia('/welcome', 'welcome', [
-    'canRegister' => Features::enabled(Features::registration()),
-])->name('welcome');
 
 require __DIR__.'/settings.php';

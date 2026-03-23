@@ -33,3 +33,7 @@ test('product page shows fit notes and reviews', function (): void {
         ->assertSee('Customers say this hoodie runs small')
         ->assertSee('Loved the fabric but had to size up.');
 });
+
+test('welcome page is not exposed publicly', function (): void {
+    $this->get('/welcome')->assertNotFound();
+});
