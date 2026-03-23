@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ActionLog;
 use App\Models\Product;
 use App\Models\Proposal;
+use App\Models\Review;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -24,6 +25,16 @@ class ProposalApprovalController extends Controller
             }
         }
 
+        if ($proposal->type === 'review_response' && $proposal->target_type === 'review') {
+            $review = Review::query()->findOrFail($proposal->target_id);
+
+            $review->forceFill([
+                'response_draft' => $proposal->payload_json['response_draft'] ?? $review->response_draft,
+                'response_draft_status' => 'approved',
+                'response_draft_approved_at' => now(),
+            ])->save();
+        }
+
         $proposal->forceFill([
             'status' => 'applied',
             'approved_by' => $request->user()->id,
@@ -40,6 +51,7 @@ class ProposalApprovalController extends Controller
             'target_id' => $proposal->target_id,
             'metadata_json' => [
                 'message' => 'Approved and applied proposal #'.$proposal->id,
+                'proposal_type' => $proposal->type,
             ],
         ]);
 

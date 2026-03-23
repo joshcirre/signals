@@ -16,6 +16,11 @@ class DashboardController extends Controller
     public function index(): Response
     {
         $latestRun = ReviewAnalysisRun::query()->latest()->first();
+        $latestAppliedProposal = Proposal::query()
+            ->whereIn('status', ['applied', 'approved'])
+            ->latest('applied_at')
+            ->latest('approved_at')
+            ->first();
 
         return Inertia::render('admin/dashboard', [
             'stats' => [
@@ -29,6 +34,15 @@ class DashboardController extends Controller
                 'status' => $latestRun->status,
                 'summary' => $latestRun->summary,
                 'requested_at' => $latestRun->requested_at?->diffForHumans(),
+            ] : null,
+            'latestAppliedChange' => $latestAppliedProposal ? [
+                'id' => $latestAppliedProposal->id,
+                'type' => $latestAppliedProposal->type,
+                'rationale' => $latestAppliedProposal->rationale,
+                'target_type' => $latestAppliedProposal->target_type,
+                'target_id' => $latestAppliedProposal->target_id,
+                'applied_at' => $latestAppliedProposal->applied_at?->diffForHumans()
+                    ?? $latestAppliedProposal->approved_at?->diffForHumans(),
             ] : null,
             'recentActions' => ActionLog::query()
                 ->latest()

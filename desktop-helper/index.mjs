@@ -1,11 +1,16 @@
 import { spawn } from "node:child_process";
+import { mkdirSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { CodexAppServerClient } from "./codex-app-server.mjs";
 
 const serverUrl = process.env.REVIEWOPS_SERVER_URL;
 const token = process.env.REVIEWOPS_DEVICE_TOKEN;
 const pollIntervalMs = Number(process.env.REVIEWOPS_POLL_INTERVAL_MS ?? 4000);
+const runOnce = process.env.REVIEWOPS_RUN_ONCE === "1";
+const requireRun = process.env.REVIEWOPS_REQUIRE_RUN === "1";
 const runCommand = process.env.REVIEWOPS_RUN_COMMAND ?? "";
-const helperWorkdir = process.env.REVIEWOPS_CODEX_CWD ?? process.cwd();
+const helperWorkspace = process.env.REVIEWOPS_CODEX_CWD ?? join(tmpdir(), "reviewops-helper");
 const codexModel = process.env.REVIEWOPS_CODEX_MODEL ?? "gpt-5.4";
 const codexReasoningEffort =
   process.env.REVIEWOPS_CODEX_REASONING_EFFORT ?? "medium";
@@ -17,22 +22,36 @@ if (!serverUrl || !token) {
   process.exit(1);
 }
 
+mkdirSync(helperWorkspace, { recursive: true });
+
 async function request(path, options = {}) {
-  const response = await fetch(`${serverUrl}${path}`, {
-    ...options,
-    headers: {
-      Accept: "application/json",
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-      ...(options.headers ?? {}),
-    },
-  });
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      const response = await fetch(`${serverUrl}${path}`, {
+        ...options,
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          ...(options.headers ?? {}),
+        },
+      });
 
-  if (!response.ok) {
-    throw new Error(`Request failed (${response.status}) for ${path}`);
+      if (!response.ok) {
+        throw new Error(`Request failed (${response.status}) for ${path}`);
+      }
+
+      return response.json();
+    } catch (error) {
+      if (attempt === 2) {
+        throw error;
+      }
+
+      await new Promise((resolve) => {
+        setTimeout(resolve, 250 * (attempt + 1));
+      });
+    }
   }
-
-  return response.json();
 }
 
 async function postRunEvent(runId, payload) {
@@ -77,19 +96,22 @@ function buildAnalysisPrompt(basePrompt) {
   return `${basePrompt}
 
 Use the reviewops MCP server as the source of truth for products, reviews, resources, and proposal writes.
+Do not inspect the local filesystem or use shell commands for business data. Stay inside MCP unless a failure prevents it.
 
 Required workflow:
 1. Inspect the reviewops MCP server and recent reviews before you draft anything.
 2. Use MCP tools and resources instead of inventing product or review details.
-3. Record concise milestones with the log_action MCP tool when you confirm a meaningful pattern.
-4. Create at most one high-confidence product copy proposal if the evidence is clear.
-5. Do not apply or publish changes directly. Customer-facing output must go through proposal tools only.
+3. Normalize hidden tags and cluster repeated issues before you draft customer-facing proposals.
+4. Record concise milestones with the log_action MCP tool when you confirm a meaningful pattern.
+5. Create at most one high-confidence product copy proposal if the evidence is clear, and draft review responses only for genuinely negative reviews.
+6. Mark the analyzed reviews as processed before you finish the run.
+7. Do not apply or publish changes directly. Customer-facing output must go through proposal tools only.
 
 Aim for a concrete fit-note style proposal when the review evidence supports it.`;
 }
 
 function buildDeveloperInstructions() {
-  return "Operate as a merchant review-ops analyst. Prefer MCP tools over freeform speculation, keep reasoning concise, and only produce customer-visible changes through proposal tools.";
+  return "Operate as a merchant review-ops analyst. Prefer MCP tools over freeform speculation, do not inspect the local repo or shell for product data, keep reasoning concise, and only produce customer-visible changes through proposal tools.";
 }
 
 function createRunMonitor() {
@@ -402,7 +424,7 @@ async function executeCustomCommand(run) {
 async function executeCodexRun(run) {
   const monitor = createRunMonitor();
   const client = new CodexAppServerClient({
-    cwd: helperWorkdir,
+    cwd: helperWorkspace,
     mcpUrl: run.mcp_url,
     model: codexModel,
     reasoningEffort: codexReasoningEffort,
@@ -542,7 +564,7 @@ async function tick() {
   });
 
   if (!response.run) {
-    return;
+    return false;
   }
 
   try {
@@ -558,18 +580,40 @@ async function tick() {
 
     throw error;
   }
+
+  return true;
 }
 
 console.log("ReviewOps helper started.");
 
-async function loop() {
-  try {
-    await tick();
-  } catch (error) {
-    console.error(error);
-  } finally {
-    setTimeout(loop, pollIntervalMs);
+async function main() {
+  if (runOnce) {
+    try {
+      const handledRun = await tick();
+
+      if (!handledRun && requireRun) {
+        console.error("No queued ReviewOps run was available for the helper.");
+        process.exit(2);
+      }
+
+      process.exit(0);
+    } catch (error) {
+      console.error(error);
+      process.exit(1);
+    }
   }
+
+  async function loop() {
+    try {
+      await tick();
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setTimeout(loop, pollIntervalMs);
+    }
+  }
+
+  await loop();
 }
 
-loop();
+void main();

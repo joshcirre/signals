@@ -118,7 +118,7 @@ class DatabaseSeeder extends Seeder
         foreach ($reviewsByProduct as $slug => $entries) {
             $product = $productMap->get($slug);
 
-            foreach ($entries as [$rating, $title, $body, $tagName]) {
+            foreach ($entries as $index => [$rating, $title, $body, $tagName]) {
                 $review = Review::query()->create([
                     'product_id' => $product->id,
                     'author_name' => fake()->firstName(),
@@ -127,7 +127,7 @@ class DatabaseSeeder extends Seeder
                     'body' => $body,
                     'source' => 'storefront',
                     'reviewed_at' => now()->subDays(fake()->numberBetween(1, 21)),
-                    'processed_at' => now()->subMinutes(fake()->numberBetween(5, 240)),
+                    'processed_at' => $index <= 1 ? null : now()->subMinutes(fake()->numberBetween(5, 240)),
                 ]);
 
                 ReviewTagAssignment::query()->create([
@@ -184,10 +184,31 @@ class DatabaseSeeder extends Seeder
             'created_by' => 'agent',
         ]);
 
+        $negativeShippingReview = $createdReviews
+            ->first(fn (Review $review): bool => $review->rating <= 2 && $review->product_id === $productMap['cloudweight-tee']->id);
+
+        if ($negativeShippingReview instanceof Review) {
+            Proposal::query()->create([
+                'review_analysis_run_id' => $run->id,
+                'type' => 'review_response',
+                'status' => 'pending',
+                'target_type' => 'review',
+                'target_id' => $negativeShippingReview->id,
+                'payload_json' => [
+                    'response_draft' => 'Thanks for flagging the shipping delay. We are sorry the delivery window missed expectations, and our support team can help make this right.',
+                    'tone' => 'empathetic',
+                ],
+                'rationale' => 'A low-rated Cloudweight Tee review called out delayed shipping and missing updates, so Codex drafted a brand-safe response for approval.',
+                'confidence' => 0.920,
+                'created_by' => 'agent',
+            ]);
+        }
+
         collect([
             ['system', 'run.queued', 'Queued a new ReviewOps analysis run.'],
             ['agent', 'tool.call', 'Read latest products and reviews from MCP.'],
             ['agent', 'proposal.created', 'Drafted a fit note proposal for Premium Hoodie.'],
+            ['agent', 'proposal.created', 'Drafted a review response for a delayed-shipping complaint.'],
         ])->each(function (array $entry) use ($run): void {
             ActionLog::query()->create([
                 'review_analysis_run_id' => $run->id,

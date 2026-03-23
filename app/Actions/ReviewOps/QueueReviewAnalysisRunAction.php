@@ -1,0 +1,44 @@
+<?php
+
+namespace App\Actions\ReviewOps;
+
+use App\Events\ReviewAnalysisEventBroadcast;
+use App\Events\ReviewAnalysisRunUpdated;
+use App\Models\ActionLog;
+use App\Models\ReviewAnalysisRun;
+use App\Models\User;
+use Throwable;
+
+class QueueReviewAnalysisRunAction
+{
+    public function handle(
+        User $user,
+        ?string $prompt = null,
+        ?string $message = null,
+    ): ReviewAnalysisRun {
+        $run = ReviewAnalysisRun::query()->create([
+            'user_id' => $user->id,
+            'status' => 'queued',
+            'prompt' => $prompt ?: 'Analyze the latest apparel reviews, confirm any repeated fit problems, and prepare only merchant-facing proposals with a strong preference for a single fit-note update when the evidence is clear.',
+            'requested_at' => now(),
+        ]);
+
+        $event = ActionLog::query()->create([
+            'review_analysis_run_id' => $run->id,
+            'actor_type' => 'system',
+            'action' => 'run.queued',
+            'metadata_json' => [
+                'message' => $message ?: 'Queued ReviewOps run and waiting for a connected local helper to claim it.',
+            ],
+        ]);
+
+        try {
+            ReviewAnalysisRunUpdated::dispatch($run);
+            ReviewAnalysisEventBroadcast::dispatch($user, $event);
+        } catch (Throwable $exception) {
+            report($exception);
+        }
+
+        return $run;
+    }
+}

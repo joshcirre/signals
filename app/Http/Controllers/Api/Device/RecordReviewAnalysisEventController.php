@@ -9,6 +9,7 @@ use App\Models\ReviewAnalysisRun;
 use App\Models\ReviewOpsDevice;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Throwable;
 
 class RecordReviewAnalysisEventController extends Controller
 {
@@ -37,7 +38,11 @@ class RecordReviewAnalysisEventController extends Controller
             ], static fn (mixed $value): bool => $value !== null),
         ]);
 
-        ReviewAnalysisEventBroadcast::dispatch($device->user, $event);
+        try {
+            ReviewAnalysisEventBroadcast::dispatch($device->user, $event);
+        } catch (Throwable $exception) {
+            report($exception);
+        }
 
         return response()->json(['ok' => true]);
     }

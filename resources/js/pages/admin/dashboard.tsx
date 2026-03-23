@@ -2,6 +2,7 @@ import { Head, Link } from '@inertiajs/react';
 import { Activity, ClipboardList, MessageSquareWarning, Search, ShoppingBag, type LucideIcon } from 'lucide-react';
 import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
+import admin from '@/routes/admin';
 import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -24,6 +25,14 @@ interface DashboardProps {
         summary: string | null;
         requested_at: string | null;
     } | null;
+    latestAppliedChange: {
+        id: number;
+        type: string;
+        rationale: string;
+        target_type: string;
+        target_id: number;
+        applied_at: string | null;
+    } | null;
     recentActions: Array<{
         id: number;
         action: string;
@@ -42,6 +51,7 @@ interface StatCard {
 export default function AdminDashboard({
     stats,
     latestRun,
+    latestAppliedChange,
     recentActions,
 }: DashboardProps) {
     const cards: StatCard[] = [
@@ -86,10 +96,16 @@ export default function AdminDashboard({
                         </p>
                         <div className="mt-8 flex flex-wrap gap-3">
                             <Link
-                                href="/admin/review-ops"
+                                href={admin.reviewOps().url}
                                 className="rounded-full bg-white px-5 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
                             >
                                 Open ReviewOps
+                            </Link>
+                            <Link
+                                href={admin.auditLog().url}
+                                className="rounded-full border border-white/20 px-5 py-3 text-sm font-semibold text-white transition hover:border-white/40 hover:bg-white/10"
+                            >
+                                Open Audit Log
                             </Link>
                             <Link
                                 href="/"
@@ -125,6 +141,22 @@ export default function AdminDashboard({
                 </section>
 
                 <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+                    {latestAppliedChange ? (
+                        <div className="mb-6 rounded-[1.5rem] bg-slate-50 p-5">
+                            <p className="text-sm font-medium uppercase tracking-[0.25em] text-slate-500">
+                                Latest Approved Change
+                            </p>
+                            <p className="mt-3 text-lg font-semibold text-slate-900">
+                                {latestAppliedChange.type.replaceAll('_', ' ')}
+                            </p>
+                            <p className="mt-2 text-sm leading-6 text-slate-600">
+                                {latestAppliedChange.rationale}
+                            </p>
+                            <p className="mt-3 text-sm text-slate-500">
+                                {latestAppliedChange.applied_at ?? 'Awaiting publication timestamp'}
+                            </p>
+                        </div>
+                    ) : null}
                     <h2 className="text-xl font-semibold text-slate-900">Recent actions</h2>
                     <div className="mt-5 space-y-4">
                         {recentActions.map((action) => (

@@ -10,6 +10,7 @@ use App\Models\ReviewAnalysisRun;
 use App\Models\ReviewOpsDevice;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Throwable;
 
 class CompleteReviewAnalysisRunController extends Controller
 {
@@ -40,8 +41,12 @@ class CompleteReviewAnalysisRunController extends Controller
             ],
         ]);
 
-        ReviewAnalysisRunUpdated::dispatch($reviewAnalysisRun);
-        ReviewAnalysisEventBroadcast::dispatch($device->user, $event);
+        try {
+            ReviewAnalysisRunUpdated::dispatch($reviewAnalysisRun);
+            ReviewAnalysisEventBroadcast::dispatch($device->user, $event);
+        } catch (Throwable $exception) {
+            report($exception);
+        }
 
         return response()->json(['ok' => true]);
     }

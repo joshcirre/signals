@@ -18,6 +18,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'source',
     'reviewed_at',
     'processed_at',
+    'response_draft',
+    'response_draft_status',
+    'response_draft_approved_at',
 ])]
 class Review extends Model
 {
@@ -29,6 +32,7 @@ class Review extends Model
         return [
             'reviewed_at' => 'datetime',
             'processed_at' => 'datetime',
+            'response_draft_approved_at' => 'datetime',
         ];
     }
 

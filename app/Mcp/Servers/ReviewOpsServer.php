@@ -5,11 +5,17 @@ namespace App\Mcp\Servers;
 use App\Mcp\Prompts\AnalyzeNewReviewsPrompt;
 use App\Mcp\Resources\PendingProposalsResource;
 use App\Mcp\Resources\ReviewOpsOverviewResource;
+use App\Mcp\Tools\AssignReviewTagTool;
 use App\Mcp\Tools\CreateProductCopyChangeProposalTool;
 use App\Mcp\Tools\CreateReviewResponseProposalTool;
+use App\Mcp\Tools\EnsureReviewTagTool;
+use App\Mcp\Tools\GetProductTool;
 use App\Mcp\Tools\ListProductsTool;
 use App\Mcp\Tools\ListReviewsTool;
 use App\Mcp\Tools\LogActionTool;
+use App\Mcp\Tools\MarkReviewsProcessedTool;
+use App\Mcp\Tools\SearchReviewsTool;
+use App\Mcp\Tools\UpsertReviewClusterTool;
 use Laravel\Mcp\Server;
 use Laravel\Mcp\Server\Attributes\Instructions;
 use Laravel\Mcp\Server\Attributes\Name;
@@ -22,7 +28,13 @@ class ReviewOpsServer extends Server
 {
     protected array $tools = [
         ListProductsTool::class,
+        GetProductTool::class,
         ListReviewsTool::class,
+        SearchReviewsTool::class,
+        EnsureReviewTagTool::class,
+        AssignReviewTagTool::class,
+        UpsertReviewClusterTool::class,
+        MarkReviewsProcessedTool::class,
         CreateProductCopyChangeProposalTool::class,
         CreateReviewResponseProposalTool::class,
         LogActionTool::class,
