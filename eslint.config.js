@@ -86,6 +86,49 @@ export default [
                         order: 'asc',
                         caseInsensitive: true,
                     },
+                    pathGroups: [
+                        {
+                            pattern: '@/types{,/**}',
+                            group: 'type',
+                            position: 'before',
+                        },
+                        {
+                            pattern: '@/actions{,/**}',
+                            group: 'internal',
+                            position: 'before',
+                        },
+                        {
+                            pattern: '@/components{,/**}',
+                            group: 'internal',
+                            position: 'before',
+                        },
+                        {
+                            pattern: '@/hooks{,/**}',
+                            group: 'internal',
+                            position: 'before',
+                        },
+                        {
+                            pattern: '@/layouts{,/**}',
+                            group: 'internal',
+                            position: 'before',
+                        },
+                        {
+                            pattern: '@/lib{,/**}',
+                            group: 'internal',
+                            position: 'before',
+                        },
+                        {
+                            pattern: '@/pages{,/**}',
+                            group: 'internal',
+                            position: 'before',
+                        },
+                        {
+                            pattern: '@/routes{,/**}',
+                            group: 'internal',
+                            position: 'before',
+                        },
+                    ],
+                    pathGroupsExcludedImportTypes: ['builtin', 'external'],
                 },
             ],
             'import/consistent-type-specifier-style': [
