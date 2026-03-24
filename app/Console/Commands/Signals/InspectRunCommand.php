@@ -4,6 +4,7 @@ namespace App\Console\Commands\Signals;
 
 use App\Models\Proposal;
 use App\Models\ReviewAnalysisRun;
+use App\Support\StorefrontPageOverrideSourceValidator;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
@@ -14,7 +15,7 @@ use Illuminate\Console\Command;
 #[Description('Inspect a Signals run, its session state, linked proposals, and recent streamed events.')]
 class InspectRunCommand extends Command
 {
-    public function handle(): int
+    public function handle(StorefrontPageOverrideSourceValidator $validator): int
     {
         $run = ReviewAnalysisRun::query()
             ->with(['proposals', 'followUps'])
@@ -71,6 +72,12 @@ class InspectRunCommand extends Command
                 $proposal->status,
                 (string) ($proposal->payload_json['title'] ?? 'Untitled override'),
             ));
+
+            $errors = $validator->validate($proposal->payload_json['arrow_source'] ?? null);
+
+            if ($errors !== []) {
+                $this->line('  validation: '.implode(' ', $errors));
+            }
         }
 
         if ($unlinkedOverrides !== []) {
@@ -120,6 +127,15 @@ class InspectRunCommand extends Command
 
         if ($run->kind === 'storefront_adaptation' && $linkedOverrides->isEmpty()) {
             $issues[] = 'Run has no linked storefront_page_override proposal.';
+        }
+
+        if ($run->kind === 'storefront_adaptation' && $linkedOverrides->isNotEmpty()) {
+            $hasInvalidOverride = $linkedOverrides
+                ->contains(fn (Proposal $proposal): bool => $validator->validate($proposal->payload_json['arrow_source'] ?? null) !== []);
+
+            if ($hasInvalidOverride) {
+                $issues[] = 'Run has an invalid storefront_page_override payload.';
+            }
         }
 
         if ($issues === []) {

@@ -26,6 +26,10 @@ Use find_storefront_page_override_proposal_tool to check for an existing overrid
 Read signals://storefront-page-override-runtime for the exact signals.ts contract and a minimal valid Arrow example.
 When you call create_storefront_page_override_proposal_tool, pass review_analysis_run_id=${run.id}.
 Stay inside the live Arrow.js proposal flow for this run.
+Return only a valid Arrow sandbox source payload with exactly one entry file named main.ts or main.js, plus optional main.css.
+Import Arrow primitives from @arrow-js/core and runtime data from ./signals.ts.
+Wrap live template values in callable expressions like \${() => state.count}.
+Do not use JSX, React hooks, Vue directives, or direct DOM mutation.
 Do not inspect or modify shared Laravel or React storefront files.
 Do not use bash, rg, sed, or local file inspection to look for Arrow examples or run metadata unless a Signals MCP tool/resource failure makes the live override path impossible.`.trim();
 }
@@ -39,6 +43,10 @@ Continue on the same Codex thread and refine the existing live Arrow.js proposal
 Use find_storefront_page_override_proposal_tool when you need to confirm the current proposal state.
 Read signals://storefront-page-override-runtime for the exact signals.ts contract and a minimal valid Arrow example.
 When you call the live proposal tool, pass review_analysis_run_id=${run.id}.
+Return only a valid Arrow sandbox source payload with exactly one entry file named main.ts or main.js, plus optional main.css.
+Import Arrow primitives from @arrow-js/core and runtime data from ./signals.ts.
+Wrap live template values in callable expressions like \${() => state.count}.
+Do not use JSX, React hooks, Vue directives, or direct DOM mutation.
 Do not switch this run into local repository edits.
 Do not use bash, rg, sed, or local file inspection for Arrow examples or run metadata unless the Signals MCP path is unavailable.`.trim();
 }

@@ -83,7 +83,7 @@ test('admin run page includes the active Arrow proposal preview context', functi
             'surface' => 'product_show',
             'title' => 'Premium Hoodie override',
             'arrow_source' => [
-                'main.ts' => 'import { product } from "./signals.ts"; export default html`<section>${product.name}</section>`;',
+                'main.ts' => 'import { html } from "@arrow-js/core"; import { product } from "./signals.ts"; export default html`<section>${product.name}</section>`;',
             ],
         ],
     ]);
@@ -138,6 +138,8 @@ test('queueing a storefront adaptation run stores the proposal context', functio
 
     expect($run->kind)->toBe('storefront_adaptation')
         ->and($run->prompt)->toContain('Use create_storefront_page_override_proposal_tool to create the live storefront change.')
+        ->and($run->prompt)->toContain('exactly one entry file named main.ts or main.js')
+        ->and($run->prompt)->toContain('@arrow-js/core')
         ->and($run->prompt)->toContain('Do not edit shared Laravel or React storefront files.')
         ->and($run->prompt)->toContain('surface="product_show"')
         ->and($run->context_json)->toMatchArray([
@@ -202,7 +204,7 @@ test('admin can queue a ui refinement run for a storefront page override proposa
             'surface' => 'product_show',
             'title' => 'Premium Hoodie live page',
             'arrow_source' => [
-                'main.ts' => 'export default html`<section>Override</section>`',
+                'main.ts' => 'import { html } from "@arrow-js/core"; import { product } from "./signals.ts"; export default html`<section>${product.name}</section>`;',
             ],
         ],
     ]);

@@ -93,7 +93,7 @@ test('product page includes an applied page override when one exists', function 
         'surface' => 'product_show',
         'title' => 'Premium Hoodie live page',
         'arrow_source_json' => [
-            'main.ts' => 'export default html`<section>Override</section>`',
+            'main.ts' => 'import { html } from "@arrow-js/core"; import { product } from "./signals.ts"; export default html`<section>${product.name}</section>`;',
         ],
     ]);
 
@@ -104,8 +104,30 @@ test('product page includes an applied page override when one exists', function 
             ->where('pageOverride.title', 'Premium Hoodie live page')
             ->where('pageOverride.surface', 'product_show')
             ->where('pageOverride.arrow_source', [
-                'main.ts' => 'export default html`<section>Override</section>`',
+                'main.ts' => 'import { html } from "@arrow-js/core"; import { product } from "./signals.ts"; export default html`<section>${product.name}</section>`;',
             ]));
+});
+
+test('product page ignores an invalid applied page override', function (): void {
+    $product = Product::factory()->create([
+        'name' => 'Premium Hoodie',
+        'slug' => 'premium-hoodie',
+    ]);
+
+    StorefrontPageOverride::factory()->create([
+        'product_id' => $product->id,
+        'surface' => 'product_show',
+        'title' => 'Broken live page',
+        'arrow_source_json' => [
+            'main.ts' => 'export default html`<section>Broken</section>`',
+        ],
+    ]);
+
+    $this->get(route('products.show', $product))
+        ->assertSuccessful()
+        ->assertInertia(fn (Assert $page): Assert => $page
+            ->component('storefront/show')
+            ->where('pageOverride', null));
 });
 
 test('welcome page is not exposed publicly', function (): void {

@@ -60,7 +60,7 @@ test('signals mcp server exposes the storefront override runtime resource and pa
             'surface' => 'product_show',
             'title' => 'Premium Hoodie override',
             'arrow_source' => [
-                'main.ts' => 'export default html`<section>Override</section>`;',
+                'main.ts' => 'import { html } from "@arrow-js/core"; import { product } from "./signals.ts"; export default html`<section>${product.name}</section>`;',
             ],
         ],
     ]);
@@ -97,6 +97,7 @@ test('signals mcp server exposes the storefront override runtime resource and pa
     $runtimeText = $runtimeResponse->json('result.contents.0.text');
 
     expect($runtimeText)
+        ->toContain('@arrow-js/core')
         ->toContain('./signals.ts')
         ->toContain("import { product, reviews, formatPrice } from './signals.ts';");
 
@@ -122,4 +123,44 @@ test('signals mcp server exposes the storefront override runtime resource and pa
 
     expect($toolPayload['proposals'][0]['id'] ?? null)->toBe($proposal->id)
         ->and($toolPayload['proposals'][0]['surface'] ?? null)->toBe('product_show');
+});
+
+test('signals mcp page override tool rejects malformed Arrow payloads', function (): void {
+    Event::fake([SignalsHelperHeartbeatUpdated::class]);
+
+    $plainTextToken = 'signals-mcp-secret';
+    $admin = User::factory()->create();
+    $product = Product::factory()->create();
+
+    SignalsDevice::factory()->create([
+        'user_id' => $admin->id,
+        'token_hash' => Hash::make($plainTextToken),
+    ]);
+
+    $toolCallResponse = $this->withHeaders([
+        'Authorization' => 'Bearer '.$plainTextToken,
+        'Accept' => 'application/json',
+    ])->postJson(route('signals.mcp'), [
+        'jsonrpc' => '2.0',
+        'id' => 'tool-call-invalid-1',
+        'method' => 'tools/call',
+        'params' => [
+            'name' => 'create-storefront-page-override-proposal-tool',
+            'arguments' => [
+                'product_id' => $product->id,
+                'surface' => 'product_show',
+                'title' => 'Broken override',
+                'arrow_source' => [
+                    'main.ts' => 'export default html`<section>Broken</section>`;',
+                    'extra.ts' => 'export const nope = true;',
+                ],
+                'rationale' => 'Invalid payload for test coverage.',
+            ],
+        ],
+    ]);
+
+    $toolCallResponse->assertOk();
+
+    expect($toolCallResponse->json('result.isError'))->toBeTrue()
+        ->and($toolCallResponse->json('result.content.0.text'))->toContain('Arrow source may only contain main.ts or main.js plus optional main.css.');
 });

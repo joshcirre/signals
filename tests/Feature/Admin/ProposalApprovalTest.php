@@ -103,7 +103,7 @@ test('approving a storefront page override proposal creates a live page override
             'surface' => 'product_show',
             'title' => 'Premium Hoodie live page',
             'arrow_source' => [
-                'main.ts' => 'export default html`<section>Override</section>`',
+                'main.ts' => 'import { html } from "@arrow-js/core"; import { product } from "./signals.ts"; export default html`<section>${product.name}</section>`;',
             ],
         ],
     ]);
@@ -119,6 +119,35 @@ test('approving a storefront page override proposal creates a live page override
 
     expect($proposal->fresh()->status)->toBe('applied')
         ->and($override->title)->toBe('Premium Hoodie live page')
-        ->and($override->arrow_source_json['main.ts'])->toContain('Override')
+        ->and($override->arrow_source_json['main.ts'])->toContain('@arrow-js/core')
         ->and($override->created_from_proposal_id)->toBe($proposal->id);
+});
+
+test('approving an invalid storefront page override proposal leaves it pending', function (): void {
+    $admin = User::factory()->create();
+    $product = Product::factory()->create();
+    $run = ReviewAnalysisRun::factory()->create([
+        'user_id' => $admin->id,
+    ]);
+    $proposal = Proposal::factory()->create([
+        'review_analysis_run_id' => $run->id,
+        'type' => 'storefront_page_override',
+        'target_type' => 'product',
+        'target_id' => $product->id,
+        'payload_json' => [
+            'surface' => 'product_show',
+            'title' => 'Broken live page',
+            'arrow_source' => [
+                'main.ts' => 'export default html`<section>Broken</section>`',
+            ],
+        ],
+    ]);
+
+    $this->actingAs($admin)
+        ->post(route('admin.proposals.approve', $proposal))
+        ->assertRedirect()
+        ->assertSessionHasErrors('proposal');
+
+    expect($proposal->fresh()->status)->toBe('pending')
+        ->and(StorefrontPageOverride::query()->where('created_from_proposal_id', $proposal->id)->exists())->toBeFalse();
 });

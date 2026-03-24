@@ -27,6 +27,14 @@ test('storefront adaptation prompt includes the concrete live run id', () => {
     );
     assert.match(
         prompt,
+        /exactly one entry file named main\.ts or main\.js/,
+    );
+    assert.match(
+        prompt,
+        /@arrow-js\/core/,
+    );
+    assert.match(
+        prompt,
         /Do not use bash, rg, sed, or local file inspection/,
     );
 });
@@ -41,6 +49,10 @@ test('ui refinement prompt includes the concrete live run id', () => {
     assert.match(
         prompt,
         /same Codex thread/,
+    );
+    assert.match(
+        prompt,
+        /exactly one entry file named main\.ts or main\.js/,
     );
 });
 

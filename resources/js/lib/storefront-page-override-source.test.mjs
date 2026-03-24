@@ -45,3 +45,34 @@ test('buildStorefrontPageOverrideSource injects runtime storefront context', () 
     assert.match(source['signals.ts'] ?? '', /Signals Supply/);
     assert.match(source['signals.ts'] ?? '', /formatPrice/);
 });
+
+test('buildStorefrontPageOverrideSource preserves a main.js payload', () => {
+    const source = buildStorefrontPageOverrideSource({
+        product: {
+            id: 1,
+            name: 'Premium Hoodie',
+            slug: 'premium-hoodie',
+            category: 'Outerwear',
+            price_cents: 11800,
+            hero_image_url: 'https://example.com/hoodie.jpg',
+            short_description: 'Soft brushed fleece.',
+            description: 'A modern hoodie.',
+            fit_note: 'Runs small.',
+            faq_items: [],
+            average_rating: 3.2,
+            review_count: 5,
+        },
+        reviews: [],
+        source: {
+            'main.js':
+                "import { html } from '@arrow-js/core'; import { product } from './signals.ts'; export default html`<section>${product.name}</section>`",
+        },
+        storeBrandName: 'Signals Supply',
+    });
+
+    assert.equal(
+        source['main.js'],
+        "import { html } from '@arrow-js/core'; import { product } from './signals.ts'; export default html`<section>${product.name}</section>`",
+    );
+    assert.match(source['signals.ts'] ?? '', /Premium Hoodie/);
+});

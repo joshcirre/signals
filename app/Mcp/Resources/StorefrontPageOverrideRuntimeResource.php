@@ -16,6 +16,11 @@ class StorefrontPageOverrideRuntimeResource extends Resource
     {
         return Response::json([
             'module' => './signals.ts',
+            'source_files' => [
+                'Exactly one of main.ts or main.js is required.',
+                'main.css is optional.',
+                'Do not include signals.ts in the stored payload. Signals injects it at runtime.',
+            ],
             'exports' => [
                 'product' => [
                     'id' => 'number',
@@ -38,11 +43,17 @@ class StorefrontPageOverrideRuntimeResource extends Resource
             'guidance' => [
                 'Create a full product page replacement, not a widget.',
                 'Keep claims grounded in product fields and live review evidence.',
+                'Import Arrow primitives from @arrow-js/core.',
                 'Import product, reviews, storefront, and formatPrice from ./signals.ts.',
-                'Return a valid Arrow.js template from main.ts.',
+                'Use html`...` for DOM and reactive(...) only when you need live state.',
+                'Wrap live template reads in functions like ${() => state.count}.',
+                'Export a default Arrow template or component result from the entry file.',
+                'Do not use JSX, React hooks, Vue directives, or direct DOM mutation.',
             ],
+            'agent_prompt' => 'Build this UI as an Arrow sandbox payload. Return an object for sandbox({ source }) with exactly one entry file named main.ts or main.js, plus main.css only if styles are needed. Use @arrow-js/core primitives directly: reactive(...) for state, html`...` for DOM, and component(...) only when reusable local state or composition is actually needed. Arrow expression slots are static by default, so any live value must be wrapped in a callable function like ${() => state.count}. Use event bindings like @click="${() => state.count++}", do not use JSX, React hooks, Vue directives, direct DOM mutation, or framework-specific render APIs. Export a default Arrow template or component result from the entry file. Keep the example self-contained, prefer a single clear root view, and communicate back to the host with output(payload) when needed.',
             'example' => [
                 'main.ts' => <<<'TS'
+import { html } from '@arrow-js/core';
 import { product, reviews, formatPrice } from './signals.ts';
 
 const fitReviews = reviews.slice(0, 3);

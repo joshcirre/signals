@@ -2,7 +2,8 @@ import { sandbox } from '@arrow-js/sandbox';
 import { useEffect, useRef } from 'react';
 
 export interface ArrowSource {
-    'main.ts': string;
+    'main.ts'?: string;
+    'main.js'?: string;
     'main.css'?: string;
     [key: string]: string | undefined;
 }

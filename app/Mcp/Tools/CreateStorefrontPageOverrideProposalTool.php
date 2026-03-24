@@ -5,6 +5,7 @@ namespace App\Mcp\Tools;
 use App\Events\ProposalUpdated;
 use App\Models\Proposal;
 use App\Models\ReviewAnalysisRun;
+use App\Support\StorefrontPageOverrideSourceValidator;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
@@ -14,6 +15,10 @@ use Laravel\Mcp\Server\Tool;
 #[Description('Create or update a product-scoped live storefront page override proposal using Arrow.js source code. The approved override replaces the product detail experience with an Arrow sandbox render for that product page.')]
 class CreateStorefrontPageOverrideProposalTool extends Tool
 {
+    public function __construct(
+        private StorefrontPageOverrideSourceValidator $validator,
+    ) {}
+
     public function handle(Request $request): Response
     {
         $proposalId = $request->get('proposal_id');
@@ -24,8 +29,10 @@ class CreateStorefrontPageOverrideProposalTool extends Tool
         $surface = $request->string('surface')->toString();
         $arrowSource = $request->get('arrow_source');
 
-        if (! is_array($arrowSource) || ! isset($arrowSource['main.ts'])) {
-            return Response::error('arrow_source must be an object containing at least a "main.ts" key.');
+        $errors = $this->validator->validate($arrowSource);
+
+        if ($errors !== []) {
+            return Response::error(implode(' ', $errors));
         }
 
         $payload = [
@@ -106,7 +113,8 @@ class CreateStorefrontPageOverrideProposalTool extends Tool
             'surface' => $schema->string()->enum(['product_show'])->required(),
             'title' => $schema->string()->required(),
             'arrow_source' => $schema->object([
-                'main.ts' => $schema->string()->required(),
+                'main.ts' => $schema->string(),
+                'main.js' => $schema->string(),
                 'main.css' => $schema->string(),
             ])->required(),
             'rationale' => $schema->string()->required(),

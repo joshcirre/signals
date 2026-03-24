@@ -7,11 +7,16 @@ use App\Models\Product;
 use App\Models\Proposal;
 use App\Models\Review;
 use App\Models\StorefrontPageOverride;
+use App\Support\StorefrontPageOverrideSourceValidator;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class ProductShowController extends Controller
 {
+    public function __construct(
+        private StorefrontPageOverrideSourceValidator $validator,
+    ) {}
+
     public function show(Product $product): Response
     {
         $product->load([
@@ -21,6 +26,9 @@ class ProductShowController extends Controller
             ->where('product_id', $product->id)
             ->where('surface', 'product_show')
             ->first();
+        $validPageOverride = $pageOverride !== null && $this->validator->passes($pageOverride->arrow_source_json)
+            ? $pageOverride
+            : null;
 
         return Inertia::render('storefront/show', [
             'product' => [
@@ -37,11 +45,11 @@ class ProductShowController extends Controller
                 'average_rating' => round((float) $product->reviews->avg('rating'), 1),
                 'review_count' => $product->reviews->count(),
             ],
-            'pageOverride' => $pageOverride ? [
-                'id' => $pageOverride->id,
-                'title' => $pageOverride->title,
-                'surface' => $pageOverride->surface,
-                'arrow_source' => $pageOverride->arrow_source_json,
+            'pageOverride' => $validPageOverride ? [
+                'id' => $validPageOverride->id,
+                'title' => $validPageOverride->title,
+                'surface' => $validPageOverride->surface,
+                'arrow_source' => $validPageOverride->arrow_source_json,
             ] : null,
             'liveWidgets' => Proposal::query()
                 ->where('type', 'storefront_widget')

@@ -8,11 +8,16 @@ use App\Models\Product;
 use App\Models\Proposal;
 use App\Models\Review;
 use App\Models\StorefrontPageOverride;
+use App\Support\StorefrontPageOverrideSourceValidator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 class ProposalApprovalController extends Controller
 {
+    public function __construct(
+        private StorefrontPageOverrideSourceValidator $validator,
+    ) {}
+
     public function __invoke(Request $request, Proposal $proposal): RedirectResponse
     {
         if ($proposal->type === 'product_copy_change' && $proposal->target_type === 'product') {
@@ -33,6 +38,13 @@ class ProposalApprovalController extends Controller
 
         if ($proposal->type === 'storefront_page_override' && $proposal->target_type === 'product') {
             $payload = $proposal->payload_json ?? [];
+            $errors = $this->validator->validate($payload['arrow_source'] ?? null);
+
+            if ($errors !== []) {
+                return back()->withErrors([
+                    'proposal' => implode(' ', $errors),
+                ]);
+            }
 
             StorefrontPageOverride::query()->updateOrCreate(
                 [

@@ -123,7 +123,7 @@ class QueueReviewAnalysisRunAction
                     ."Title: {$title}\n\n"
                     ."Current Arrow source:\n{$existingSource}\n\n"
                     .($normalizedFocus !== '' ? "Requested changes: {$normalizedFocus}\n\n" : '')
-                    ."Call create_storefront_page_override_proposal_tool with the updated arrow_source and proposal_id={$proposal->id} to push changes live. Keep the same product target and surface unless explicitly changed. The runtime provides a ./signals.ts module with product, reviews, storefront, and formatPrice exports.";
+                    ."Call create_storefront_page_override_proposal_tool with the updated arrow_source and proposal_id={$proposal->id} to push changes live. Keep the same product target and surface unless explicitly changed. The runtime provides a ./signals.ts module with product, reviews, storefront, and formatPrice exports. Return only a sandbox source payload with exactly one entry file named main.ts or main.js, plus optional main.css. Import Arrow primitives from @arrow-js/core and do not use JSX, React hooks, Vue directives, or direct DOM mutation.";
 
                 return [
                     'prompt' => $prompt,
@@ -183,11 +183,13 @@ class QueueReviewAnalysisRunAction
             ."- Use find_storefront_page_override_proposal_tool first to check for an existing override for product_id={$product->id} and surface=\"{$surface}\".\n"
             ."- Read the signals://storefront-page-override-runtime resource for the exact signals.ts contract and a minimal valid Arrow example.\n"
             ."- Use create_storefront_page_override_proposal_tool to create the live storefront change.\n"
+            ."- Return only a sandbox source payload with exactly one entry file named main.ts or main.js, plus optional main.css.\n"
             ."- Pass the current review_analysis_run_id when calling the tool so live proposal updates stream back into Signals.\n"
             ."- Target product_id={$product->id} and surface=\"{$surface}\".\n"
             ."- Keep the page override grounded in the proposal copy and supporting reviews instead of inventing new claims.\n"
             ."- Prefer replacing the full product detail experience for this one product instead of editing a small global widget.\n"
             ."- The runtime provides a ./signals.ts module with product, reviews, storefront, and formatPrice exports.\n"
+            ."- Import Arrow primitives from @arrow-js/core, wrap live template reads in callable expressions, and do not use JSX, React hooks, Vue directives, or direct DOM mutation.\n"
             ."- If you refine an existing storefront_page_override proposal, update it in place with proposal_id.\n\n"
             ."Pending proposal copy:\n"
             .($after ?? 'No replacement copy was provided.')."\n\n"
