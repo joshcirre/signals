@@ -16,6 +16,7 @@ class ReviewAnalysisRunFollowUpController extends Controller
     public function __invoke(StoreReviewAnalysisRunFollowUpRequest $request, ReviewAnalysisRun $reviewAnalysisRun): RedirectResponse
     {
         abort_if($reviewAnalysisRun->user_id !== $request->user()?->id, 404);
+        abort_if(! in_array($reviewAnalysisRun->kind, ['storefront_adaptation', 'ui_refinement'], true), 422);
         abort_if($reviewAnalysisRun->codex_thread_id === null, 422);
 
         ReviewAnalysisRunFollowUp::query()->create([

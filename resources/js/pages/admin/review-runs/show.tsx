@@ -29,6 +29,7 @@ import { cn } from '@/lib/utils';
 import {
     canContinueSession,
     hasPreviewableProposal,
+    supportsUiSessionFollowUp,
 } from '@/pages/admin/review-runs/session-follow-up';
 import type { ToolTraceActivity } from '@/pages/admin/review-runs/session-trace';
 import {
@@ -860,9 +861,11 @@ export default function ReviewAnalysisRunShow({
     const focus =
         typeof run.context?.focus === 'string' ? run.context.focus : null;
     const isRunning = displayRun.status === 'running';
+    const supportsFollowUp = supportsUiSessionFollowUp(displayRun.kind);
     const canFollowUp = canContinueSession({
         codexSessionStatus: displayRun.codex_session_status,
         codexThreadId: displayRun.codex_thread_id,
+        runKind: displayRun.kind,
         runStatus: displayRun.status,
     });
     const latestAssistantContent =
@@ -1107,12 +1110,14 @@ export default function ReviewAnalysisRunShow({
                                 />
                             ) : null}
 
-                            <ContinueSessionCard
-                                canFollowUp={canFollowUp}
-                                followUpForm={followUpForm}
-                                onSubmit={submitFollowUp}
-                                proposal={liveProposal}
-                            />
+                            {supportsFollowUp ? (
+                                <ContinueSessionCard
+                                    canFollowUp={canFollowUp}
+                                    followUpForm={followUpForm}
+                                    onSubmit={submitFollowUp}
+                                    proposal={liveProposal}
+                                />
+                            ) : null}
 
                             {toolActivities.length > 0 ? (
                                 <div className="pt-6">

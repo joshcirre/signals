@@ -11,6 +11,7 @@ test('admin can queue a follow-up on an active codex run session', function (): 
     $admin = User::factory()->create();
     $run = ReviewAnalysisRun::factory()->create([
         'user_id' => $admin->id,
+        'kind' => 'storefront_adaptation',
         'status' => 'completed',
         'codex_thread_id' => 'thread_live_123',
         'codex_session_status' => 'active',
@@ -40,12 +41,32 @@ test('admin cannot queue a follow-up when no codex thread is attached', function
     $admin = User::factory()->create();
     $run = ReviewAnalysisRun::factory()->create([
         'user_id' => $admin->id,
+        'kind' => 'storefront_adaptation',
         'codex_thread_id' => null,
     ]);
 
     $this->actingAs($admin)
         ->post(route('admin.review-runs.follow-ups.store', $run), [
             'content' => 'Make it warmer.',
+        ])
+        ->assertStatus(422);
+
+    expect(ReviewAnalysisRunFollowUp::query()->count())->toBe(0);
+});
+
+test('admin cannot queue a follow-up on a non-ui run even when a codex thread is attached', function (): void {
+    $admin = User::factory()->create();
+    $run = ReviewAnalysisRun::factory()->create([
+        'user_id' => $admin->id,
+        'kind' => 'review_analysis',
+        'status' => 'completed',
+        'codex_thread_id' => 'thread_live_123',
+        'codex_session_status' => 'active',
+    ]);
+
+    $this->actingAs($admin)
+        ->post(route('admin.review-runs.follow-ups.store', $run), [
+            'content' => 'Make the fit callout more red.',
         ])
         ->assertStatus(422);
 
@@ -62,6 +83,7 @@ test('device can claim and complete a queued follow-up for an active run session
     $run = ReviewAnalysisRun::factory()->create([
         'user_id' => $admin->id,
         'review_ops_device_id' => $device->id,
+        'kind' => 'ui_refinement',
         'status' => 'completed',
         'codex_thread_id' => 'thread_live_123',
         'codex_session_status' => 'active',
