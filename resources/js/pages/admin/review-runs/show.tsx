@@ -26,6 +26,10 @@ import type { ArrowSource } from '@/components/arrow-sandbox-widget';
 import AppLayout from '@/layouts/app-layout';
 import { buildStorefrontPageOverrideSource } from '@/lib/storefront-page-override-source';
 import { cn } from '@/lib/utils';
+import {
+    canContinueSession,
+    hasPreviewableProposal,
+} from '@/pages/admin/review-runs/session-follow-up';
 import type { ToolTraceActivity } from '@/pages/admin/review-runs/session-trace';
 import {
     buildToolTickerItem,
@@ -616,11 +620,11 @@ function proposalPreviewSource(
     proposal: ProposalPayload,
     previewContext: PreviewContext | null,
 ): ArrowSource | null {
-    const arrowSource = proposal.payload.arrow_source;
-
-    if (!arrowSource?.['main.ts']) {
+    if (!hasPreviewableProposal(proposal)) {
         return null;
     }
+
+    const arrowSource = proposal.payload.arrow_source as ArrowSource;
 
     if (proposal.type === 'storefront_page_override') {
         if (previewContext === null) {
@@ -640,14 +644,10 @@ function proposalPreviewSource(
 
 function RunProposalPreview({
     canFollowUp,
-    followUpForm,
-    onSubmit,
     previewContext,
     proposal,
 }: {
     canFollowUp: boolean;
-    followUpForm: FollowUpFormState;
-    onSubmit: () => void;
     previewContext: PreviewContext | null;
     proposal: ProposalPayload;
 }) {
@@ -729,53 +729,72 @@ function RunProposalPreview({
                     source yet.
                 </div>
             )}
+        </div>
+    );
+}
 
-            <div className="rounded-[26px] border border-slate-950/7 bg-slate-50 px-4 py-4">
-                <div className="flex items-center gap-2 text-[10px] font-medium tracking-[0.18em] text-slate-400 uppercase">
-                    <MessageSquarePlus className="size-3.5" />
-                    Continue this session
-                </div>
-                <p className="mt-2 text-sm leading-6 text-slate-500">
-                    Ask the same Codex thread to refine the live UI without
-                    starting a new run.
-                </p>
-                <div className="mt-3 flex gap-2">
-                    <input
-                        type="text"
-                        value={followUpForm.data.content}
-                        onChange={(event) =>
-                            followUpForm.setData('content', event.target.value)
-                        }
-                        onKeyDown={(event) => {
-                            if (event.key === 'Enter') {
-                                onSubmit();
-                            }
-                        }}
-                        placeholder="Make the fit callout more red and pull it above the price."
-                        disabled={!canFollowUp || followUpForm.processing}
-                        className="flex-1 rounded-full border border-slate-950/10 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none placeholder:text-slate-400 disabled:cursor-not-allowed disabled:bg-slate-100"
-                    />
-                    <button
-                        type="button"
-                        onClick={onSubmit}
-                        disabled={!canFollowUp || followUpForm.processing}
-                        className="inline-flex items-center gap-2 rounded-full bg-slate-950 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
-                    >
-                        {followUpForm.processing ? (
-                            <Loader2 className="size-4 animate-spin" />
-                        ) : (
-                            <Wand2 className="size-4" />
-                        )}
-                        Refine
-                    </button>
-                </div>
-                {!canFollowUp ? (
-                    <p className="mt-3 text-xs text-slate-400">
-                        This run does not currently have an active live Codex
-                        session attached.
-                    </p>
-                ) : null}
+function ContinueSessionCard({
+    canFollowUp,
+    followUpForm,
+    onSubmit,
+    proposal,
+}: {
+    canFollowUp: boolean;
+    followUpForm: FollowUpFormState;
+    onSubmit: () => void;
+    proposal: ProposalPayload | null;
+}) {
+    return (
+        <div className="rounded-[30px] border border-white/65 bg-white/85 p-5 shadow-[0_30px_120px_-60px_rgba(15,23,42,0.55)] backdrop-blur-xl">
+            <div className="flex items-center gap-2 text-[10px] font-medium tracking-[0.18em] text-slate-400 uppercase">
+                <MessageSquarePlus className="size-3.5" />
+                Continue this session
             </div>
+            <p className="mt-2 text-sm leading-6 text-slate-500">
+                {proposal
+                    ? 'Ask the same Codex thread to refine the live UI without starting a new run.'
+                    : 'No live Arrow proposal has been created yet. Use the same Codex thread to tell it to create one or adjust the draft direction.'}
+            </p>
+            <div className="mt-3 flex gap-2">
+                <input
+                    type="text"
+                    value={followUpForm.data.content}
+                    onChange={(event) =>
+                        followUpForm.setData('content', event.target.value)
+                    }
+                    onKeyDown={(event) => {
+                        if (event.key === 'Enter') {
+                            onSubmit();
+                        }
+                    }}
+                    placeholder={
+                        proposal
+                            ? 'Make the fit callout more red and pull it above the price.'
+                            : 'Create the live Arrow page override now and make the fit note the hero message.'
+                    }
+                    disabled={!canFollowUp || followUpForm.processing}
+                    className="flex-1 rounded-full border border-slate-950/10 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none placeholder:text-slate-400 disabled:cursor-not-allowed disabled:bg-slate-100"
+                />
+                <button
+                    type="button"
+                    onClick={onSubmit}
+                    disabled={!canFollowUp || followUpForm.processing}
+                    className="inline-flex items-center gap-2 rounded-full bg-slate-950 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+                >
+                    {followUpForm.processing ? (
+                        <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                        <Wand2 className="size-4" />
+                    )}
+                    Refine
+                </button>
+            </div>
+            {!canFollowUp ? (
+                <p className="mt-3 text-xs text-slate-400">
+                    This run does not currently have an active live Codex
+                    session attached.
+                </p>
+            ) : null}
         </div>
     );
 }
@@ -841,10 +860,11 @@ export default function ReviewAnalysisRunShow({
     const focus =
         typeof run.context?.focus === 'string' ? run.context.focus : null;
     const isRunning = displayRun.status === 'running';
-    const canFollowUp =
-        displayRun.codex_thread_id !== null &&
-        displayRun.codex_session_status === 'active' &&
-        !isRunning;
+    const canFollowUp = canContinueSession({
+        codexSessionStatus: displayRun.codex_session_status,
+        codexThreadId: displayRun.codex_thread_id,
+        runStatus: displayRun.status,
+    });
     const latestAssistantContent =
         [...timelineEvents]
             .reverse()
@@ -948,15 +968,12 @@ export default function ReviewAnalysisRunShow({
             return;
         }
 
-        followUpForm.post(
-            `/admin/review-runs/${run.id.toString()}/follow-ups`,
-            {
-                preserveScroll: true,
-                onSuccess: () => {
-                    followUpForm.reset();
-                },
+        followUpForm.post(admin.reviewRuns.followUps.store(run.id).url, {
+            preserveScroll: true,
+            onSuccess: () => {
+                followUpForm.reset();
             },
-        );
+        });
     };
 
     return (
@@ -1085,12 +1102,17 @@ export default function ReviewAnalysisRunShow({
                             {liveProposal ? (
                                 <RunProposalPreview
                                     canFollowUp={canFollowUp}
-                                    followUpForm={followUpForm}
-                                    onSubmit={submitFollowUp}
                                     previewContext={previewContext}
                                     proposal={liveProposal}
                                 />
                             ) : null}
+
+                            <ContinueSessionCard
+                                canFollowUp={canFollowUp}
+                                followUpForm={followUpForm}
+                                onSubmit={submitFollowUp}
+                                proposal={liveProposal}
+                            />
 
                             {toolActivities.length > 0 ? (
                                 <div className="pt-6">
