@@ -6,6 +6,7 @@ import {
     CheckCircle2,
     ChevronDown,
     ChevronUp,
+    ClipboardList,
     CircleAlert,
     Loader2,
     Sparkles,
@@ -666,13 +667,22 @@ export default function ReviewAnalysisRunShow({ run }: ReviewRunShowProps) {
                         </>
                     }
                     actions={
-                        <Link
-                            href={admin.signals().url}
-                            className="inline-flex items-center gap-2 rounded-sm border border-slate-950/10 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-950/20 hover:bg-slate-50"
-                        >
-                            <ArrowLeft className="size-4" />
-                            Back to launcher
-                        </Link>
+                        <div className="flex flex-wrap items-center gap-2">
+                            <Link
+                                href={admin.proposals.index().url}
+                                className="inline-flex items-center gap-2 rounded-sm border border-slate-950/10 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-950/20 hover:bg-slate-50"
+                            >
+                                <ClipboardList className="size-4" />
+                                Review queue
+                            </Link>
+                            <Link
+                                href={admin.signals().url}
+                                className="inline-flex items-center gap-2 rounded-sm border border-slate-950/10 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-950/20 hover:bg-slate-50"
+                            >
+                                <ArrowLeft className="size-4" />
+                                Back to launcher
+                            </Link>
+                        </div>
                     }
                 />
 

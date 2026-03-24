@@ -1,6 +1,13 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useEcho } from '@laravel/echo-react';
-import { Bot, Check, CirclePlay, Copy, Radar } from 'lucide-react';
+import {
+    Bot,
+    Check,
+    CirclePlay,
+    ClipboardList,
+    Copy,
+    Radar,
+} from 'lucide-react';
 import type { FormEvent } from 'react';
 import { useState } from 'react';
 import {
@@ -195,6 +202,15 @@ function SignalsPage({ filters, helper, latestRun }: SignalsPageProps) {
                             ) : null}
                         </>
                     }
+                    actions={
+                        <Link
+                            href={admin.proposals.index().url}
+                            className="inline-flex items-center gap-2 rounded-sm border border-slate-950/10 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-950/20 hover:bg-slate-50"
+                        >
+                            <ClipboardList className="size-4" />
+                            Open review queue
+                        </Link>
+                    }
                 />
 
                 <AdminSurface>
@@ -342,6 +358,15 @@ function SignalsPage({ filters, helper, latestRun }: SignalsPageProps) {
                                                         : 'Open latest session'}
                                                 </Link>
                                             ) : null}
+                                            <Link
+                                                href={
+                                                    admin.proposals.index().url
+                                                }
+                                                className="inline-flex items-center gap-2 rounded-sm border border-slate-950/10 bg-white px-3.5 py-2.5 text-sm font-medium text-slate-700 transition hover:border-slate-950/20 hover:bg-slate-50"
+                                            >
+                                                <ClipboardList className="size-4" />
+                                                Review queue
+                                            </Link>
                                         </div>
                                     </form>
                                 )}

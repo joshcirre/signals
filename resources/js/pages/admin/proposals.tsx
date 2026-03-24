@@ -1,7 +1,7 @@
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { useEcho } from '@laravel/echo-react';
 import { PencilLine, Save, ShieldCheck, ShieldX, Wand2 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
     AdminHeader,
     AdminPage,
@@ -13,6 +13,7 @@ import {
 import { ArrowSandboxWidget } from '@/components/arrow-sandbox-widget';
 import AppLayout from '@/layouts/app-layout';
 import { cn } from '@/lib/utils';
+import { reconcileQueueState } from '@/pages/admin/proposals/queue-state';
 import type { BreadcrumbItem } from '@/types';
 import admin from '@/routes/admin';
 import { dashboard } from '@/routes/index';
@@ -147,6 +148,28 @@ export default function ProposalQueue({
         [auth.user.id],
     );
 
+    useEffect(() => {
+        setProposals(initialProposals);
+        setSelectedProposalId((currentSelectedProposalId) => {
+            const nextQueueState = reconcileQueueState(
+                initialProposals,
+                currentSelectedProposalId,
+                editingProposalId,
+            );
+
+            return nextQueueState.selectedProposalId;
+        });
+        setEditingProposalId((currentEditingProposalId) => {
+            const nextQueueState = reconcileQueueState(
+                initialProposals,
+                selectedProposalId,
+                currentEditingProposalId,
+            );
+
+            return nextQueueState.editingProposalId;
+        });
+    }, [editingProposalId, initialProposals, selectedProposalId]);
+
     const beginEditingProposal = (proposalId: number) => {
         const proposal = proposals.find((item) => item.id === proposalId);
 
@@ -177,6 +200,31 @@ export default function ProposalQueue({
             focus: refineQuery,
             redirect_to: 'proposals',
         });
+    };
+
+    const refreshQueueVisitOptions = {
+        preserveScroll: true,
+        preserveState: false,
+    } as const;
+
+    const approveProposal = (proposalId: number) => {
+        router.post(
+            admin.proposals.approve({
+                proposal: proposalId,
+            }).url,
+            {},
+            refreshQueueVisitOptions,
+        );
+    };
+
+    const rejectProposal = (proposalId: number) => {
+        router.post(
+            admin.proposals.reject({
+                proposal: proposalId,
+            }).url,
+            {},
+            refreshQueueVisitOptions,
+        );
     };
 
     return (
@@ -387,6 +435,8 @@ export default function ProposalQueue({
                                         refineQuery={refineQuery}
                                         onRefineQueryChange={setRefineQuery}
                                         onRefine={refineWithCodex}
+                                        onApprove={approveProposal}
+                                        onReject={rejectProposal}
                                     />
                                 ) : isEditingSelected ? (
                                     <form
@@ -399,6 +449,7 @@ export default function ProposalQueue({
                                                         selectedProposal.id,
                                                 }).url,
                                                 {
+                                                    preserveState: false,
                                                     preserveScroll: true,
                                                     onSuccess: () => {
                                                         setEditingProposalId(
@@ -549,13 +600,8 @@ export default function ProposalQueue({
                                                     <button
                                                         type="button"
                                                         onClick={() =>
-                                                            router.post(
-                                                                admin.proposals.approve(
-                                                                    {
-                                                                        proposal:
-                                                                            selectedProposal.id,
-                                                                    },
-                                                                ).url,
+                                                            approveProposal(
+                                                                selectedProposal.id,
                                                             )
                                                         }
                                                         className="inline-flex items-center gap-2 rounded-sm bg-slate-950 px-3 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
@@ -566,13 +612,8 @@ export default function ProposalQueue({
                                                     <button
                                                         type="button"
                                                         onClick={() =>
-                                                            router.post(
-                                                                admin.proposals.reject(
-                                                                    {
-                                                                        proposal:
-                                                                            selectedProposal.id,
-                                                                    },
-                                                                ).url,
+                                                            rejectProposal(
+                                                                selectedProposal.id,
                                                             )
                                                         }
                                                         className="inline-flex items-center gap-2 rounded-sm border border-slate-950/10 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition hover:border-slate-950/20 hover:bg-slate-50"
@@ -644,13 +685,17 @@ export default function ProposalQueue({
 }
 
 function StorefrontWidgetDetail({
+    onApprove,
     proposal,
     refineQuery,
+    onReject,
     onRefineQueryChange,
     onRefine,
 }: {
+    onApprove: (proposalId: number) => void;
     proposal: Proposal;
     refineQuery: string;
+    onReject: (proposalId: number) => void;
     onRefineQueryChange: (v: string) => void;
     onRefine: () => void;
 }) {
@@ -709,13 +754,7 @@ function StorefrontWidgetDetail({
                 <div className="flex flex-wrap items-center gap-2">
                     <button
                         type="button"
-                        onClick={() =>
-                            router.post(
-                                admin.proposals.approve({
-                                    proposal: proposal.id,
-                                }).url,
-                            )
-                        }
+                        onClick={() => onApprove(proposal.id)}
                         className="inline-flex items-center gap-2 rounded-sm bg-slate-950 px-3 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
                     >
                         <ShieldCheck className="size-4" />
@@ -723,13 +762,7 @@ function StorefrontWidgetDetail({
                     </button>
                     <button
                         type="button"
-                        onClick={() =>
-                            router.post(
-                                admin.proposals.reject({
-                                    proposal: proposal.id,
-                                }).url,
-                            )
-                        }
+                        onClick={() => onReject(proposal.id)}
                         className="inline-flex items-center gap-2 rounded-sm border border-slate-950/10 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition hover:border-slate-950/20 hover:bg-slate-50"
                     >
                         <ShieldX className="size-4" />
