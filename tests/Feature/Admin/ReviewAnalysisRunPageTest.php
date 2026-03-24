@@ -48,9 +48,58 @@ test('admin can open their review analysis run chat page', function (): void {
             ->where('run.status', 'running')
             ->where('run.kind', 'review_analysis')
             ->where('run.prompt', $run->prompt)
+            ->where('run.codex_thread_id', null)
+            ->where('run.codex_session_status', null)
             ->has('run.events', 1)
             ->where('run.events.0.kind', 'assistant_text')
-            ->where('run.events.0.content', 'Checking the latest apparel review patterns now.'));
+            ->where('run.events.0.content', 'Checking the latest apparel review patterns now.')
+            ->where('proposal', null)
+            ->where('preview_context', null));
+});
+
+test('admin run page includes the active Arrow proposal preview context', function (): void {
+    $admin = User::factory()->create();
+    $product = Product::factory()->create([
+        'name' => 'Premium Hoodie',
+        'slug' => 'premium-hoodie',
+    ]);
+    $run = ReviewAnalysisRun::factory()->create([
+        'user_id' => $admin->id,
+        'status' => 'completed',
+        'kind' => 'storefront_adaptation',
+        'codex_thread_id' => 'thread_live_preview',
+        'codex_session_status' => 'active',
+        'context_json' => [
+            'product_id' => $product->id,
+            'product_slug' => $product->slug,
+        ],
+    ]);
+    Proposal::factory()->create([
+        'review_analysis_run_id' => $run->id,
+        'type' => 'storefront_page_override',
+        'target_type' => 'product',
+        'target_id' => $product->id,
+        'payload_json' => [
+            'surface' => 'product_show',
+            'title' => 'Premium Hoodie override',
+            'arrow_source' => [
+                'main.ts' => 'import { product } from "./signals.ts"; export default html`<section>${product.name}</section>`;',
+            ],
+        ],
+    ]);
+
+    $this->actingAs($admin)
+        ->get(route('admin.review-runs.show', $run))
+        ->assertSuccessful()
+        ->assertInertia(fn (Assert $page): Assert => $page
+            ->component('admin/review-runs/show')
+            ->where('run.codex_thread_id', 'thread_live_preview')
+            ->where('run.codex_session_status', 'active')
+            ->where('proposal.type', 'storefront_page_override')
+            ->where('proposal.target_slug', 'premium-hoodie')
+            ->where('preview_context.product.id', $product->id)
+            ->where('preview_context.product.slug', 'premium-hoodie')
+            ->has('preview_context.reviews'));
 });
 
 test('queueing a storefront adaptation run stores the proposal context', function (): void {
@@ -177,6 +226,8 @@ test('admin can queue a ui refinement run for a storefront page override proposa
     expect($run->prompt)->toContain('create_storefront_page_override_proposal_tool')
         ->and($run->context_json)->toMatchArray([
             'arrow_proposal_id' => $proposal->id,
+            'product_id' => $product->id,
+            'product_slug' => 'premium-hoodie',
             'surface' => 'product_show',
             'title' => 'Premium Hoodie live page',
             'focus' => 'Move the fit guidance above the price',

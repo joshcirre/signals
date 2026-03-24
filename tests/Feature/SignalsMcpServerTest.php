@@ -32,6 +32,7 @@ test('signals mcp server lists tools for an authenticated helper session', funct
     $toolNames = collect($toolsResponse->json('result.tools'))->pluck('name');
 
     expect($toolNames)
+        ->toContain('create-storefront-page-override-proposal-tool')
         ->toContain('create-storefront-widget-proposal-tool')
         ->toContain('search-reviews-tool');
 });

@@ -41,6 +41,7 @@ class CreateStorefrontWidgetProposalTool extends Tool
 
             if ($proposal !== null) {
                 $proposal->forceFill([
+                    'review_analysis_run_id' => $runId,
                     'payload_json' => $payload,
                     'rationale' => $request->string('rationale')->toString(),
                     'confidence' => (float) ($request->get('confidence') ?? 0.850),

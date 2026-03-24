@@ -3,13 +3,14 @@
 namespace Database\Factories;
 
 use App\Models\ReviewAnalysisRun;
+use App\Models\ReviewAnalysisRunFollowUp;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends Factory<ReviewAnalysisRun>
+ * @extends Factory<ReviewAnalysisRunFollowUp>
  */
-class ReviewAnalysisRunFactory extends Factory
+class ReviewAnalysisRunFollowUpFactory extends Factory
 {
     /**
      * Define the model's default state.
@@ -19,16 +20,12 @@ class ReviewAnalysisRunFactory extends Factory
     public function definition(): array
     {
         return [
-            'user_id' => User::factory(),
-            'review_ops_device_id' => null,
+            'review_analysis_run_id' => ReviewAnalysisRun::factory(),
+            'requested_by' => User::factory(),
+            'content' => fake()->sentence(),
             'status' => 'queued',
-            'kind' => 'review_analysis',
-            'prompt' => 'Analyze the latest apparel reviews and create merchant-facing proposals.',
-            'context_json' => null,
             'summary' => null,
             'error_message' => null,
-            'codex_thread_id' => null,
-            'codex_session_status' => null,
             'requested_at' => now(),
             'started_at' => null,
             'completed_at' => null,

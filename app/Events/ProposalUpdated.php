@@ -3,6 +3,7 @@
 namespace App\Events;
 
 use App\Models\Proposal;
+use App\Support\SignalsProposalPresenter;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
@@ -34,11 +35,6 @@ class ProposalUpdated implements ShouldBroadcastNow
 
     public function broadcastWith(): array
     {
-        return [
-            'id' => $this->proposal->id,
-            'type' => $this->proposal->type,
-            'status' => $this->proposal->status,
-            'payload' => $this->proposal->payload_json,
-        ];
+        return SignalsProposalPresenter::present($this->proposal);
     }
 }

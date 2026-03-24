@@ -130,6 +130,8 @@ class QueueReviewAnalysisRunAction
                     'message' => 'Queued a UI refinement run — Codex will update the page override live.',
                     'context_json' => [
                         'arrow_proposal_id' => $proposal->id,
+                        'product_id' => $proposal->target_id,
+                        'product_slug' => Product::query()->find($proposal->target_id)?->slug,
                         'surface' => $surface,
                         'title' => $title,
                         'focus' => $normalizedFocus ?: null,

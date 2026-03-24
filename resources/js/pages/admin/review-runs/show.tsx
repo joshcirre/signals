@@ -1,4 +1,4 @@
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { useEcho } from '@laravel/echo-react';
 import {
     ArrowLeft,
@@ -9,7 +9,9 @@ import {
     ClipboardList,
     CircleAlert,
     Loader2,
+    MessageSquarePlus,
     Sparkles,
+    Wand2,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import type { BreadcrumbItem } from '@/types';
@@ -19,7 +21,10 @@ import {
     AdminPill,
     AdminSurface,
 } from '@/components/admin-page';
+import { ArrowSandboxWidget } from '@/components/arrow-sandbox-widget';
+import type { ArrowSource } from '@/components/arrow-sandbox-widget';
 import AppLayout from '@/layouts/app-layout';
+import { buildStorefrontPageOverrideSource } from '@/lib/storefront-page-override-source';
 import { cn } from '@/lib/utils';
 import type { ToolTraceActivity } from '@/pages/admin/review-runs/session-trace';
 import {
@@ -29,6 +34,7 @@ import {
 } from '@/pages/admin/review-runs/session-trace';
 import admin from '@/routes/admin';
 import { dashboard } from '@/routes/index';
+import productRoutes from '@/routes/products';
 
 interface PageProps {
     auth: {
@@ -44,6 +50,8 @@ interface RunUpdatedEvent {
     status: string;
     summary: string | null;
     error_message: string | null;
+    codex_thread_id: string | null;
+    codex_session_status: string | null;
 }
 
 interface RunEventPayload {
@@ -70,11 +78,74 @@ interface ReviewRunShowProps {
         prompt: string | null;
         context: Record<string, unknown> | null;
         error_message: string | null;
+        codex_thread_id: string | null;
+        codex_session_status: string | null;
         requested_at: string | null;
         started_at: string | null;
         completed_at: string | null;
         events: RunEventPayload[];
     };
+    proposal: ProposalPayload | null;
+    preview_context: PreviewContext | null;
+}
+
+interface ProposalPayload {
+    id: number;
+    review_analysis_run_id: number | null;
+    type: string;
+    status: string;
+    target_type: string;
+    target_id: number;
+    target_label: string;
+    target_slug: string | null;
+    rationale: string;
+    confidence: number;
+    created_at: string | null;
+    payload: {
+        field?: string | null;
+        after?: string | null;
+        response_draft?: string | null;
+        position?: string;
+        surface?: string;
+        title?: string;
+        arrow_source?: ArrowSource;
+    };
+}
+
+interface PreviewContext {
+    product: {
+        id: number;
+        name: string;
+        slug: string;
+        category: string;
+        price_cents: number;
+        hero_image_url: string;
+        short_description: string;
+        description: string;
+        fit_note: string | null;
+        faq_items: Array<{ question: string; answer: string }>;
+        average_rating: number;
+        review_count: number;
+    };
+    reviews: Array<{
+        id: number;
+        author_name: string;
+        rating: number;
+        title: string | null;
+        body: string;
+        reviewed_at: string | null;
+        approved_response: string | null;
+        response_approved_at: string | null;
+    }>;
+    store_brand_name: string;
+}
+
+interface FollowUpFormState {
+    data: {
+        content: string;
+    };
+    processing: boolean;
+    setData: (key: 'content', value: string) => void;
 }
 
 const milestoneActions = new Set([
@@ -86,6 +157,9 @@ const milestoneActions = new Set([
     'codex.thread.started',
     'codex.thread.ready',
     'codex.turn.started',
+    'codex.follow-up.started',
+    'codex.follow-up.completed',
+    'codex.follow-up.failed',
     'run.completed',
     'run.failed',
 ]);
@@ -236,6 +310,9 @@ function humanizeAction(action: string): string {
         'codex.thread.started': 'Thread created',
         'codex.thread.ready': 'Thread ready',
         'codex.turn.started': 'Analysis started',
+        'codex.follow-up.started': 'Follow-up started',
+        'codex.follow-up.completed': 'Follow-up completed',
+        'codex.follow-up.failed': 'Follow-up failed',
         'run.completed': 'Run completed',
         'run.failed': 'Run failed',
     };
@@ -387,6 +464,27 @@ function TraceAssistantBubble({
     );
 }
 
+function TraceUserBubble({
+    content,
+    createdAt,
+}: {
+    content: string;
+    createdAt: string;
+}) {
+    return (
+        <div className="flex justify-end pl-12">
+            <div className="max-w-[34rem] min-w-0">
+                <div className="rounded-[28px] bg-slate-950 px-5 py-4 text-[15px] leading-7 whitespace-pre-wrap text-white shadow-[0_24px_70px_-45px_rgba(15,23,42,0.95)]">
+                    {content}
+                </div>
+                <time className="mt-2 block pr-2 text-right text-[11px] text-slate-400">
+                    {formatTimestamp(createdAt)}
+                </time>
+            </div>
+        </div>
+    );
+}
+
 function TraceStatusRow({ event }: { event: RunEventPayload }) {
     return (
         <div className="flex items-center gap-3 py-1">
@@ -514,16 +612,195 @@ function ToolTicker({
     );
 }
 
-export default function ReviewAnalysisRunShow({ run }: ReviewRunShowProps) {
+function proposalPreviewSource(
+    proposal: ProposalPayload,
+    previewContext: PreviewContext | null,
+): ArrowSource | null {
+    const arrowSource = proposal.payload.arrow_source;
+
+    if (!arrowSource?.['main.ts']) {
+        return null;
+    }
+
+    if (proposal.type === 'storefront_page_override') {
+        if (previewContext === null) {
+            return null;
+        }
+
+        return buildStorefrontPageOverrideSource({
+            product: previewContext.product,
+            reviews: previewContext.reviews,
+            source: arrowSource,
+            storeBrandName: previewContext.store_brand_name,
+        });
+    }
+
+    return arrowSource;
+}
+
+function RunProposalPreview({
+    canFollowUp,
+    followUpForm,
+    onSubmit,
+    previewContext,
+    proposal,
+}: {
+    canFollowUp: boolean;
+    followUpForm: FollowUpFormState;
+    onSubmit: () => void;
+    previewContext: PreviewContext | null;
+    proposal: ProposalPayload;
+}) {
+    const source = proposalPreviewSource(proposal, previewContext);
+
+    return (
+        <div className="space-y-4 rounded-[30px] border border-white/65 bg-white/85 p-5 shadow-[0_30px_120px_-60px_rgba(15,23,42,0.55)] backdrop-blur-xl">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                    <div className="flex items-center gap-2 text-[10px] font-medium tracking-[0.22em] text-slate-400 uppercase">
+                        <Sparkles className="size-3.5 text-sky-500" />
+                        Live UI preview
+                    </div>
+                    <h2 className="mt-2 text-lg font-medium text-slate-950">
+                        {proposal.payload.title ??
+                            proposal.target_label ??
+                            'Arrow proposal'}
+                    </h2>
+                    <p className="mt-1 text-sm leading-6 text-slate-500">
+                        {proposal.rationale}
+                    </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                    <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-medium tracking-[0.14em] text-slate-500 uppercase">
+                        {proposal.status}
+                    </span>
+                    {proposal.target_slug ? (
+                        <Link
+                            href={
+                                productRoutes.show({
+                                    product: proposal.target_slug,
+                                }).url
+                            }
+                            className="rounded-full border border-slate-950/10 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:border-slate-950/20 hover:bg-slate-50"
+                        >
+                            Preview storefront
+                        </Link>
+                    ) : null}
+                </div>
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-2">
+                <div className="rounded-2xl border border-slate-950/7 bg-slate-50 px-4 py-3">
+                    <p className="text-[10px] font-medium tracking-[0.18em] text-slate-400 uppercase">
+                        Surface
+                    </p>
+                    <p className="mt-1 text-sm font-medium text-slate-950 capitalize">
+                        {(
+                            proposal.payload.surface ??
+                            proposal.payload.position ??
+                            'product_show'
+                        ).replaceAll('_', ' ')}
+                    </p>
+                </div>
+                <div className="rounded-2xl border border-slate-950/7 bg-slate-50 px-4 py-3">
+                    <p className="text-[10px] font-medium tracking-[0.18em] text-slate-400 uppercase">
+                        Session
+                    </p>
+                    <p className="mt-1 text-sm font-medium text-slate-950">
+                        {canFollowUp ? 'Open for refinement' : 'Closed'}
+                    </p>
+                </div>
+            </div>
+
+            {source ? (
+                <div className="overflow-hidden rounded-[26px] border border-slate-950/7 bg-white">
+                    <div className="border-b border-slate-950/6 bg-slate-50 px-4 py-2.5">
+                        <p className="text-[10px] font-medium tracking-[0.18em] text-slate-400 uppercase">
+                            Inline preview
+                        </p>
+                    </div>
+                    <div className="bg-white p-4">
+                        <ArrowSandboxWidget source={source} />
+                    </div>
+                </div>
+            ) : (
+                <div className="rounded-[26px] border border-dashed border-slate-950/10 px-4 py-8 text-center text-sm text-slate-400">
+                    The current proposal does not have a previewable Arrow
+                    source yet.
+                </div>
+            )}
+
+            <div className="rounded-[26px] border border-slate-950/7 bg-slate-50 px-4 py-4">
+                <div className="flex items-center gap-2 text-[10px] font-medium tracking-[0.18em] text-slate-400 uppercase">
+                    <MessageSquarePlus className="size-3.5" />
+                    Continue this session
+                </div>
+                <p className="mt-2 text-sm leading-6 text-slate-500">
+                    Ask the same Codex thread to refine the live UI without
+                    starting a new run.
+                </p>
+                <div className="mt-3 flex gap-2">
+                    <input
+                        type="text"
+                        value={followUpForm.data.content}
+                        onChange={(event) =>
+                            followUpForm.setData('content', event.target.value)
+                        }
+                        onKeyDown={(event) => {
+                            if (event.key === 'Enter') {
+                                onSubmit();
+                            }
+                        }}
+                        placeholder="Make the fit callout more red and pull it above the price."
+                        disabled={!canFollowUp || followUpForm.processing}
+                        className="flex-1 rounded-full border border-slate-950/10 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none placeholder:text-slate-400 disabled:cursor-not-allowed disabled:bg-slate-100"
+                    />
+                    <button
+                        type="button"
+                        onClick={onSubmit}
+                        disabled={!canFollowUp || followUpForm.processing}
+                        className="inline-flex items-center gap-2 rounded-full bg-slate-950 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+                    >
+                        {followUpForm.processing ? (
+                            <Loader2 className="size-4 animate-spin" />
+                        ) : (
+                            <Wand2 className="size-4" />
+                        )}
+                        Refine
+                    </button>
+                </div>
+                {!canFollowUp ? (
+                    <p className="mt-3 text-xs text-slate-400">
+                        This run does not currently have an active live Codex
+                        session attached.
+                    </p>
+                ) : null}
+            </div>
+        </div>
+    );
+}
+
+export default function ReviewAnalysisRunShow({
+    preview_context: previewContext,
+    proposal,
+    run,
+}: ReviewRunShowProps) {
     const { auth } = usePage<PageProps>().props;
     const [runOverride, setRunOverride] = useState<RunUpdatedEvent | null>(
         null,
     );
     const [liveEvents, setLiveEvents] = useState<RunEventPayload[]>([]);
+    const [liveProposal, setLiveProposal] = useState<ProposalPayload | null>(
+        proposal,
+    );
     const [traceOpen, setTraceOpen] = useState(run.status === 'failed');
+    const followUpForm = useForm({
+        content: '',
+    });
     const scrollEndRef = useRef<HTMLDivElement | null>(null);
     const runUpdatedEventName = '.review-analysis-run.updated';
     const runEventCreatedEventName = '.review-analysis-event.created';
+    const proposalUpdatedEventName = '.proposal.updated';
     const displayRun =
         runOverride?.id === run.id
             ? {
@@ -531,6 +808,11 @@ export default function ReviewAnalysisRunShow({ run }: ReviewRunShowProps) {
                   status: runOverride.status,
                   summary: runOverride.summary,
                   error_message: runOverride.error_message,
+                  codex_thread_id:
+                      runOverride.codex_thread_id ?? run.codex_thread_id,
+                  codex_session_status:
+                      runOverride.codex_session_status ??
+                      run.codex_session_status,
               }
             : run;
     const events = [...run.events, ...liveEvents].filter(
@@ -542,6 +824,7 @@ export default function ReviewAnalysisRunShow({ run }: ReviewRunShowProps) {
     const timelineEvents = mergedEvents.filter(
         (event) =>
             event.kind === 'assistant_text' ||
+            event.kind === 'user_text' ||
             milestoneActions.has(event.action) ||
             event.action === 'run.failed',
     );
@@ -558,6 +841,10 @@ export default function ReviewAnalysisRunShow({ run }: ReviewRunShowProps) {
     const focus =
         typeof run.context?.focus === 'string' ? run.context.focus : null;
     const isRunning = displayRun.status === 'running';
+    const canFollowUp =
+        displayRun.codex_thread_id !== null &&
+        displayRun.codex_session_status === 'active' &&
+        !isRunning;
     const latestAssistantContent =
         [...timelineEvents]
             .reverse()
@@ -617,6 +904,29 @@ export default function ReviewAnalysisRunShow({ run }: ReviewRunShowProps) {
         [auth.user.id, run.id],
     );
 
+    useEcho<ProposalPayload>(
+        `signals.user.${auth.user.id}`,
+        proposalUpdatedEventName,
+        (payload) => {
+            if (
+                payload.review_analysis_run_id !== run.id &&
+                payload.id !== proposal?.id
+            ) {
+                return;
+            }
+
+            if (
+                payload.type !== 'storefront_widget' &&
+                payload.type !== 'storefront_page_override'
+            ) {
+                return;
+            }
+
+            setLiveProposal(payload);
+        },
+        [auth.user.id, proposal?.id, run.id],
+    );
+
     useEffect(() => {
         scrollEndRef.current?.scrollIntoView({
             block: 'end',
@@ -628,6 +938,26 @@ export default function ReviewAnalysisRunShow({ run }: ReviewRunShowProps) {
         latestTimelineSignature,
         streamItems.length,
     ]);
+
+    useEffect(() => {
+        setLiveProposal(proposal);
+    }, [proposal]);
+
+    const submitFollowUp = () => {
+        if (!canFollowUp || followUpForm.data.content.trim() === '') {
+            return;
+        }
+
+        followUpForm.post(
+            `/admin/review-runs/${run.id.toString()}/follow-ups`,
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    followUpForm.reset();
+                },
+            },
+        );
+    };
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -725,6 +1055,14 @@ export default function ReviewAnalysisRunShow({ run }: ReviewRunShowProps) {
                                                     item.event.created_at
                                                 }
                                             />
+                                        ) : item.event.kind === 'user_text' ? (
+                                            <TraceUserBubble
+                                                key={item.event.id}
+                                                content={eventBody(item.event)}
+                                                createdAt={
+                                                    item.event.created_at
+                                                }
+                                            />
                                         ) : (
                                             <TraceStatusRow
                                                 key={item.event.id}
@@ -743,6 +1081,16 @@ export default function ReviewAnalysisRunShow({ run }: ReviewRunShowProps) {
                                     </div>
                                 </div>
                             )}
+
+                            {liveProposal ? (
+                                <RunProposalPreview
+                                    canFollowUp={canFollowUp}
+                                    followUpForm={followUpForm}
+                                    onSubmit={submitFollowUp}
+                                    previewContext={previewContext}
+                                    proposal={liveProposal}
+                                />
+                            ) : null}
 
                             {toolActivities.length > 0 ? (
                                 <div className="pt-6">

@@ -68,6 +68,29 @@ async function completeRun(runId, payload) {
     });
 }
 
+async function updateRunSession(runId, payload) {
+    await request(`/api/device/runs/${runId}/session`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+    });
+}
+
+async function claimFollowUp(activeRunIds) {
+    return request('/api/device/follow-ups/claim', {
+        method: 'POST',
+        body: JSON.stringify({
+            active_run_ids: activeRunIds,
+        }),
+    });
+}
+
+async function completeFollowUp(runId, followUpId, payload) {
+    await request(`/api/device/runs/${runId}/follow-ups/${followUpId}/complete`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+    });
+}
+
 function limitText(text, max = 420) {
     if (!text) {
         return '';
@@ -111,42 +134,22 @@ Aim for a concrete fit-note style proposal when the review evidence supports it.
 }
 
 function buildStorefrontAdaptationPrompt(run) {
-    const context = run.context ?? {};
-    const productName = context.product_name ?? 'the target product';
-    const productSlug = context.product_slug ?? null;
-    const proposalField = context.proposal_field ?? 'fit_note';
-    const proposalAfter = context.proposal_after ?? null;
-    const proposalRationale = context.proposal_rationale ?? null;
-
     return `${run.prompt}
 
-Use the signals MCP server as the source of truth for the product, review evidence, and pending proposal context before you edit code.
-You are operating inside the Signals repository workspace and may inspect and modify the local codebase.
+Use the signals MCP server as the source of truth for product data, reviews, and proposal writes.
+Stay inside the live Arrow.js proposal flow for this run. Do not inspect or modify shared Laravel or React storefront files unless a tool failure makes the live override path impossible.`.trim();
+}
 
-Required workflow:
-1. Inspect the signals MCP server and confirm the current state of ${productName}${productSlug ? ` (${productSlug})` : ''}.
-2. Review the shared storefront implementation before making edits. Prefer updating existing files over introducing new abstractions.
-3. Reuse existing product fields like short_description, description, fit_note, and faq_items before inventing new structure.
-4. Prefer editing shared storefront React code instead of storing raw HTML in the database.
-5. Make focused code changes that improve where the merchant signal appears and how supporting copy is presented.
-6. Update or add targeted tests for the storefront behavior you change.
-7. Run the smallest useful verification commands before you finish.
+function buildUiRefinementPrompt(run) {
+    return `${run.prompt}
 
-Suggested starting files:
-- resources/js/pages/storefront/show.tsx
-- tests/Feature/StorefrontPagesTest.php
-- app/Http/Controllers/Storefront/ProductShowController.php
-
-Business context:
-- Target product: ${productName}
-- Pending proposal field: ${proposalField}
-${proposalAfter ? `- Suggested copy: ${proposalAfter}` : ''}
-${proposalRationale ? `- Rationale: ${proposalRationale}` : ''}`.trim();
+Continue on the same Codex thread and refine the existing live Arrow.js proposal in place.
+Do not switch this run into local repository edits. Keep changes inside the Signals MCP proposal tools unless the live tool path is unavailable.`.trim();
 }
 
 function buildDeveloperInstructions(kind) {
-    if (kind === 'storefront_adaptation') {
-        return 'Operate as a Signals storefront engineer. Use the signals MCP server for business truth, then make narrow code changes in the local repository workspace. Prefer shared storefront updates, preserve the existing UI language, and always verify changes with targeted tests.';
+    if (kind === 'storefront_adaptation' || kind === 'ui_refinement') {
+        return 'Operate as a live Signals Arrow.js storefront agent. Use the signals MCP server for product truth and proposal writes, keep work inside the live override flow, and avoid local repository edits for adaptation or refinement runs.';
     }
 
     return 'Operate as a merchant Signals analyst. Prefer MCP tools over freeform speculation, do not inspect the local repo or shell for product data, keep reasoning concise, and only produce customer-visible changes through proposal tools.';
@@ -155,6 +158,10 @@ function buildDeveloperInstructions(kind) {
 function buildRunPrompt(run) {
     if (run.kind === 'storefront_adaptation') {
         return buildStorefrontAdaptationPrompt(run);
+    }
+
+    if (run.kind === 'ui_refinement') {
+        return buildUiRefinementPrompt(run);
     }
 
     return buildReviewAnalysisPrompt(run.prompt);
@@ -521,6 +528,8 @@ function shellCommand(prompt, mcpUrl) {
         .replaceAll('{mcp_url}', mcpUrl);
 }
 
+const activeRunSessions = new Map();
+
 async function executeCustomCommand(run) {
     await postRunEvent(run.id, {
         action: 'helper.custom-command',
@@ -606,76 +615,97 @@ async function executeCustomCommand(run) {
     });
 }
 
-async function executeCodexRun(run) {
-    const monitor = createRunMonitor();
-    const client = new CodexAppServerClient({
-        cwd: helperWorkspace,
-        mcpUrl: run.mcp_url,
-        model: codexModel,
-        reasoningEffort: codexReasoningEffort,
-    });
+class ActiveRunSession {
+    constructor(run) {
+        this.run = run;
+        this.threadId = null;
+        this.turnMonitor = null;
+        this.closed = false;
+        this.client = new CodexAppServerClient({
+            cwd: helperWorkspace,
+            mcpUrl: run.mcp_url,
+            model: codexModel,
+            reasoningEffort: codexReasoningEffort,
+        });
+        this.stopNotificationStream = this.client.onNotification(
+            (notification) => {
+                if (
+                    notification.method === 'turn/completed' &&
+                    this.turnMonitor !== null
+                ) {
+                    const status =
+                        notification.params?.turn?.status ?? 'failed';
 
-    const stopNotificationStream = client.onNotification((notification) => {
-        if (notification.method === 'turn/completed') {
-            const status = notification.params?.turn?.status ?? 'failed';
+                    if (status === 'completed') {
+                        this.turnMonitor.resolve(
+                            notification.params?.turn ?? {},
+                        );
+                    } else {
+                        this.turnMonitor.reject(
+                            new Error(
+                                notification.params?.turn?.error?.message ??
+                                    `Codex turn finished with status ${status}.`,
+                            ),
+                        );
+                    }
+                }
 
-            if (status === 'completed') {
-                monitor.resolve(notification.params?.turn ?? {});
-            } else {
-                monitor.reject(
-                    new Error(
-                        notification.params?.turn?.error?.message ??
-                            `Codex turn finished with status ${status}.`,
-                    ),
-                );
-            }
-        }
+                for (const event of notificationToEvents(notification)) {
+                    void postRunEvent(this.run.id, event).catch((error) => {
+                        console.error(error);
+                    });
+                }
+            },
+        );
+        this.stopLifecycleStream = this.client.onLifecycle((event) => {
+            const message =
+                event.type === 'stderr'
+                    ? event.message
+                    : event.type === 'error'
+                      ? event.message
+                      : `Codex app-server exited with code ${event.code}.`;
 
-        for (const event of notificationToEvents(notification)) {
-            void postRunEvent(run.id, event).catch((error) => {
+            void postRunEvent(this.run.id, {
+                action:
+                    event.type === 'stderr'
+                        ? 'codex.stderr'
+                        : event.type === 'error'
+                          ? 'codex.error'
+                          : 'codex.closed',
+                kind: 'status',
+                content: message,
+                message,
+            }).catch((error) => {
                 console.error(error);
             });
-        }
-    });
 
-    const stopLifecycleStream = client.onLifecycle((event) => {
-        const message =
-            event.type === 'stderr'
-                ? event.message
-                : event.type === 'error'
-                  ? event.message
-                  : `Codex app-server exited with code ${event.code}.`;
+            if (event.type !== 'stderr') {
+                this.closed = true;
+                activeRunSessions.delete(this.run.id);
+                void updateRunSession(this.run.id, {
+                    session_status: 'closed',
+                }).catch((error) => {
+                    console.error(error);
+                });
+            }
 
-        void postRunEvent(run.id, {
-            action:
-                event.type === 'stderr'
-                    ? 'codex.stderr'
-                    : event.type === 'error'
-                      ? 'codex.error'
-                      : 'codex.closed',
-            kind: 'status',
-            content: message,
-            message,
-        }).catch((error) => {
-            console.error(error);
+            if (event.type === 'error' && this.turnMonitor !== null) {
+                this.turnMonitor.reject(new Error(event.message));
+            }
         });
+    }
 
-        if (event.type === 'error') {
-            monitor.reject(new Error(event.message));
-        }
-    });
-
-    try {
-        await postRunEvent(run.id, {
+    async start() {
+        await postRunEvent(this.run.id, {
             action: 'helper.codex.starting',
             kind: 'status',
             content: 'Starting a local Codex app-server session for Signals.',
             message: 'Starting a local Codex app-server session for Signals.',
         });
 
-        await client.start();
+        await this.client.start();
 
-        const statusResponse = await client.listMcpServerStatus();
+        const statusResponse = await this.client.listMcpServerStatus();
         const reviewOpsServer = (statusResponse.data ?? []).find((server) => {
             const toolNames = Object.keys(server.tools ?? {});
 
@@ -694,39 +724,100 @@ async function executeCodexRun(run) {
             );
         }
 
-        await postRunEvent(run.id, formatMcpStatusEvent(reviewOpsServer));
+        await postRunEvent(this.run.id, formatMcpStatusEvent(reviewOpsServer));
 
-        const threadResponse = await client.startThread({
-            developerInstructions: buildDeveloperInstructions(run.kind),
+        const threadResponse = await this.client.startThread({
+            developerInstructions: buildDeveloperInstructions(this.run.kind),
             baseInstructions: null,
         });
 
-        await postRunEvent(run.id, {
+        this.threadId = threadResponse.thread.id;
+
+        await postRunEvent(this.run.id, {
             action: 'codex.thread.ready',
             kind: 'status',
             content: 'Codex thread is ready. Starting the Signals turn now.',
             message: 'Codex thread is ready. Starting the Signals turn now.',
             metadata: {
-                thread_id: threadResponse.thread?.id ?? null,
+                thread_id: this.threadId,
             },
         });
 
-        await client.startTurn({
-            threadId: threadResponse.thread.id,
-            prompt: buildRunPrompt(run),
+        await updateRunSession(this.run.id, {
+            thread_id: this.threadId,
+            session_status: 'active',
         });
+    }
 
-        const turnResult = await monitor.completion;
+    async runPrompt(prompt) {
+        if (this.threadId === null) {
+            throw new Error('Codex thread is not ready for this Signals run.');
+        }
+
+        if (this.turnMonitor !== null) {
+            throw new Error('Codex is already processing a turn for this run.');
+        }
+
+        this.turnMonitor = createRunMonitor();
+
+        try {
+            await this.client.startTurn({
+                threadId: this.threadId,
+                prompt,
+            });
+
+            return await this.turnMonitor.completion;
+        } finally {
+            this.turnMonitor = null;
+        }
+    }
+
+    isBusy() {
+        return this.turnMonitor !== null;
+    }
+
+    async close() {
+        if (this.closed) {
+            return;
+        }
+
+        this.closed = true;
+        activeRunSessions.delete(this.run.id);
+        this.stopNotificationStream();
+        this.stopLifecycleStream();
+        this.client.stop();
+
+        try {
+            await updateRunSession(this.run.id, {
+                session_status: 'closed',
+            });
+        } catch (error) {
+            console.error(error);
+        }
+    }
+}
+
+async function executeCodexRun(run) {
+    const session = new ActiveRunSession(run);
+
+    try {
+        await session.start();
+
+        const turnResult = await session.runPrompt(buildRunPrompt(run));
 
         await completeRun(run.id, {
             summary:
                 turnResult.summary ??
                 'Local Codex run completed and streamed events back into Signals.',
         });
-    } finally {
-        stopNotificationStream();
-        stopLifecycleStream();
-        client.stop();
+
+        activeRunSessions.set(run.id, session);
+
+        return session;
+    } catch (error) {
+        await session.close();
+
+        throw error;
     }
 }
 
@@ -741,13 +832,13 @@ async function executeRun(run) {
     if (runCommand) {
         await executeCustomCommand(run);
 
-        return;
+        return null;
     }
 
-    await executeCodexRun(run);
+    return executeCodexRun(run);
 }
 
-async function tick() {
+async function tickRuns() {
     const response = await request('/api/device/runs/claim', {
         method: 'POST',
         body: JSON.stringify({}),
@@ -776,12 +867,80 @@ async function tick() {
     return true;
 }
 
+async function tickFollowUps() {
+    const activeRunIds = [...activeRunSessions.values()]
+        .filter((session) => !session.closed && !session.isBusy())
+        .map((session) => session.run.id);
+
+    if (activeRunIds.length === 0) {
+        return false;
+    }
+
+    const response = await claimFollowUp(activeRunIds);
+
+    if (!response.follow_up) {
+        return false;
+    }
+
+    const session = activeRunSessions.get(response.follow_up.review_analysis_run_id);
+
+    if (!session || session.closed) {
+        await completeFollowUp(
+            response.follow_up.review_analysis_run_id,
+            response.follow_up.id,
+            {
+                failed: true,
+                error_message:
+                    'The helper no longer has the original Codex session available for this run.',
+            },
+        );
+
+        return true;
+    }
+
+    try {
+        const turnResult = await session.runPrompt(response.follow_up.content);
+
+        await completeFollowUp(
+            response.follow_up.review_analysis_run_id,
+            response.follow_up.id,
+            {
+                summary:
+                    turnResult.summary ??
+                    'Codex completed the follow-up turn on the active Signals session.',
+            },
+        );
+    } catch (error) {
+        const message =
+            error instanceof Error
+                ? error.message
+                : 'Unknown helper execution error.';
+
+        await completeFollowUp(
+            response.follow_up.review_analysis_run_id,
+            response.follow_up.id,
+            {
+                failed: true,
+                error_message: message,
+            },
+        );
+
+        if (session.closed) {
+            await session.close();
+        }
+
+        throw error;
+    }
+
+    return true;
+}
+
 console.log('Signals helper started.');
 
 async function main() {
     if (runOnce) {
         try {
-            const handledRun = await tick();
+            const handledRun = await tickRuns();
 
             if (!handledRun && requireRun) {
                 console.error(
@@ -799,7 +958,11 @@ async function main() {
 
     async function loop() {
         try {
-            await tick();
+            const handledRun = await tickRuns();
+
+            if (!handledRun) {
+                await tickFollowUps();
+            }
         } catch (error) {
             console.error(error);
         } finally {

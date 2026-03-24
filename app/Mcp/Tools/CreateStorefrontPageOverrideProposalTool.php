@@ -43,6 +43,7 @@ class CreateStorefrontPageOverrideProposalTool extends Tool
 
             if ($proposal !== null) {
                 $proposal->forceFill([
+                    'review_analysis_run_id' => $runId,
                     'target_id' => $productId,
                     'payload_json' => $payload,
                     'rationale' => $request->string('rationale')->toString(),

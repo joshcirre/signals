@@ -18,6 +18,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'context_json',
     'summary',
     'error_message',
+    'codex_thread_id',
+    'codex_session_status',
     'requested_at',
     'started_at',
     'completed_at',
@@ -55,5 +57,10 @@ class ReviewAnalysisRun extends Model
     public function actionLogs(): HasMany
     {
         return $this->hasMany(ActionLog::class);
+    }
+
+    public function followUps(): HasMany
+    {
+        return $this->hasMany(ReviewAnalysisRunFollowUp::class);
     }
 }

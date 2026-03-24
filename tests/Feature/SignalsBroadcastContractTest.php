@@ -12,6 +12,8 @@ test('review analysis run updated broadcast uses the private user channel contra
     $run = ReviewAnalysisRun::factory()->create([
         'status' => 'running',
         'summary' => 'Codex is working through the queued Signals run.',
+        'codex_thread_id' => 'thread_123',
+        'codex_session_status' => 'active',
     ]);
 
     $event = new ReviewAnalysisRunUpdated($run);
@@ -23,6 +25,8 @@ test('review analysis run updated broadcast uses the private user channel contra
             'id' => $run->id,
             'status' => 'running',
             'summary' => 'Codex is working through the queued Signals run.',
+            'codex_thread_id' => 'thread_123',
+            'codex_session_status' => 'active',
         ]);
 });
 

@@ -38,6 +38,8 @@ class ReviewAnalysisRunUpdated implements ShouldBroadcastNow
             'status' => $this->run->status,
             'summary' => $this->run->summary,
             'error_message' => $this->run->error_message,
+            'codex_thread_id' => $this->run->codex_thread_id,
+            'codex_session_status' => $this->run->codex_session_status,
             'requested_at' => $this->run->requested_at?->toIso8601String(),
             'started_at' => $this->run->started_at?->toIso8601String(),
             'completed_at' => $this->run->completed_at?->toIso8601String(),

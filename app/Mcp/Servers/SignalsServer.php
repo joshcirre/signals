@@ -8,6 +8,7 @@ use App\Mcp\Resources\SignalsOverviewResource;
 use App\Mcp\Tools\AssignReviewTagTool;
 use App\Mcp\Tools\CreateProductCopyChangeProposalTool;
 use App\Mcp\Tools\CreateReviewResponseProposalTool;
+use App\Mcp\Tools\CreateStorefrontPageOverrideProposalTool;
 use App\Mcp\Tools\CreateStorefrontWidgetProposalTool;
 use App\Mcp\Tools\EnsureReviewTagTool;
 use App\Mcp\Tools\GetProductTool;
@@ -38,6 +39,7 @@ class SignalsServer extends Server
         MarkReviewsProcessedTool::class,
         CreateProductCopyChangeProposalTool::class,
         CreateReviewResponseProposalTool::class,
+        CreateStorefrontPageOverrideProposalTool::class,
         CreateStorefrontWidgetProposalTool::class,
         LogActionTool::class,
     ];
