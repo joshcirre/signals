@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\Proposal;
 use App\Models\Review;
+use App\Models\StorefrontPageOverride;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -16,6 +17,10 @@ class ProductShowController extends Controller
         $product->load([
             'reviews' => fn ($query) => $query->latest('reviewed_at'),
         ]);
+        $pageOverride = StorefrontPageOverride::query()
+            ->where('product_id', $product->id)
+            ->where('surface', 'product_show')
+            ->first();
 
         return Inertia::render('storefront/show', [
             'product' => [
@@ -32,6 +37,12 @@ class ProductShowController extends Controller
                 'average_rating' => round((float) $product->reviews->avg('rating'), 1),
                 'review_count' => $product->reviews->count(),
             ],
+            'pageOverride' => $pageOverride ? [
+                'id' => $pageOverride->id,
+                'title' => $pageOverride->title,
+                'surface' => $pageOverride->surface,
+                'arrow_source' => $pageOverride->arrow_source_json,
+            ] : null,
             'liveWidgets' => Proposal::query()
                 ->where('type', 'storefront_widget')
                 ->where('status', 'applied')

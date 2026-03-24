@@ -31,19 +31,41 @@ export function prettifyToolContent(content: string | null): string {
     return unwrapStructuredContent(content);
 }
 
-export function buildToolTickerItems(
+export function buildToolTickerItem(
     tools: ToolTraceActivity[],
-): ToolTickerItem[] {
-    return [...tools]
+): ToolTickerItem | null {
+    const activeTool = [...tools]
         .sort((left, right) => left.startedAt.localeCompare(right.startedAt))
-        .slice(-8)
-        .reverse()
-        .map((tool) => ({
-            id: tool.id,
-            title: formatToolName(tool.name),
-            detail: summarizeToolDetail(tool),
-            status: tool.status,
-        }));
+        .findLast((tool) => tool.status === 'running');
+
+    if (activeTool !== undefined) {
+        return {
+            id: activeTool.id,
+            title: formatToolName(activeTool.name),
+            detail: summarizeToolDetail(activeTool),
+            status: activeTool.status,
+        };
+    }
+
+    const latestTool = [...tools]
+        .sort((left, right) => {
+            const leftTimestamp = left.completedAt ?? left.startedAt;
+            const rightTimestamp = right.completedAt ?? right.startedAt;
+
+            return leftTimestamp.localeCompare(rightTimestamp);
+        })
+        .at(-1);
+
+    if (latestTool === undefined) {
+        return null;
+    }
+
+    return {
+        id: latestTool.id,
+        title: formatToolName(latestTool.name),
+        detail: summarizeToolDetail(latestTool),
+        status: latestTool.status,
+    };
 }
 
 function summarizeToolDetail(tool: ToolTraceActivity): string {

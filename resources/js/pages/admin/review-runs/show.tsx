@@ -23,7 +23,7 @@ import AppLayout from '@/layouts/app-layout';
 import { cn } from '@/lib/utils';
 import type { ToolTraceActivity } from '@/pages/admin/review-runs/session-trace';
 import {
-    buildToolTickerItems,
+    buildToolTickerItem,
     formatToolName,
     prettifyToolContent,
 } from '@/pages/admin/review-runs/session-trace';
@@ -444,33 +444,15 @@ function TraceBlock({
 }
 
 function ToolTicker({
-    items,
+    item,
     traceOpen,
     onToggleTrace,
 }: {
-    items: ReturnType<typeof buildToolTickerItems>;
+    item: ReturnType<typeof buildToolTickerItem>;
     traceOpen: boolean;
     onToggleTrace: () => void;
 }) {
-    const [index, setIndex] = useState(0);
-    const activeItem =
-        items.length > 0 ? (items[index % items.length] ?? null) : null;
-
-    useEffect(() => {
-        if (items.length <= 1) {
-            return undefined;
-        }
-
-        const interval = window.setInterval(() => {
-            setIndex((currentIndex) => (currentIndex + 1) % items.length);
-        }, 2600);
-
-        return () => {
-            window.clearInterval(interval);
-        };
-    }, [items.length]);
-
-    if (activeItem === null) {
+    if (item === null) {
         return null;
     }
 
@@ -481,16 +463,16 @@ function ToolTicker({
                 <div
                     className={cn(
                         'flex size-10 shrink-0 items-center justify-center rounded-full border',
-                        activeItem.status === 'running'
+                        item.status === 'running'
                             ? 'border-sky-200 bg-sky-50 text-sky-600'
-                            : activeItem.status === 'error'
+                            : item.status === 'error'
                               ? 'border-red-200 bg-red-50 text-red-600'
                               : 'border-emerald-200 bg-emerald-50 text-emerald-600',
                     )}
                 >
-                    {activeItem.status === 'running' ? (
+                    {item.status === 'running' ? (
                         <Loader2 className="size-4 animate-spin" />
-                    ) : activeItem.status === 'error' ? (
+                    ) : item.status === 'error' ? (
                         <CircleAlert className="size-4" />
                     ) : (
                         <CheckCircle2 className="size-4" />
@@ -502,14 +484,16 @@ function ToolTicker({
                         <Sparkles className="size-3 text-sky-500" />
                         Live tool activity
                         <span className="text-slate-300">
-                            {index + 1} / {items.length}
+                            {item.status === 'running'
+                                ? 'Current tool'
+                                : 'Latest tool'}
                         </span>
                     </div>
                     <p className="mt-1 truncate text-sm font-medium text-slate-950 capitalize">
-                        {activeItem.title}
+                        {item.title}
                     </p>
                     <p className="truncate text-sm text-slate-500">
-                        {activeItem.detail}
+                        {item.detail}
                     </p>
                 </div>
 
@@ -567,7 +551,7 @@ export default function ReviewAnalysisRunShow({ run }: ReviewRunShowProps) {
         event,
         sortKey: event.created_at,
     }));
-    const tickerItems = buildToolTickerItems(toolActivities);
+    const tickerItem = buildToolTickerItem(toolActivities);
     const streamItems = [...timelineItems].sort((a, b) =>
         a.sortKey.localeCompare(b.sortKey),
     );
@@ -706,11 +690,11 @@ export default function ReviewAnalysisRunShow({ run }: ReviewRunShowProps) {
                         </div>
                     ) : null}
 
-                    {tickerItems.length > 0 ? (
+                    {tickerItem !== null ? (
                         <div className="relative shrink-0 px-5 pt-4">
                             <div className="mx-auto max-w-3xl">
                                 <ToolTicker
-                                    items={tickerItems}
+                                    item={tickerItem}
                                     traceOpen={traceOpen}
                                     onToggleTrace={() =>
                                         setTraceOpen((current) => !current)

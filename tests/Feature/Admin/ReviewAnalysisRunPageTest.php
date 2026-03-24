@@ -88,12 +88,16 @@ test('queueing a storefront adaptation run stores the proposal context', functio
     $response->assertRedirect(route('admin.review-runs.show', $run));
 
     expect($run->kind)->toBe('storefront_adaptation')
+        ->and($run->prompt)->toContain('Use create_storefront_page_override_proposal_tool to create the live storefront change.')
+        ->and($run->prompt)->toContain('Do not edit shared Laravel or React storefront files.')
+        ->and($run->prompt)->toContain('surface="product_show"')
         ->and($run->context_json)->toMatchArray([
             'product_slug' => 'premium-hoodie',
             'proposal_id' => $proposal->id,
             'proposal_field' => 'short_description',
             'proposal_after' => 'A softer, slimmer hoodie with a fit note right where shoppers need it.',
             'supporting_review_ids' => [101, 202],
+            'preferred_override_surface' => 'product_show',
         ]);
 });
 
@@ -130,6 +134,53 @@ test('admin can queue a storefront adaptation run from another users pending pro
         'product_slug' => 'premium-hoodie',
         'proposal_id' => $proposal->id,
     ]);
+});
+
+test('admin can queue a ui refinement run for a storefront page override proposal', function (): void {
+    $admin = User::factory()->create();
+    $product = Product::factory()->create([
+        'name' => 'Premium Hoodie',
+        'slug' => 'premium-hoodie',
+    ]);
+    $proposal = Proposal::factory()->create([
+        'review_analysis_run_id' => ReviewAnalysisRun::factory()->create([
+            'user_id' => $admin->id,
+        ])->id,
+        'type' => 'storefront_page_override',
+        'target_type' => 'product',
+        'target_id' => $product->id,
+        'payload_json' => [
+            'surface' => 'product_show',
+            'title' => 'Premium Hoodie live page',
+            'arrow_source' => [
+                'main.ts' => 'export default html`<section>Override</section>`',
+            ],
+        ],
+    ]);
+
+    $response = $this->actingAs($admin)
+        ->post(route('admin.review-runs.store'), [
+            'kind' => 'ui_refinement',
+            'proposal_id' => $proposal->id,
+            'focus' => 'Move the fit guidance above the price',
+            'redirect_to' => 'proposals',
+        ]);
+
+    $run = ReviewAnalysisRun::query()
+        ->where('user_id', $admin->id)
+        ->where('kind', 'ui_refinement')
+        ->latest('id')
+        ->firstOrFail();
+
+    $response->assertRedirect(route('admin.proposals.index'));
+
+    expect($run->prompt)->toContain('create_storefront_page_override_proposal_tool')
+        ->and($run->context_json)->toMatchArray([
+            'arrow_proposal_id' => $proposal->id,
+            'surface' => 'product_show',
+            'title' => 'Premium Hoodie live page',
+            'focus' => 'Move the fit guidance above the price',
+        ]);
 });
 
 test('signals workspace can queue a focused run and stay on the signals page', function (): void {

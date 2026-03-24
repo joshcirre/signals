@@ -7,6 +7,7 @@ use App\Models\ActionLog;
 use App\Models\Product;
 use App\Models\Proposal;
 use App\Models\Review;
+use App\Models\StorefrontPageOverride;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -28,6 +29,25 @@ class ProposalApprovalController extends Controller
         if ($proposal->type === 'storefront_widget') {
             // Arrow source is stored in payload_json; no extra DB write needed.
             // The storefront reads directly from applied proposals.
+        }
+
+        if ($proposal->type === 'storefront_page_override' && $proposal->target_type === 'product') {
+            $payload = $proposal->payload_json ?? [];
+
+            StorefrontPageOverride::query()->updateOrCreate(
+                [
+                    'product_id' => $proposal->target_id,
+                    'surface' => is_string($payload['surface'] ?? null) ? $payload['surface'] : 'product_show',
+                ],
+                [
+                    'title' => is_string($payload['title'] ?? null) ? $payload['title'] : null,
+                    'arrow_source_json' => $payload['arrow_source'] ?? [],
+                    'approved_by' => $request->user()->id,
+                    'created_from_proposal_id' => $proposal->id,
+                    'created_from_run_id' => $proposal->review_analysis_run_id,
+                    'approved_at' => now(),
+                ],
+            );
         }
 
         if ($proposal->type === 'review_response' && $proposal->target_type === 'review') {

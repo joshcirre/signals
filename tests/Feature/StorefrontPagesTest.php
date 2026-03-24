@@ -2,6 +2,7 @@
 
 use App\Models\Product;
 use App\Models\Review;
+use App\Models\StorefrontPageOverride;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -79,6 +80,32 @@ test('product page shows approved review responses but hides unapproved drafts',
             }))
         ->assertSee('Thanks for flagging the shipping delay')
         ->assertDontSee('Pending draft that should stay internal.');
+});
+
+test('product page includes an applied page override when one exists', function (): void {
+    $product = Product::factory()->create([
+        'name' => 'Premium Hoodie',
+        'slug' => 'premium-hoodie',
+    ]);
+
+    StorefrontPageOverride::factory()->create([
+        'product_id' => $product->id,
+        'surface' => 'product_show',
+        'title' => 'Premium Hoodie live page',
+        'arrow_source_json' => [
+            'main.ts' => 'export default html`<section>Override</section>`',
+        ],
+    ]);
+
+    $this->get(route('products.show', $product))
+        ->assertSuccessful()
+        ->assertInertia(fn (Assert $page): Assert => $page
+            ->component('storefront/show')
+            ->where('pageOverride.title', 'Premium Hoodie live page')
+            ->where('pageOverride.surface', 'product_show')
+            ->where('pageOverride.arrow_source', [
+                'main.ts' => 'export default html`<section>Override</section>`',
+            ]));
 });
 
 test('welcome page is not exposed publicly', function (): void {

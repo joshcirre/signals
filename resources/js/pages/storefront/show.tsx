@@ -1,9 +1,17 @@
 import { Link } from '@inertiajs/react';
 import { ArrowLeft, Star } from 'lucide-react';
-import type { LiveWidget } from '@/components/arrow-sandbox-widget';
-import { LiveWidgetSlot } from '@/components/arrow-sandbox-widget';
+import { useState } from 'react';
+import type {
+    ArrowSource,
+    LiveWidget,
+} from '@/components/arrow-sandbox-widget';
+import {
+    ArrowSandboxWidget,
+    LiveWidgetSlot,
+} from '@/components/arrow-sandbox-widget';
 import { StorefrontShell } from '@/components/storefront-shell';
 import { storeBrand } from '@/lib/brand';
+import { buildStorefrontPageOverrideSource } from '@/lib/storefront-page-override-source';
 
 interface ProductPageData {
     id: number;
@@ -31,15 +39,47 @@ interface ReviewData {
     response_approved_at: string | null;
 }
 
+interface StorefrontPageOverrideData {
+    id: number;
+    title: string | null;
+    surface: string;
+    arrow_source: ArrowSource;
+}
+
 export default function StorefrontShow({
+    pageOverride,
     product,
     reviews,
     liveWidgets = [],
 }: {
+    pageOverride: StorefrontPageOverrideData | null;
     product: ProductPageData;
     reviews: ReviewData[];
     liveWidgets?: LiveWidget[];
 }) {
+    const [overrideFailed, setOverrideFailed] = useState(false);
+    const overrideSource =
+        pageOverride === null
+            ? null
+            : buildStorefrontPageOverrideSource({
+                  product,
+                  reviews,
+                  source: pageOverride.arrow_source,
+                  storeBrandName: storeBrand.name,
+              });
+
+    if (pageOverride !== null && !overrideFailed && overrideSource !== null) {
+        return (
+            <StorefrontShell title={`${product.name} · ${storeBrand.name}`}>
+                <ArrowSandboxWidget
+                    source={overrideSource}
+                    shadowDOM={false}
+                    onError={() => setOverrideFailed(true)}
+                />
+            </StorefrontShell>
+        );
+    }
+
     return (
         <StorefrontShell title={`${product.name} · ${storeBrand.name}`}>
             <section className="pt-8">

@@ -19,15 +19,15 @@ class StoreReviewAnalysisRunRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'kind' => ['nullable', 'string', Rule::in(['review_analysis', 'storefront_adaptation'])],
+            'kind' => ['nullable', 'string', Rule::in(['review_analysis', 'storefront_adaptation', 'ui_refinement'])],
             'focus' => ['nullable', 'string', 'max:180'],
             'proposal_id' => [
-                Rule::requiredIf($this->string('kind')->toString() === 'storefront_adaptation'),
+                Rule::requiredIf(in_array($this->string('kind')->toString(), ['storefront_adaptation', 'ui_refinement'], true)),
                 'nullable',
                 'integer',
                 'exists:proposals,id',
             ],
-            'redirect_to' => ['nullable', 'string', Rule::in(['run', 'signals'])],
+            'redirect_to' => ['nullable', 'string', Rule::in(['run', 'signals', 'proposals'])],
         ];
     }
 

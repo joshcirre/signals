@@ -28,7 +28,7 @@ class ReviewAnalysisRunController extends Controller
         if ($kind === 'ui_refinement') {
             $proposal = Proposal::query()
                 ->whereKey((int) $request->integer('proposal_id'))
-                ->where('type', 'storefront_widget')
+                ->whereIn('type', ['storefront_widget', 'storefront_page_override'])
                 ->firstOrFail();
         }
 

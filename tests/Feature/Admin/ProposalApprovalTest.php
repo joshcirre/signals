@@ -4,6 +4,7 @@ use App\Models\Product;
 use App\Models\Proposal;
 use App\Models\Review;
 use App\Models\ReviewAnalysisRun;
+use App\Models\StorefrontPageOverride;
 use App\Models\User;
 
 test('approving a product copy proposal updates the storefront record', function (): void {
@@ -85,4 +86,39 @@ test('approving a product description proposal updates the storefront descriptio
 
     expect($proposal->fresh()->status)->toBe('applied')
         ->and($product->fresh()->short_description)->toBe('Updated lead copy shaped by the latest fit feedback.');
+});
+
+test('approving a storefront page override proposal creates a live page override record', function (): void {
+    $admin = User::factory()->create();
+    $product = Product::factory()->create();
+    $run = ReviewAnalysisRun::factory()->create([
+        'user_id' => $admin->id,
+    ]);
+    $proposal = Proposal::factory()->create([
+        'review_analysis_run_id' => $run->id,
+        'type' => 'storefront_page_override',
+        'target_type' => 'product',
+        'target_id' => $product->id,
+        'payload_json' => [
+            'surface' => 'product_show',
+            'title' => 'Premium Hoodie live page',
+            'arrow_source' => [
+                'main.ts' => 'export default html`<section>Override</section>`',
+            ],
+        ],
+    ]);
+
+    $this->actingAs($admin)
+        ->post(route('admin.proposals.approve', $proposal))
+        ->assertRedirect();
+
+    $override = StorefrontPageOverride::query()
+        ->where('product_id', $product->id)
+        ->where('surface', 'product_show')
+        ->firstOrFail();
+
+    expect($proposal->fresh()->status)->toBe('applied')
+        ->and($override->title)->toBe('Premium Hoodie live page')
+        ->and($override->arrow_source_json['main.ts'])->toContain('Override')
+        ->and($override->created_from_proposal_id)->toBe($proposal->id);
 });

@@ -1,9 +1,10 @@
 import { sandbox } from '@arrow-js/sandbox';
 import { useEffect, useRef } from 'react';
 
-interface ArrowSource {
+export interface ArrowSource {
     'main.ts': string;
     'main.css'?: string;
+    [key: string]: string | undefined;
 }
 
 export interface LiveWidget {
@@ -13,7 +14,15 @@ export interface LiveWidget {
     arrow_source: ArrowSource;
 }
 
-export function ArrowSandboxWidget({ source }: { source: ArrowSource }) {
+export function ArrowSandboxWidget({
+    onError,
+    shadowDOM = true,
+    source,
+}: {
+    onError?: (error: Error | string) => void;
+    shadowDOM?: boolean;
+    source: ArrowSource;
+}) {
     const containerRef = useRef<HTMLDivElement>(null);
     const serializedSource = JSON.stringify(source);
 
@@ -28,13 +37,15 @@ export function ArrowSandboxWidget({ source }: { source: ArrowSource }) {
 
         const template = sandbox({
             source: JSON.parse(serializedSource) as ArrowSource,
+            shadowDOM,
+            onError,
         });
         template(el);
 
         return () => {
             el.innerHTML = '';
         };
-    }, [serializedSource]);
+    }, [onError, serializedSource, shadowDOM]);
 
     return <div ref={containerRef} />;
 }

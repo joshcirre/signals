@@ -12,6 +12,7 @@ import {
     AdminSurfaceHeader,
 } from '@/components/admin-page';
 import { ArrowSandboxWidget } from '@/components/arrow-sandbox-widget';
+import type { ArrowSource } from '@/components/arrow-sandbox-widget';
 import AppLayout from '@/layouts/app-layout';
 import { cn } from '@/lib/utils';
 import { reconcileQueueState } from '@/pages/admin/proposals/queue-state';
@@ -30,11 +31,6 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-interface ArrowSource {
-    'main.ts': string;
-    'main.css'?: string;
-}
-
 interface Proposal {
     id: number;
     type: string;
@@ -51,6 +47,7 @@ interface Proposal {
         after?: string | null;
         response_draft?: string | null;
         position?: string;
+        surface?: string;
         title?: string;
         arrow_source?: ArrowSource;
     };
@@ -168,6 +165,14 @@ function proposalFieldLabel(field: string | null | undefined): string {
     }
 
     return field.replaceAll('_', ' ');
+}
+
+function isArrowProposal(proposal: Proposal | null): boolean {
+    return (
+        proposal !== null &&
+        (proposal.type === 'storefront_widget' ||
+            proposal.type === 'storefront_page_override')
+    );
 }
 
 export default function ProposalQueue({
@@ -394,8 +399,7 @@ export default function ProposalQueue({
                                                     )}
                                                 </p>
                                                 <p className="mt-1 truncate text-sm font-medium">
-                                                    {proposal.type ===
-                                                    'storefront_widget'
+                                                    {isArrowProposal(proposal)
                                                         ? (proposal.payload
                                                               .title ??
                                                           proposal.target_label)
@@ -465,8 +469,7 @@ export default function ProposalQueue({
                         <AdminSurfaceHeader
                             title={
                                 selectedProposal
-                                    ? selectedProposal.type ===
-                                      'storefront_widget'
+                                    ? isArrowProposal(selectedProposal)
                                         ? (selectedProposal.payload.title ??
                                           selectedProposal.target_label)
                                         : selectedProposal.target_label
@@ -498,8 +501,7 @@ export default function ProposalQueue({
                         />
                         <AdminSurfaceBody className="space-y-4">
                             {selectedProposal ? (
-                                selectedProposal.type ===
-                                'storefront_widget' ? (
+                                isArrowProposal(selectedProposal) ? (
                                     <StorefrontWidgetDetail
                                         proposal={selectedProposal}
                                         refineQuery={refineQuery}
@@ -778,11 +780,14 @@ function StorefrontWidgetDetail({
             <div className="grid gap-3 md:grid-cols-2">
                 <div className="rounded-sm border border-slate-950/7 bg-slate-50 px-3.5 py-3">
                     <p className="text-[10px] font-medium tracking-[0.18em] text-slate-400 uppercase">
-                        Position
+                        {proposal.type === 'storefront_page_override'
+                            ? 'Surface'
+                            : 'Position'}
                     </p>
                     <p className="mt-1 text-sm font-medium text-slate-950 capitalize">
-                        {(
-                            proposal.payload.position ?? 'below_products'
+                        {(proposal.type === 'storefront_page_override'
+                            ? (proposal.payload.surface ?? 'product_show')
+                            : (proposal.payload.position ?? 'below_products')
                         ).replaceAll('_', ' ')}
                     </p>
                 </div>
@@ -848,7 +853,8 @@ function StorefrontWidgetDetail({
                     Refine with Codex
                 </p>
                 <p className="mt-2 text-sm text-slate-500">
-                    Describe a change and Codex will update the widget live.
+                    Describe a change and Codex will update the live Arrow
+                    proposal.
                 </p>
                 <div className="mt-3 flex gap-2">
                     <input
@@ -860,7 +866,11 @@ function StorefrontWidgetDetail({
                                 onRefine();
                             }
                         }}
-                        placeholder="Make the chart taller, add a legend…"
+                        placeholder={
+                            proposal.type === 'storefront_page_override'
+                                ? 'Make the hero stronger, surface fit guidance earlier…'
+                                : 'Make the chart taller, add a legend…'
+                        }
                         className="flex-1 rounded-sm border border-slate-950/10 bg-white px-3 py-2 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-slate-950/20"
                     />
                     <button
@@ -880,7 +890,13 @@ function StorefrontWidgetDetail({
                 </p>
                 <div className="mt-3">
                     <Link
-                        href="/"
+                        href={
+                            proposal.target_slug
+                                ? productRoutes.show({
+                                      product: proposal.target_slug,
+                                  }).url
+                                : '/'
+                        }
                         className="rounded-sm border border-slate-950/10 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition hover:border-slate-950/20 hover:bg-slate-50"
                     >
                         Preview storefront
