@@ -97,6 +97,41 @@ test('queueing a storefront adaptation run stores the proposal context', functio
         ]);
 });
 
+test('admin can queue a storefront adaptation run from another users pending proposal', function (): void {
+    $admin = User::factory()->create();
+    $proposalOwner = User::factory()->create();
+    $product = Product::factory()->create([
+        'name' => 'Premium Hoodie',
+        'slug' => 'premium-hoodie',
+    ]);
+    $proposalRun = ReviewAnalysisRun::factory()->create([
+        'user_id' => $proposalOwner->id,
+    ]);
+    $proposal = Proposal::factory()->create([
+        'review_analysis_run_id' => $proposalRun->id,
+        'target_id' => $product->id,
+    ]);
+
+    $response = $this->actingAs($admin)
+        ->post(route('admin.review-runs.store'), [
+            'kind' => 'storefront_adaptation',
+            'proposal_id' => $proposal->id,
+        ]);
+
+    $run = ReviewAnalysisRun::query()
+        ->where('user_id', $admin->id)
+        ->where('kind', 'storefront_adaptation')
+        ->latest('id')
+        ->firstOrFail();
+
+    $response->assertRedirect(route('admin.review-runs.show', $run));
+
+    expect($run->context_json)->toMatchArray([
+        'product_slug' => 'premium-hoodie',
+        'proposal_id' => $proposal->id,
+    ]);
+});
+
 test('signals workspace can queue a focused run and stay on the signals page', function (): void {
     $admin = User::factory()->create();
 

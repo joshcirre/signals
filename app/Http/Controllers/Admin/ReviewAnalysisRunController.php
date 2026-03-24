@@ -19,7 +19,9 @@ class ReviewAnalysisRunController extends Controller
         if ($kind === 'storefront_adaptation') {
             $proposal = Proposal::query()
                 ->whereKey((int) $request->integer('proposal_id'))
-                ->whereHas('run', fn ($query) => $query->where('user_id', $request->user()->id))
+                ->where('status', 'pending')
+                ->where('type', 'product_copy_change')
+                ->where('target_type', 'product')
                 ->firstOrFail();
         }
 
