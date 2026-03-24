@@ -12,7 +12,6 @@ import {
     Sparkles,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import type { ToolTraceActivity } from '@/pages/admin/review-runs/session-trace';
 import type { BreadcrumbItem } from '@/types';
 import {
     AdminHeader,
@@ -22,6 +21,7 @@ import {
 } from '@/components/admin-page';
 import AppLayout from '@/layouts/app-layout';
 import { cn } from '@/lib/utils';
+import type { ToolTraceActivity } from '@/pages/admin/review-runs/session-trace';
 import {
     buildToolTickerItems,
     formatToolName,

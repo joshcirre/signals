@@ -1,6 +1,6 @@
 import { Link } from '@inertiajs/react';
-import type { NavItem } from '@/types';
 import type { PropsWithChildren } from 'react';
+import type { NavItem } from '@/types';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';

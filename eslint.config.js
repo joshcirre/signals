@@ -76,7 +76,6 @@ export default [
                     groups: [
                         'builtin',
                         'external',
-                        'type',
                         'internal',
                         'parent',
                         'sibling',
@@ -89,7 +88,7 @@ export default [
                     pathGroups: [
                         {
                             pattern: '@/types{,/**}',
-                            group: 'type',
+                            group: 'internal',
                             position: 'before',
                         },
                         {
