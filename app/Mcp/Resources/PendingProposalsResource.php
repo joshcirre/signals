@@ -21,6 +21,7 @@ class PendingProposalsResource extends Resource
             ->limit(10)
             ->get([
                 'id',
+                'review_analysis_run_id',
                 'type',
                 'target_type',
                 'target_id',

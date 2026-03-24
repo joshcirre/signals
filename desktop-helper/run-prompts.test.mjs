@@ -17,6 +17,18 @@ test('storefront adaptation prompt includes the concrete live run id', () => {
         prompt,
         /pass review_analysis_run_id=47/,
     );
+    assert.match(
+        prompt,
+        /find_storefront_page_override_proposal_tool/,
+    );
+    assert.match(
+        prompt,
+        /signals:\/\/storefront-page-override-runtime/,
+    );
+    assert.match(
+        prompt,
+        /Do not use bash, rg, sed, or local file inspection/,
+    );
 });
 
 test('ui refinement prompt includes the concrete live run id', () => {

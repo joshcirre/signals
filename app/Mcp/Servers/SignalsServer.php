@@ -5,12 +5,14 @@ namespace App\Mcp\Servers;
 use App\Mcp\Prompts\AnalyzeNewReviewsPrompt;
 use App\Mcp\Resources\PendingProposalsResource;
 use App\Mcp\Resources\SignalsOverviewResource;
+use App\Mcp\Resources\StorefrontPageOverrideRuntimeResource;
 use App\Mcp\Tools\AssignReviewTagTool;
 use App\Mcp\Tools\CreateProductCopyChangeProposalTool;
 use App\Mcp\Tools\CreateReviewResponseProposalTool;
 use App\Mcp\Tools\CreateStorefrontPageOverrideProposalTool;
 use App\Mcp\Tools\CreateStorefrontWidgetProposalTool;
 use App\Mcp\Tools\EnsureReviewTagTool;
+use App\Mcp\Tools\FindStorefrontPageOverrideProposalTool;
 use App\Mcp\Tools\GetProductTool;
 use App\Mcp\Tools\ListProductsTool;
 use App\Mcp\Tools\ListReviewsTool;
@@ -39,6 +41,7 @@ class SignalsServer extends Server
         MarkReviewsProcessedTool::class,
         CreateProductCopyChangeProposalTool::class,
         CreateReviewResponseProposalTool::class,
+        FindStorefrontPageOverrideProposalTool::class,
         CreateStorefrontPageOverrideProposalTool::class,
         CreateStorefrontWidgetProposalTool::class,
         LogActionTool::class,
@@ -47,6 +50,7 @@ class SignalsServer extends Server
     protected array $resources = [
         SignalsOverviewResource::class,
         PendingProposalsResource::class,
+        StorefrontPageOverrideRuntimeResource::class,
     ];
 
     protected array $prompts = [

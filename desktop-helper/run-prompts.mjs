@@ -22,8 +22,12 @@ export function buildStorefrontAdaptationPrompt(run) {
 Current live review_analysis_run_id: ${run.id}
 
 Use the signals MCP server as the source of truth for product data, reviews, and proposal writes.
+Use find_storefront_page_override_proposal_tool to check for an existing override before creating a new one.
+Read signals://storefront-page-override-runtime for the exact signals.ts contract and a minimal valid Arrow example.
 When you call create_storefront_page_override_proposal_tool, pass review_analysis_run_id=${run.id}.
-Stay inside the live Arrow.js proposal flow for this run. Do not inspect or modify shared Laravel or React storefront files unless a tool failure makes the live override path impossible.`.trim();
+Stay inside the live Arrow.js proposal flow for this run.
+Do not inspect or modify shared Laravel or React storefront files.
+Do not use bash, rg, sed, or local file inspection to look for Arrow examples or run metadata unless a Signals MCP tool/resource failure makes the live override path impossible.`.trim();
 }
 
 export function buildUiRefinementPrompt(run) {
@@ -32,8 +36,11 @@ export function buildUiRefinementPrompt(run) {
 Current live review_analysis_run_id: ${run.id}
 
 Continue on the same Codex thread and refine the existing live Arrow.js proposal in place.
+Use find_storefront_page_override_proposal_tool when you need to confirm the current proposal state.
+Read signals://storefront-page-override-runtime for the exact signals.ts contract and a minimal valid Arrow example.
 When you call the live proposal tool, pass review_analysis_run_id=${run.id}.
-Do not switch this run into local repository edits. Keep changes inside the Signals MCP proposal tools unless the live tool path is unavailable.`.trim();
+Do not switch this run into local repository edits.
+Do not use bash, rg, sed, or local file inspection for Arrow examples or run metadata unless the Signals MCP path is unavailable.`.trim();
 }
 
 export function buildDeveloperInstructions(kind) {

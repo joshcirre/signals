@@ -180,6 +180,8 @@ class QueueReviewAnalysisRunAction
             ."Use the latest Signals review evidence plus pending proposal #{$proposal->id} for {$field} to create or refine a product-scoped live Arrow.js page override proposal that makes the guidance more noticeable on the storefront.\n\n"
             ."Requirements:\n"
             ."- Do not edit shared Laravel or React storefront files.\n"
+            ."- Use find_storefront_page_override_proposal_tool first to check for an existing override for product_id={$product->id} and surface=\"{$surface}\".\n"
+            ."- Read the signals://storefront-page-override-runtime resource for the exact signals.ts contract and a minimal valid Arrow example.\n"
             ."- Use create_storefront_page_override_proposal_tool to create the live storefront change.\n"
             ."- Pass the current review_analysis_run_id when calling the tool so live proposal updates stream back into Signals.\n"
             ."- Target product_id={$product->id} and surface=\"{$surface}\".\n"
