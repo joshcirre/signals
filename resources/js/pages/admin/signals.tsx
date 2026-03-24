@@ -8,8 +8,9 @@ import {
     Copy,
     Radar,
 } from 'lucide-react';
-import type { FormEvent } from 'react';
 import { useState } from 'react';
+import type { BreadcrumbItem } from '@/types';
+import type { FormEvent } from 'react';
 import {
     AdminHeader,
     AdminPage,
@@ -22,7 +23,6 @@ import AppLayout from '@/layouts/app-layout';
 import { cn } from '@/lib/utils';
 import admin from '@/routes/admin';
 import { dashboard } from '@/routes/index';
-import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {

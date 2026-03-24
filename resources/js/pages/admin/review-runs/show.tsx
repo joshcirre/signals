@@ -12,6 +12,8 @@ import {
     Sparkles,
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import type { ToolTraceActivity } from '@/pages/admin/review-runs/session-trace';
+import type { BreadcrumbItem } from '@/types';
 import {
     AdminHeader,
     AdminPage,
@@ -25,10 +27,8 @@ import {
     formatToolName,
     prettifyToolContent,
 } from '@/pages/admin/review-runs/session-trace';
-import type { ToolTraceActivity } from '@/pages/admin/review-runs/session-trace';
 import admin from '@/routes/admin';
 import { dashboard } from '@/routes/index';
-import type { BreadcrumbItem } from '@/types';
 
 interface PageProps {
     auth: {

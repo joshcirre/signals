@@ -1,5 +1,6 @@
 import { Head, Link } from '@inertiajs/react';
 import { CirclePlay, ClipboardList, Radar, ShoppingBag } from 'lucide-react';
+import type { BreadcrumbItem } from '@/types';
 import {
     AdminHeader,
     AdminPage,
@@ -10,7 +11,6 @@ import {
 import AppLayout from '@/layouts/app-layout';
 import admin from '@/routes/admin';
 import { dashboard } from '@/routes/index';
-import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {

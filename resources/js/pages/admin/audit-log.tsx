@@ -1,5 +1,6 @@
 import { Head } from '@inertiajs/react';
 import { Bot, ShieldCheck, TerminalSquare } from 'lucide-react';
+import type { BreadcrumbItem } from '@/types';
 import {
     AdminHeader,
     AdminMetric,
@@ -12,7 +13,6 @@ import {
 import AppLayout from '@/layouts/app-layout';
 import admin from '@/routes/admin';
 import { dashboard } from '@/routes/index';
-import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {

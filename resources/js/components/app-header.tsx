@@ -6,6 +6,7 @@ import {
     Radar,
     ShoppingBag,
 } from 'lucide-react';
+import type { BreadcrumbItem, NavItem } from '@/types';
 import AppLogo from '@/components/app-logo';
 import AppLogoIcon from '@/components/app-logo-icon';
 import { Breadcrumbs } from '@/components/breadcrumbs';
@@ -35,7 +36,6 @@ import { useInitials } from '@/hooks/use-initials';
 import { storeBrand } from '@/lib/brand';
 import { cn } from '@/lib/utils';
 import { dashboard } from '@/routes/index';
-import type { BreadcrumbItem, NavItem } from '@/types';
 
 type Props = {
     breadcrumbs?: BreadcrumbItem[];

@@ -2,6 +2,7 @@ import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { useEcho } from '@laravel/echo-react';
 import { PencilLine, Save, ShieldCheck, ShieldX, Wand2 } from 'lucide-react';
 import { useEffect, useReducer, useState } from 'react';
+import type { BreadcrumbItem } from '@/types';
 import {
     AdminHeader,
     AdminPage,
@@ -17,7 +18,6 @@ import { reconcileQueueState } from '@/pages/admin/proposals/queue-state';
 import admin from '@/routes/admin';
 import { dashboard } from '@/routes/index';
 import productRoutes from '@/routes/products';
-import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {

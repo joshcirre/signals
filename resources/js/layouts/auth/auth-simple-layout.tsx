@@ -1,5 +1,6 @@
 import { Link } from '@inertiajs/react';
 import { ArrowRight, ClipboardList, Radar, ShieldCheck } from 'lucide-react';
+import type { AuthLayoutProps } from '@/types';
 import {
     AdminMetric,
     AdminPill,
@@ -10,7 +11,6 @@ import {
 import { BrandMark } from '@/components/brand-mark';
 import { storeBrand } from '@/lib/brand';
 import { home } from '@/routes/index';
-import type { AuthLayoutProps } from '@/types';
 
 const workflow = [
     {

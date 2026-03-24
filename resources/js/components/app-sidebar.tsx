@@ -7,6 +7,7 @@ import {
     ScrollText,
     ShoppingBag,
 } from 'lucide-react';
+import type { NavItem } from '@/types';
 import AppLogoIcon from '@/components/app-logo-icon';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
@@ -21,7 +22,6 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes/index';
-import type { NavItem } from '@/types';
 
 const mainNavItems: NavItem[] = [
     {
