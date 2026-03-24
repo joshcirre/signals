@@ -810,7 +810,7 @@ function StorefrontWidgetDetail({
                 </p>
             </div>
 
-            {arrowSource?.['main.ts'] ? (
+            {arrowSource?.['main.ts'] || arrowSource?.['main.js'] ? (
                 <div className="overflow-hidden rounded-sm border border-slate-950/7">
                     <div className="border-b border-slate-950/6 bg-slate-50 px-4 py-2.5">
                         <p className="text-[10px] font-medium tracking-[0.18em] text-slate-400 uppercase">

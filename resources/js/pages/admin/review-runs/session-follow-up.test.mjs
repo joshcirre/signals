@@ -74,4 +74,14 @@ test('hasPreviewableProposal only returns true when Arrow source includes main.t
         }),
         true,
     );
+    assert.equal(
+        hasPreviewableProposal({
+            payload: {
+                arrow_source: {
+                    'main.js': 'export default html`<div />`',
+                },
+            },
+        }),
+        true,
+    );
 });

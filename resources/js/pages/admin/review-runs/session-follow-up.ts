@@ -26,5 +26,8 @@ export function canContinueSession({
 export function hasPreviewableProposal(
     proposal: { payload: { arrow_source?: ArrowSource } } | null,
 ): boolean {
-    return Boolean(proposal?.payload.arrow_source?.['main.ts']);
+    return Boolean(
+        proposal?.payload.arrow_source?.['main.ts'] ??
+        proposal?.payload.arrow_source?.['main.js'],
+    );
 }
