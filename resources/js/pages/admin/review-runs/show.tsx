@@ -1,4 +1,4 @@
-import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { useEcho } from '@laravel/echo-react';
 import {
     ArrowLeft,
@@ -644,10 +644,12 @@ function proposalPreviewSource(
 }
 
 function RunProposalPreview({
+    onApprove,
     canFollowUp,
     previewContext,
     proposal,
 }: {
+    onApprove: (proposalId: number) => void;
     canFollowUp: boolean;
     previewContext: PreviewContext | null;
     proposal: ProposalPayload;
@@ -675,6 +677,15 @@ function RunProposalPreview({
                     <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-medium tracking-[0.14em] text-slate-500 uppercase">
                         {proposal.status}
                     </span>
+                    {proposal.status === 'pending' ? (
+                        <button
+                            type="button"
+                            onClick={() => onApprove(proposal.id)}
+                            className="rounded-full bg-slate-950 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-slate-800"
+                        >
+                            Approve and publish
+                        </button>
+                    ) : null}
                     {proposal.target_slug ? (
                         <Link
                             href={
@@ -979,6 +990,19 @@ export default function ReviewAnalysisRunShow({
         });
     };
 
+    const approveProposal = (proposalId: number) => {
+        router.post(
+            admin.proposals.approve({
+                proposal: proposalId,
+            }).url,
+            {},
+            {
+                preserveScroll: true,
+                preserveState: false,
+            },
+        );
+    };
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Signals session" />
@@ -1104,6 +1128,7 @@ export default function ReviewAnalysisRunShow({
 
                             {liveProposal ? (
                                 <RunProposalPreview
+                                    onApprove={approveProposal}
                                     canFollowUp={canFollowUp}
                                     previewContext={previewContext}
                                     proposal={liveProposal}
