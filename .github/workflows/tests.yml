@@ -46,8 +46,5 @@ jobs:
       - name: Generate Application Key
         run: php artisan key:generate
 
-      - name: Build Assets
-        run: npm run build
-
-      - name: Tests
-        run: php artisan test --compact
+      - name: Build Assets And Run Tests
+        run: composer ci:test

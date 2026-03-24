@@ -68,6 +68,16 @@
         "lint:check": [
             "pint --parallel --test"
         ],
+        "ci:lint": [
+            "@lint:check",
+            "npm run format:check",
+            "npm run lint:check",
+            "npm run types:check"
+        ],
+        "ci:test": [
+            "npm run build",
+            "@php artisan test --compact"
+        ],
         "refactor": [
             "rector process"
         ],
@@ -81,10 +91,8 @@
             "Composer\\Config::disableProcessTimeout",
             "@test:types",
             "@refactor:check",
-            "npm run lint:check",
-            "npm run format:check",
-            "npm run types:check",
-            "@test"
+            "@ci:lint",
+            "@ci:test"
         ],
         "test": [
             "@php artisan config:clear --ansi",

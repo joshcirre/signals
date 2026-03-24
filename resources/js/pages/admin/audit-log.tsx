@@ -10,9 +10,9 @@ import {
     AdminSurfaceHeader,
 } from '@/components/admin-page';
 import AppLayout from '@/layouts/app-layout';
-import type { BreadcrumbItem } from '@/types';
 import admin from '@/routes/admin';
 import { dashboard } from '@/routes/index';
+import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {

@@ -1,5 +1,5 @@
-import test from 'node:test';
 import assert from 'node:assert/strict';
+import test from 'node:test';
 import { reconcileQueueState } from './queue-state.ts';
 
 test('reconcileQueueState keeps the current selection when it still exists', () => {

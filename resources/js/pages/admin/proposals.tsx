@@ -1,7 +1,7 @@
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { useEcho } from '@laravel/echo-react';
 import { PencilLine, Save, ShieldCheck, ShieldX, Wand2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useReducer, useState } from 'react';
 import {
     AdminHeader,
     AdminPage,
@@ -14,10 +14,10 @@ import { ArrowSandboxWidget } from '@/components/arrow-sandbox-widget';
 import AppLayout from '@/layouts/app-layout';
 import { cn } from '@/lib/utils';
 import { reconcileQueueState } from '@/pages/admin/proposals/queue-state';
-import type { BreadcrumbItem } from '@/types';
 import admin from '@/routes/admin';
 import { dashboard } from '@/routes/index';
 import productRoutes from '@/routes/products';
+import type { BreadcrumbItem } from '@/types';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -75,6 +75,93 @@ interface ProposalUpdatedEvent {
     payload: Proposal['payload'];
 }
 
+interface ProposalQueueState {
+    editingProposalId: number | null;
+    proposals: Proposal[];
+    selectedProposalId: number | null;
+}
+
+type ProposalQueueAction =
+    | { type: 'proposal.editing_stopped' }
+    | { proposalId: number; type: 'proposal.selected' }
+    | { proposalId: number; type: 'proposal.editing_started' }
+    | {
+          payload: Proposal['payload'];
+          proposalId: number;
+          status: string;
+          type: 'proposal.updated';
+      }
+    | { proposals: Proposal[]; type: 'server.synced' };
+
+function buildProposalQueueState(
+    proposals: Proposal[],
+    selectedProposalId: number | null,
+    editingProposalId: number | null,
+): ProposalQueueState {
+    const nextQueueState = reconcileQueueState(
+        proposals,
+        selectedProposalId,
+        editingProposalId,
+    );
+
+    return {
+        proposals,
+        selectedProposalId: nextQueueState.selectedProposalId,
+        editingProposalId: nextQueueState.editingProposalId,
+    };
+}
+
+function createInitialProposalQueueState(
+    proposals: Proposal[],
+): ProposalQueueState {
+    return buildProposalQueueState(proposals, proposals[0]?.id ?? null, null);
+}
+
+function proposalQueueReducer(
+    state: ProposalQueueState,
+    action: ProposalQueueAction,
+): ProposalQueueState {
+    switch (action.type) {
+        case 'proposal.editing_started':
+            return {
+                ...state,
+                selectedProposalId: action.proposalId,
+                editingProposalId: action.proposalId,
+            };
+        case 'proposal.editing_stopped':
+            return {
+                ...state,
+                editingProposalId: null,
+            };
+        case 'proposal.selected':
+            return {
+                ...state,
+                selectedProposalId: action.proposalId,
+                editingProposalId: null,
+            };
+        case 'proposal.updated':
+            return buildProposalQueueState(
+                state.proposals.map((proposal) =>
+                    proposal.id === action.proposalId
+                        ? {
+                              ...proposal,
+                              status: action.status,
+                              payload: action.payload,
+                          }
+                        : proposal,
+                ),
+                state.selectedProposalId,
+                state.editingProposalId,
+            );
+        case 'server.synced':
+            return buildProposalQueueState(
+                action.proposals,
+                state.selectedProposalId,
+                state.editingProposalId,
+            );
+    }
+}
+
 function proposalFieldLabel(field: string | null | undefined): string {
     if (!field) {
         return 'Storefront copy';
@@ -89,12 +176,10 @@ export default function ProposalQueue({
 }: ProposalQueueProps) {
     const { auth } = usePage<PageProps>().props;
     const statusFilter = filters.status;
-    const [proposals, setProposals] = useState<Proposal[]>(initialProposals);
-    const [selectedProposalId, setSelectedProposalId] = useState<number | null>(
-        initialProposals[0]?.id ?? null,
-    );
-    const [editingProposalId, setEditingProposalId] = useState<number | null>(
-        null,
+    const [queueState, dispatchQueue] = useReducer(
+        proposalQueueReducer,
+        initialProposals,
+        createInitialProposalQueueState,
     );
     const [refineQuery, setRefineQuery] = useState('');
     const form = useForm({
@@ -102,6 +187,7 @@ export default function ProposalQueue({
         rationale: '',
         confidence: 0.9,
     });
+    const { editingProposalId, proposals, selectedProposalId } = queueState;
     const proposalCounts = proposals.reduce(
         (counts, proposal) => {
             counts.total += 1;
@@ -133,42 +219,22 @@ export default function ProposalQueue({
         `signals.user.${auth.user.id}`,
         '.proposal.updated',
         (payload) => {
-            setProposals((current) =>
-                current.map((p) =>
-                    p.id === payload.id
-                        ? {
-                              ...p,
-                              status: payload.status,
-                              payload: payload.payload,
-                          }
-                        : p,
-                ),
-            );
+            dispatchQueue({
+                type: 'proposal.updated',
+                proposalId: payload.id,
+                status: payload.status,
+                payload: payload.payload,
+            });
         },
         [auth.user.id],
     );
 
     useEffect(() => {
-        setProposals(initialProposals);
-        setSelectedProposalId((currentSelectedProposalId) => {
-            const nextQueueState = reconcileQueueState(
-                initialProposals,
-                currentSelectedProposalId,
-                editingProposalId,
-            );
-
-            return nextQueueState.selectedProposalId;
+        dispatchQueue({
+            type: 'server.synced',
+            proposals: initialProposals,
         });
-        setEditingProposalId((currentEditingProposalId) => {
-            const nextQueueState = reconcileQueueState(
-                initialProposals,
-                selectedProposalId,
-                currentEditingProposalId,
-            );
-
-            return nextQueueState.editingProposalId;
-        });
-    }, [editingProposalId, initialProposals, selectedProposalId]);
+    }, [initialProposals]);
 
     const beginEditingProposal = (proposalId: number) => {
         const proposal = proposals.find((item) => item.id === proposalId);
@@ -185,8 +251,10 @@ export default function ProposalQueue({
             rationale: proposal.rationale,
             confidence: proposal.confidence,
         });
-        setSelectedProposalId(proposal.id);
-        setEditingProposalId(proposal.id);
+        dispatchQueue({
+            type: 'proposal.editing_started',
+            proposalId: proposal.id,
+        });
     };
 
     const refineWithCodex = () => {
@@ -296,10 +364,12 @@ export default function ProposalQueue({
                                     <button
                                         key={proposal.id}
                                         type="button"
-                                        onClick={() => {
-                                            setSelectedProposalId(proposal.id);
-                                            setEditingProposalId(null);
-                                        }}
+                                        onClick={() =>
+                                            dispatchQueue({
+                                                type: 'proposal.selected',
+                                                proposalId: proposal.id,
+                                            })
+                                        }
                                         className={cn(
                                             'w-full rounded-sm border px-3 py-3 text-left transition',
                                             proposal.id === selectedProposal?.id
@@ -452,9 +522,9 @@ export default function ProposalQueue({
                                                     preserveState: false,
                                                     preserveScroll: true,
                                                     onSuccess: () => {
-                                                        setEditingProposalId(
-                                                            null,
-                                                        );
+                                                        dispatchQueue({
+                                                            type: 'proposal.editing_stopped',
+                                                        });
                                                     },
                                                 },
                                             );
@@ -517,7 +587,9 @@ export default function ProposalQueue({
                                             <button
                                                 type="button"
                                                 onClick={() =>
-                                                    setEditingProposalId(null)
+                                                    dispatchQueue({
+                                                        type: 'proposal.editing_stopped',
+                                                    })
                                                 }
                                                 className="rounded-sm border border-slate-950/10 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition hover:border-slate-950/20 hover:bg-slate-50"
                                             >

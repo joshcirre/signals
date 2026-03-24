@@ -26,9 +26,9 @@ import {
     prettifyToolContent,
 } from '@/pages/admin/review-runs/session-trace';
 import type { ToolTraceActivity } from '@/pages/admin/review-runs/session-trace';
-import type { BreadcrumbItem } from '@/types';
 import admin from '@/routes/admin';
 import { dashboard } from '@/routes/index';
+import type { BreadcrumbItem } from '@/types';
 
 interface PageProps {
     auth: {
