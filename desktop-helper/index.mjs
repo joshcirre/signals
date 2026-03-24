@@ -5,6 +5,7 @@ import {
     buildDeveloperInstructions,
     buildRunPrompt,
 } from './run-prompts.mjs';
+import { extractTurnId, matchesActiveTurn } from './turn-monitor.mjs';
 
 const serverUrl = process.env.SIGNALS_SERVER_URL;
 const token = process.env.SIGNALS_DEVICE_TOKEN;
@@ -571,6 +572,7 @@ class ActiveRunSession {
     constructor(run) {
         this.run = run;
         this.threadId = null;
+        this.activeTurn = null;
         this.turnMonitor = null;
         this.closed = false;
         this.client = new CodexAppServerClient({
@@ -582,7 +584,7 @@ class ActiveRunSession {
         this.stopNotificationStream = this.client.onNotification(
             (notification) => {
                 if (
-                    notification.method === 'turn/completed' &&
+                    matchesActiveTurn(notification, this.activeTurn) &&
                     this.turnMonitor !== null
                 ) {
                     const status =
@@ -600,6 +602,8 @@ class ActiveRunSession {
                             ),
                         );
                     }
+
+                    this.activeTurn = null;
                 }
 
                 for (const event of notificationToEvents(notification)) {
@@ -713,13 +717,18 @@ class ActiveRunSession {
         this.turnMonitor = createRunMonitor();
 
         try {
-            await this.client.startTurn({
+            const turnResponse = await this.client.startTurn({
                 threadId: this.threadId,
                 prompt,
             });
+            this.activeTurn = {
+                turnId: extractTurnId(turnResponse),
+                threadId: this.threadId,
+            };
 
             return await this.turnMonitor.completion;
         } finally {
+            this.activeTurn = null;
             this.turnMonitor = null;
         }
     }

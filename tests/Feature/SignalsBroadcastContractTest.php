@@ -61,6 +61,34 @@ test('review analysis event broadcast uses the private user channel contract', f
         ]);
 });
 
+test('review analysis event broadcast trims oversized metadata for live websocket delivery', function (): void {
+    $eventLog = ActionLog::factory()->create([
+        'action' => 'mcp.tool.started',
+        'metadata_json' => [
+            'message' => str_repeat('Launching the storefront override tool. ', 40),
+            'content' => str_repeat('Very long assistant content. ', 120),
+            'tool_name' => 'mcp__signals__create_storefront_page_override_proposal',
+            'server_name' => 'signals',
+            'arguments' => [
+                'source' => str_repeat('A', 9000),
+            ],
+        ],
+    ]);
+
+    $payload = (new ReviewAnalysisEventBroadcast($eventLog->run->user, $eventLog))
+        ->broadcastWith();
+
+    expect($payload['tool_name'])->toBe('mcp__signals__create_storefront_page_override_proposal')
+        ->and($payload['content'])->toBeString()
+        ->and(strlen($payload['content']))->toBeLessThanOrEqual(1800)
+        ->and($payload['metadata'])->toMatchArray([
+            'tool_name' => 'mcp__signals__create_storefront_page_override_proposal',
+            'server_name' => 'signals',
+            'details_omitted' => true,
+        ])
+        ->and($payload['metadata'])->not->toHaveKey('arguments');
+});
+
 test('signals helper heartbeat broadcast uses the private user channel contract', function (): void {
     CarbonImmutable::setTestNow('2026-03-23 06:05:15');
 
